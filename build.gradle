@@ -1,0 +1,208 @@
+/*
+ *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
+buildscript {
+    ext {
+        es_version = System.getProperty("es.version", "7.4.2")
+        es_group = "org.elasticsearch"
+        distribution = 'oss-zip'
+    }
+
+    // This isn't applying from repositories.gradle so repeating git diff it here
+    repositories {
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+        jcenter()
+    }
+
+    dependencies {
+        classpath "${es_group}.gradle:build-tools:${es_version}"
+    }
+}
+
+//****************************************************************************/
+// Build configurations
+//****************************************************************************/
+
+plugins {
+    id 'java-library'
+}
+
+plugins {
+    id 'nebula.ospackage' version "5.3.0" apply false
+}
+
+ext {
+    opendistroVersion = '1.4.0'
+    isSnapshot = "true" == System.getProperty("build.snapshot", "true")
+}
+
+
+allprojects {
+    group = 'com.amazon.opendistroforelasticsearch'
+    version = "${opendistroVersion}.0"
+
+    apply from: 'build-tools/repositories.gradle'
+    plugins.withId('java') {
+        sourceCompatibility = targetCompatibility = "1.8"
+    }
+}
+
+apply plugin: 'elasticsearch.esplugin'
+apply plugin: 'jacoco'
+apply from: 'build-tools/knnplugin-coverage.gradle'
+
+jacoco {
+    toolVersion = "0.8.3"
+}
+
+ext {
+    projectSubstitutions = [:]
+    licenseFile = rootProject.file('LICENSE.TXT')
+    noticeFile = rootProject.file('NOTICE.TXT')
+}
+
+esplugin {
+    name 'opendistro-knn'
+    // zip file name and plugin name in ${elasticsearch.plugin.name} read by ES when plugin loading
+    description 'Open Distro for Elasticsearch KNN'
+    classname 'com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin'
+}
+
+task release(type: Copy, group: 'build') {
+    dependsOn allprojects*.tasks.build
+    from(zipTree(project.tasks.bundlePlugin.outputs.files.getSingleFile()))
+    into "build/plugins/opendistro-knn"
+    includeEmptyDirs = false
+    eachFile { it.path = it.path - "elasticsearch/" }
+}
+
+
+//****************************************************************************/
+// Dependencies
+//****************************************************************************/
+dependencies {
+    compileOnly "org.elasticsearch:elasticsearch:${es_version}"
+    compile group: 'com.google.guava', name: 'guava', version:'15.0'
+    testImplementation "org.elasticsearch.test:framework:${es_version}"
+}
+
+licenseHeaders.enabled = false
+dependencyLicenses.enabled = false
+thirdPartyAudit.enabled = false
+
+def es_tmp_dir = rootProject.file('build/private/es_tmp').absoluteFile
+es_tmp_dir.mkdirs()
+
+test {
+    systemProperty 'tests.security.manager', 'false'
+}
+
+integTestRunner {
+    systemProperty 'tests.security.manager', 'false'
+    systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
+    distribution = "oss-zip"
+
+    // Tell the test JVM if the cluster JVM is running under a debugger so that tests can use longer timeouts for
+    // requests. The 'doFirst' delays reading the debug setting on the cluster till execution time.
+    doFirst { systemProperty 'cluster.debug', integTestCluster.debug }
+
+    // The --debug-jvm command-line option makes the cluster debuggable; this makes the tests debuggable
+    if (System.getProperty("test.debug") != null) {
+        jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005'
+    }
+
+    systemProperty "java.library.path", "$rootDir/buildSrc"
+    // allows integration test classes to access test resource from project root path
+    systemProperty('project.root', project.rootDir.absolutePath)
+}
+
+integTestCluster {
+    distribution = "oss-zip"
+    systemProperty "java.library.path", "$rootDir/buildSrc"
+}
+
+check.dependsOn jacocoTestReport
+
+run {
+    distribution = "oss-zip"
+    systemProperty "java.library.path", "$rootDir/buildSrc"
+}
+
+check.dependsOn jacocoTestReport
+
+//TODO fix these
+checkstyleMain.ignoreFailures = true
+checkstyleTest.ignoreFailures = true
+forbiddenApis.ignoreFailures = true
+forbiddenPatterns {
+    setEnabled(false)
+}
+
+// We don't need to follow ES testing naming conventions.
+// see https://github.com/elastic/elasticsearch/blob/323f312bbc829a63056a79ebe45adced5099f6e6/buildSrc/src/main/java/org/elasticsearch/gradle/precommit/TestingConventionsTasks.java
+// enable testingConventions check will cause errors like:  "Classes ending with [Tests] must subclass [LuceneTestCase]"
+testingConventions.enabled = false
+
+apply plugin: 'nebula.ospackage'
+
+// This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
+afterEvaluate {
+    ospackage {
+        packageName = "${name}"
+        release = isSnapshot ? "0.1" : '1'
+        version = "${project.version}" - "-SNAPSHOT"
+
+        into '/usr/share/elasticsearch/plugins'
+        from(zipTree(bundlePlugin.archivePath)) {
+            into esplugin.name
+        }
+
+        user 'root'
+        permissionGroup 'root'
+        fileMode 0644
+        dirMode 0755
+
+        requires('elasticsearch-oss', versions.elasticsearch, EQUAL)
+        packager = 'Amazon'
+        vendor = 'Amazon'
+        os = 'LINUX'
+        prefix '/usr'
+
+        license 'ASL-2.0'
+        maintainer 'OpenDistro for Elasticsearch Team <opendistro@amazon.com>'
+        url 'https://opendistro.github.io/elasticsearch/downloads'
+        summary '''
+         KNN plugin for OpenDistro for Elasticsearch. 
+         Reference documentation can be found at https://opendistro.github.io/for-elasticsearch-docs/.
+    '''.stripIndent().replace('\n', ' ').trim()
+    }
+
+    buildRpm {
+        arch = 'NOARCH'
+        archiveName "${packageName}-${version}.rpm"
+        dependsOn 'assemble'
+    }
+
+    buildDeb {
+        arch = 'amd64'
+        archiveName "${packageName}-${version}.deb"
+        dependsOn 'assemble'
+    }
+
+    task buildPackages(type: GradleBuild) {
+        tasks = ['build', 'buildRpm', 'buildDeb']
+    }
+}

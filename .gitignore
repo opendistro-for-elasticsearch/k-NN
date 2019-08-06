@@ -1,0 +1,11 @@
+buildSrc/libs
+buildSrc/build/
+.gradle/
+build
+.idea/
+!.idea/codeStyles/codeStyleConfig.xml
+.DS_Store
+*.log
+out/
+buildSrc/es-knn-offline-repo-*
+oss/*
