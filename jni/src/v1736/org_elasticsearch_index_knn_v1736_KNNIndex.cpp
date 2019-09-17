@@ -61,14 +61,15 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
 
 JNIEXPORT void JNICALL Java_org_elasticsearch_index_knn_v1736_KNNIndex_saveIndex(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath)
 {
+    Space<float>* space = NULL;
+    ObjectVector dataset;
+    Index<float>* index = NULL;
+    int* object_ids = NULL;
+
     try {
-
         initLibrary();
-
-        Space<float>* space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
-
-        ObjectVector dataset;
-        int* object_ids = env->GetIntArrayElements(ids, 0);
+        space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
+        object_ids = env->GetIntArrayElements(ids, 0);
         for (int i = 0; i < env->GetArrayLength(vectors); i++) {
             jfloatArray vectorArray = (jfloatArray)env->GetObjectArrayElement(vectors, i);
             float* vector = env->GetFloatArrayElements(vectorArray, 0);
@@ -76,34 +77,47 @@ JNIEXPORT void JNICALL Java_org_elasticsearch_index_knn_v1736_KNNIndex_saveIndex
             env->ReleaseFloatArrayElements(vectorArray, vector, 0);
         }
 
-        Index<float>* index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", "l2", *space, dataset);
+        index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", "l2", *space, dataset);
 
         index->CreateIndex(AnyParams());
         has_exception_in_stack(env);
         index->SaveIndex(env->GetStringUTFChars(indexPath, NULL));
         has_exception_in_stack(env);
+
+        // free up memory
+        env->ReleaseIntArrayElements(ids, object_ids, 0);
+        dataset.clear();
+        delete index;
+        delete space;
     }
     catch (...) {
+        if (object_ids) { env->ReleaseIntArrayElements(ids, object_ids, 0); }
+        dataset.clear();
+        if (index) { delete index; }
+        if (space) { delete space; }
         catch_cpp_exception_and_throw_java(env);
     }
 }
 
 JNIEXPORT jobjectArray JNICALL Java_org_elasticsearch_index_knn_v1736_KNNIndex_queryIndex(JNIEnv* env, jobject indexObject, jfloatArray queryVector, jint k)
 {
+    Space<float>* space = NULL;
+    KNNQueue<float>* result = NULL;
+
     try {
         jclass indexClass = env->GetObjectClass(indexObject);
         jmethodID getIndex = env->GetMethodID(indexClass, "getIndex", "()J");
         jlong indexValue = env->CallLongMethod(indexObject, getIndex);
         Index<float>* index = reinterpret_cast<Index<float>*>(indexValue);
         float* vector = env->GetFloatArrayElements(queryVector, 0);
-        Space<float>* space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
+        space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
         KNNQuery<float> query(*space, new Object(-1, -1, env->GetArrayLength(queryVector)*sizeof(float), vector), k);
         env->ReleaseFloatArrayElements(queryVector, vector, 0);
         has_exception_in_stack(env);
         index->SetQueryTimeParams(AnyParams({ "ef=512" }));
 
         index->Search(&query);
-        KNNQueue<float>* result = query.Result()->Clone();
+        result = query.Result()->Clone();
         has_exception_in_stack(env);
         int resultSize = result->Size();
         jclass resultClass = env->FindClass("org/elasticsearch/index/knn/KNNQueryResult");
@@ -115,9 +129,16 @@ JNIEXPORT jobjectArray JNICALL Java_org_elasticsearch_index_knn_v1736_KNNIndex_q
             env->SetObjectArrayElement(results, i, env->NewObject(resultClass, allArgs, id, distance));
         }
         has_exception_in_stack(env);
+
+        //free up memory
+        delete space;
+        delete result;
+
         return results;
     }
     catch (...) {
+        if (space) { delete space; }
+        if (result) { delete result; }
         catch_cpp_exception_and_throw_java(env);
     }
     return NULL;
@@ -125,11 +146,14 @@ JNIEXPORT jobjectArray JNICALL Java_org_elasticsearch_index_knn_v1736_KNNIndex_q
 
 JNIEXPORT void JNICALL Java_org_elasticsearch_index_knn_v1736_KNNIndex_init(JNIEnv* env, jobject indexObject, jstring indexPath)
 {
+    Space<float>* space = NULL;
+    ObjectVector* dataset = NULL;
+    Index<float>* index = NULL;
 
     try {
         initLibrary();
-        Space<float>* space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
-        ObjectVector* dataset = new ObjectVector();
+        space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
+        dataset = new ObjectVector();
         Index<float>* index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", "l2", *space, *dataset);
         index->LoadIndex(env->GetStringUTFChars(indexPath, NULL));
         has_exception_in_stack(env);
@@ -137,8 +161,14 @@ JNIEXPORT void JNICALL Java_org_elasticsearch_index_knn_v1736_KNNIndex_init(JNIE
         jmethodID setIndex = env->GetMethodID(indexClass, "setIndex", "(J)V");
         env->CallVoidMethod(indexObject, setIndex, (jlong)index);
         has_exception_in_stack(env);
+
+        // free up memory
+        delete space;
+        delete dataset;
     }
     catch (...) {
+        if (space) { delete space; }
+        if (dataset) { delete dataset; }
         catch_cpp_exception_and_throw_java(env);
     }
 }
