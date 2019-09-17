@@ -91,17 +91,17 @@ task release(type: Copy, group: 'build') {
 
     doLast {
         if (sandboxedBuild) {
-                buildDir.eachFile { file ->
-                    if (file.name != "plugins" && !file.name.startsWith("brazil-") && file.name != "lib") {
-                        delete(file)
-                    }
-                }
-                subprojects { Project sp ->
-                    if (sp.file('Config').exists()) return // Avoid other brazil pkgs; can't hurt to be safe
-                    sp.delete(sp.buildDir)
+            buildDir.eachFile { file ->
+                if (file.name != "plugins" && !file.name.startsWith("brazil-") && file.name != "lib") {
+                    delete(file)
                 }
             }
+            subprojects { Project sp ->
+                if (sp.file('Config').exists()) return // Avoid other brazil pkgs; can't hurt to be safe
+                sp.delete(sp.buildDir)
+            }
         }
+    }
 }
 
 
@@ -137,7 +137,7 @@ integTestRunner {
     if (System.getProperty("test.debug") != null) {
         jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005'
     }
-    
+
     systemProperty "java.library.path", "$rootDir/buildSrc"
     // allows integration test classes to access test resource from project root path
     systemProperty('project.root', project.rootDir.absolutePath)
@@ -161,6 +161,9 @@ check.dependsOn jacocoTestReport
 checkstyleMain.ignoreFailures = true
 checkstyleTest.ignoreFailures = true
 forbiddenApis.ignoreFailures = true
+forbiddenPatterns {
+    setEnabled(false)
+}
 
 // We don't need to follow ES testing naming conventions.
 // see https://github.com/elastic/elasticsearch/blob/323f312bbc829a63056a79ebe45adced5099f6e6/buildSrc/src/main/java/org/elasticsearch/gradle/precommit/TestingConventionsTasks.java

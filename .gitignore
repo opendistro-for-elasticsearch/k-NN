@@ -1,0 +1,9 @@
+buildSrc/libs
+buildSrc/build/
+.gradle/
+build/
+.idea/
+!.idea/codeStyles/codeStyleConfig.xml
+.DS_Store
+*.log
+out/

@@ -1,18 +1,15 @@
 # Open Distro for Elasticsearch KNN
+========================================
 
-Open Distro for Elasticsearch enables you to run nearest neighbor search on billions of documents across thousands of dimensions with the same ease as running any regular Elasticsearch query. You can use aggregations and filter clauses to further refine your similarity search operations. K-NN similarity search power use cases such as product recommendations, fraud detection, image and video search, related document search, and more.
-
-## REQUEST FOR COMMENT (RFC)
-
-We'd like to get your comments! Please read the plugin RFC [document](https://github.com/opendistro-for-elasticsearch/k-NN/blob/development/RFC.md) and raise an issue to add your comments and questions.
+Open Distro for Elasticsearch enables you to run nearest neighbor search on billions of documents across thousands of dimensions with the same ease as running any regular Elasticsearch query. Use aggregations and filter clauses to further refine your similarity search operations. K-NN similarity search power use cases such as product recommendations, fraud detection, image and video search, related document search, and more.
 
 ## Documentation
 
-To learn more, please see our [documentation](https://opendistro.github.io/for-elasticsearch-docs/).
+Please see our [documentation](https://opendistro.github.io/for-elasticsearch-docs/).
 
 ## Setup
 
-1. Check out the package from version control.
+1. Check out this package from version control.
 2. Launch Intellij IDEA, choose **Import Project**, and select the `settings.gradle` file in the root of this package.
 3. To build from the command line, set `JAVA_HOME` to point to a JDK >= 12 before running `./gradlew`.
 
@@ -51,7 +48,7 @@ The test runner JVM will start suspended and wait for a debugger to attach to `l
 ## Basic Usage
 
 * Creating KNN index
-You can create a KNN type index by specifying codec as *KNNCodec* and mark the particular field as of type ‘*knn_vector’*.
+You could  create a KNN type index by specifying codec as *KNNCodec* and mark the particular field as of type ‘*knn_vector’*.
 The following code creates a KNN index with fields my_vector1, my_vector2, my_vector3 as knn types. The knn type field accepts array of float.
 
 ```
