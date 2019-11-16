@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  elasticsearch:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: odfes_elasticsearch_knn
+    image: odfes_elasticsearch_knn
+    env_file:
+      - ./.envs/.elasticsearch
+    volumes:
+      - odfes_elasticsearch_data:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the Elasticsearch user, set to at least 65536 on modern systems
+        hard: 65536
+    ports:
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
+    networks:
+      - odfes-net
+volumes:
+  odfes_elasticsearch_data:
+
+networks:
+  odfes-net:
+

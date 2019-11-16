@@ -141,6 +141,182 @@ curl -X POST "localhost:9200/myindex/_search" -H 'Content-Type: application/json
 ## Java Native library usage
 For plugin installations from archive(.zip), it is necessary to ensure ```.so``` file for linux OS and ```.jnilib``` file for Mac OS are present in the java library path. This can be possible by copying .so/.jnilib to either $ES_HOME or by adding manually ```-Djava.library.path=<path_to_lib_files>``` in ```jvm.options``` file
 
+## Docker
+We put a docker-compose.yml file for you and which equipped with a custom Dockerfile
+that build and install `opendistro-knn` elasticsearch plugin.
+
+Please issue the following command to start your elasticsearch container:
+
+```shell script
+docker-compose up -d --build
+```
+This will start the elasticsearch on 9200 port. You may access it at https://localhost:9200 
+
+Default username and password is:
+
+  - Username: `admin`
+  - Password: `admin`
+
+**Get a list of installed plugins in elasticsearch:**
+```shell script
+curl -XGET https://localhost:9200/_cat/plugins?v -u admin:admin --insecure
+```
+
+**Create an index:**
+Please open your terminal then paste the run the following curl command in console:
+```
+curl -XPUT "https://localhost:9200/demo" -u admin:admin --insecure -H 'Content-Type: application/json' -d'
+{
+  "settings": {
+    "index": {
+      "codec": "KNNCodec"
+    }
+  },
+  "mappings": {
+    "properties": {
+      "my_vector": {
+        "type": "knn_vector"
+      },
+      "price": {
+        "type": "integer"
+      },
+      "name": {
+        "type": "text"
+      }
+    }
+  }
+}
+'
+```
+Click on play button and your index is created.
+
+**Push some data:**
+```shell script
+curl -X PUT "https://localhost:9200/demo/_doc/1" -u admin:admin --insecure -H 'Content-Type: application/json' -d'
+{
+  "my_vector": [1.5, 2.5],
+  "price": 10,
+  "name": "Nurul"
+}
+'
+
+curl -X PUT "https://localhost:9200/demo/_doc/2" -u admin:admin --insecure -H 'Content-Type: application/json' -d'
+{
+  "my_vector": [2.5, 3.5],
+  "price": 12,
+  "name": "Ferdous"
+}
+'
+
+curl -X PUT "https://localhost:9200/demo/_doc/3" -u admin:admin --insecure -H 'Content-Type: application/json' -d'
+{
+  "my_vector": [3.5, 4.5],
+  "price": 15,
+  "name": "Dynamic"
+}
+'
+
+curl -X PUT "https://localhost:9200/demo/_doc/4" -u admin:admin --insecure -H 'Content-Type: application/json' -d'
+{
+  "my_vector": [5.5, 6.5],
+  "price": 17,
+  "name": "Guy"
+}'
+
+curl -X PUT "https://localhost:9200/demo/_doc/5" -u admin:admin --insecure -H 'Content-Type: application/json' -d'
+{
+  "my_vector": [6.5, 7.5],
+  "price": 18,
+  "name": "Nurul Ferdous"
+}
+'
+```
+
+**Search for a KNN query:**
+```shell script
+curl -X POST "https://localhost:9200/demo/_search" -u admin:admin --insecure -H 'Content-Type: application/json' -d'
+{"size" : 10,
+ "query": {
+  "knn": {
+   "my_vector": {
+     "vector": [3, 4],
+     "k": 3
+   }
+  }
+ }
+}
+'
+```
+
+**If everything goes well you would see a response like this:**
+```json
+{
+  "took": 29,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 3,
+      "relation": "eq"
+    },
+    "max_score": 1.4142135,
+    "hits": [
+      {
+        "_index": "demo",
+        "_type": "_doc",
+        "_id": "2",
+        "_score": 1.4142135,
+        "_source": {
+          "my_vector": [
+            2.5,
+            3.5
+          ],
+          "price": 12,
+          "name": "Ferdous"
+        }
+      },
+      {
+        "_index": "demo",
+        "_type": "_doc",
+        "_id": "3",
+        "_score": 1.4142135,
+        "_source": {
+          "my_vector": [
+            3.5,
+            4.5
+          ],
+          "price": 15,
+          "name": "Dynamic"
+        }
+      },
+      {
+        "_index": "demo",
+        "_type": "_doc",
+        "_id": "1",
+        "_score": 0.47140455,
+        "_source": {
+          "my_vector": [
+            1.5,
+            2.5
+          ],
+          "price": 10,
+          "name": "Nurul"
+        }
+      }
+    ]
+  }
+}
+```
+
+If you want to use a prebuilt container here is a public one: https://hub.docker.com/r/ferdous/odfes_elasticsearch_knn
+
+Enjoy!
+
 ## Code of Conduct
 
 This project has adopted an [Open Source Code of Conduct](https://opendistro.github.io/for-elasticsearch/codeofconduct.html).
