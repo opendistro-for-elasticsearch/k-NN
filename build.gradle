@@ -86,7 +86,6 @@ task release(type: Copy, group: 'build') {
     from(zipTree(project.tasks.bundlePlugin.outputs.files.getSingleFile()))
     into "build/plugins/opendistro-knn"
     includeEmptyDirs = false
-    // ES versions < 6.3 have a top-level elasticsearch directory inside the plugin zip which we need to remove
     eachFile { it.path = it.path - "elasticsearch/" }
 }
 
