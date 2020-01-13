@@ -138,6 +138,9 @@ curl -X POST "localhost:9200/myindex/_search" -H 'Content-Type: application/json
 '
 ```
 
+## Java Native library usage
+For plugin installations from archive(.zip), it is necessary to ensure ```.so``` file for linux OS and ```.jnilib``` file for Mac OS are present in the java library path. This can be possible by copying .so/.jnilib to either $ES_HOME or by adding manually ```-Djava.library.path=<path_to_lib_files>``` in ```jvm.options``` file
+
 ## Code of Conduct
 
 This project has adopted an [Open Source Code of Conduct](https://opendistro.github.io/for-elasticsearch/codeofconduct.html).
