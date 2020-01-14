@@ -110,13 +110,20 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
 
         // free up memory
         env->ReleaseIntArrayElements(ids, object_ids, 0);
-        dataset.clear();
+
+        // Free each object in the dataset. No need to clear the vector because it goes out of scope
+        // immediately
+        for (auto it = dataset.begin(); it != dataset.end(); it++) {
+            delete *it;
+        }
         delete index;
         delete space;
     }
     catch (...) {
         if (object_ids) { env->ReleaseIntArrayElements(ids, object_ids, 0); }
-        dataset.clear();
+        for (auto it = dataset.begin(); it != dataset.end(); it++) {
+            delete *it;
+        }
         if (index) { delete index; }
         if (space) { delete space; }
         catch_cpp_exception_and_throw_java(env);
