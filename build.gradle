@@ -78,7 +78,7 @@ esplugin {
     name 'opendistro-knn'
     // zip file name and plugin name in ${elasticsearch.plugin.name} read by ES when plugin loading
     description 'Open Distro for Elasticsearch KNN'
-    classname 'org.elasticsearch.plugin.knn.KNNPlugin'
+    classname 'com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin'
 }
 
 task release(type: Copy, group: 'build') {
@@ -86,22 +86,7 @@ task release(type: Copy, group: 'build') {
     from(zipTree(project.tasks.bundlePlugin.outputs.files.getSingleFile()))
     into "build/plugins/opendistro-knn"
     includeEmptyDirs = false
-    // ES versions < 6.3 have a top-level elasticsearch directory inside the plugin zip which we need to remove
     eachFile { it.path = it.path - "elasticsearch/" }
-
-    doLast {
-        if (sandboxedBuild) {
-            buildDir.eachFile { file ->
-                if (file.name != "plugins" && !file.name.startsWith("brazil-") && file.name != "lib") {
-                    delete(file)
-                }
-            }
-            subprojects { Project sp ->
-                if (sp.file('Config').exists()) return // Avoid other brazil pkgs; can't hurt to be safe
-                sp.delete(sp.buildDir)
-            }
-        }
-    }
 }
 
 
@@ -110,6 +95,7 @@ task release(type: Copy, group: 'build') {
 //****************************************************************************/
 dependencies {
     compileOnly "org.elasticsearch:elasticsearch:${es_version}"
+    compile group: 'com.google.guava', name: 'guava', version:'15.0'
     testImplementation "org.elasticsearch.test:framework:${es_version}"
 }
 
