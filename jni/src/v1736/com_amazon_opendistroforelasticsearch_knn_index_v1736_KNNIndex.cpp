@@ -91,6 +91,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
             dataset.push_back(new Object(object_ids[i], -1, env->GetArrayLength(vectorArray)*sizeof(float), vector));
             env->ReleaseFloatArrayElements(vectorArray, vector, 0);
         }
+        env->ReleaseIntArrayElements(ids, object_ids, 0);
 
         index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", "l2", *space, dataset);
 
@@ -105,11 +106,10 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
 
         index->CreateIndex(AnyParams(paramsList));
         has_exception_in_stack(env);
-        index->SaveIndex(env->GetStringUTFChars(indexPath, NULL));
+        const char * indexString = env->GetStringUTFChars(indexPath, 0);
+        index->SaveIndex(indexString);
+        env->ReleaseStringUTFChars(indexPath, indexString);
         has_exception_in_stack(env);
-
-        // free up memory
-        env->ReleaseIntArrayElements(ids, object_ids, 0);
 
         // Free each object in the dataset. No need to clear the vector because it goes out of scope
         // immediately
@@ -198,7 +198,9 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
         space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
         dataset = new ObjectVector();
         Index<float>* index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", "l2", *space, *dataset);
-        index->LoadIndex(env->GetStringUTFChars(indexPath, NULL));
+        const char *indexString = env->GetStringUTFChars(indexPath, 0);
+        index->LoadIndex(indexString);
+        env->ReleaseStringUTFChars(indexPath, indexString);
         has_exception_in_stack(env);
         jclass indexClass = env->GetObjectClass(indexObject);
         jmethodID setIndex = env->GetMethodID(indexClass, "setIndex", "(J)V");
