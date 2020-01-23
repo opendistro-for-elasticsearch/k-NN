@@ -33,11 +33,6 @@ public class KNNStatsAction extends ActionType<KNNStatsResponse> {
         super(NAME, KNNStatsResponse::new);
     }
 
-//    @Override
-//    public KNNStatsResponse newResponse() {
-//        throw new UnsupportedOperationException("Usage of Streamable is to be replaced by Writeable");
-//    }
-
     @Override
     public Writeable.Reader<KNNStatsResponse> getResponseReader() {
         return KNNStatsResponse::new;
