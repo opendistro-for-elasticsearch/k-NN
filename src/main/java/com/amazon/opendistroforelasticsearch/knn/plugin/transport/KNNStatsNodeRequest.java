@@ -37,6 +37,17 @@ class KNNStatsNodeRequest extends BaseNodeRequest {
     /**
      * Constructor
      *
+     * @param in input stream
+     * @throws IOException in case of I/O errors
+     */
+    public KNNStatsNodeRequest(StreamInput in) throws IOException {
+        super(in);
+        request = new KNNStatsRequest();
+    }
+
+    /**
+     * Constructor
+     *
      * @param request KNNStatsRequest
      */
     public KNNStatsNodeRequest(KNNStatsRequest request) {
@@ -53,16 +64,8 @@ class KNNStatsNodeRequest extends BaseNodeRequest {
     }
 
     @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        request = new KNNStatsRequest();
-        request.readFrom(in);
-    }
-
-    @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         request.writeTo(out);
     }
 }
-

@@ -78,7 +78,6 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
             FIELD_TYPE.setHasDocValues(true);
             FIELD_TYPE.setDocValuesType(DocValuesType.BINARY);
             FIELD_TYPE.putAttribute(KNN_FIELD, "true"); //This attribute helps to determine knn field type
-            FIELD_TYPE.freeze();
         }
     }
 
@@ -139,7 +138,7 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
             builder.algoParams(KNNConstants.HNSW_ALGO_M, parserContext.mapperService().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING));
             builder.algoParams(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, parserContext.mapperService().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING));
             builder.algoParams(KNNConstants.HNSW_ALGO_EF_SEARCH, parserContext.mapperService().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING));
-
+            
             /**
              * If dimension not provided. Throw Exception
              */
@@ -286,4 +285,3 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
         builder.field("dimension", fieldType().dimension);
     }
 }
-

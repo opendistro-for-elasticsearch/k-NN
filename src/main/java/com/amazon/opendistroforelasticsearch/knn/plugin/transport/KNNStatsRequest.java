@@ -40,7 +40,21 @@ public class KNNStatsRequest extends BaseNodesRequest<KNNStatsRequest> {
     /**
      * Empty constructor needed for KNNStatsTransportAction
      */
-    public KNNStatsRequest() {}
+    public KNNStatsRequest() {
+        super((String[]) null);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param in input stream
+     * @throws IOException in case of I/O errors
+     */
+    public KNNStatsRequest(StreamInput in) throws IOException {
+        super(in);
+        validStats = in.readSet(StreamInput::readString);
+        statsToBeRetrieved = in.readSet(StreamInput::readString);
+    }
 
     /**
      * Constructor
@@ -91,17 +105,9 @@ public class KNNStatsRequest extends BaseNodesRequest<KNNStatsRequest> {
     }
 
     @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        validStats = in.readSet(StreamInput::readString);
-        statsToBeRetrieved = in.readSet(StreamInput::readString);
-    }
-
-    @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         out.writeStringCollection(validStats);
         out.writeStringCollection(statsToBeRetrieved);
     }
 }
-

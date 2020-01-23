@@ -236,7 +236,6 @@ public class RestKNNStatsHandlerIT extends ESRestTestCase {
                         (Integer) metricMap2.get(StatNames.MISS_COUNT.getName()) == initialMissCount + 1);
     }
 
-
     /**
      *  Test checks that handler correctly returns selected metrics
      * @throws IOException throws IOException

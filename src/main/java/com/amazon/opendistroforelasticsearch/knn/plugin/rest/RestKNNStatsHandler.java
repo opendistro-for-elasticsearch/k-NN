@@ -53,7 +53,6 @@ public class RestKNNStatsHandler extends BaseRestHandler {
      * @param knnStats KNNStats
      */
     public RestKNNStatsHandler(Settings settings, RestController controller, KNNStats knnStats) {
-        super(settings);
         controller.registerHandler(RestRequest.Method.GET, KNNPlugin.KNN_BASE_URI + "/{nodeId}/stats/",this);
         controller.registerHandler(RestRequest.Method.GET, KNNPlugin.KNN_BASE_URI + "/{nodeId}/stats/{stat}",this);
         controller.registerHandler(RestRequest.Method.GET, KNNPlugin.KNN_BASE_URI + "/stats/",this);
@@ -121,4 +120,3 @@ public class RestKNNStatsHandler extends BaseRestHandler {
         return knnStatsRequest;
     }
 }
-
