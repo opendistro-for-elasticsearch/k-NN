@@ -128,7 +128,6 @@ public class RestKNNStatsHandlerIT extends ESRestTestCase {
      * @throws IOException throws IOException
      */
     public void testStatsValueCheck() throws IOException {
-// <<<<<<< HEAD
         // Setup request for stat calls
         Request statsRequest = new Request(
                 "GET",
@@ -235,119 +234,8 @@ public class RestKNNStatsHandlerIT extends ESRestTestCase {
         assertTrue("Miss and hit count does not return expected",
                 (Integer) metricMap2.get(StatNames.HIT_COUNT.getName()) == initialHitCount + 1 &&
                         (Integer) metricMap2.get(StatNames.MISS_COUNT.getName()) == initialMissCount + 1);
-//=======
-
-
-//        try {
-//            // Setup request for stat calls
-//            Request statsRequest = new Request(
-//                    "GET",
-//                    KNNPlugin.KNN_BASE_URI + "/stats"
-//            );
-//
-//            // Get initial stats as baseline
-//            String statsResponseBody = makeRequestAndReturnResponseBody(statsRequest);
-//            Map<String, Object> responseMap0 = createParser(XContentType.JSON.xContent(), statsResponseBody).map();
-//            assertNotNull("Stats response 0 is null", responseMap0);
-//
-//            @SuppressWarnings("unchecked")
-//            Map<String, Object> nodesResponseMap0 = (HashMap<String, Object>)responseMap0.get("nodes");
-//            assertNotNull("Stats node response 0 is null", nodesResponseMap0);
-//
-//            Object[] keys = nodesResponseMap0.keySet().toArray();
-//            assertTrue("No node keys returned", keys.length > 0);
-//            String key = (String) keys[0];
-//
-//            @SuppressWarnings("unchecked")
-//            HashMap<String, Object> metricMap0 = (HashMap<String, Object>) nodesResponseMap0.get(key);
-//            Integer initialHitCount = (Integer) metricMap0.get("hitCount");
-//            Integer initialMissCount = (Integer) metricMap0.get("missCount");
-//
-//            // Setup index
-//            Settings settings = Settings.builder()
-//                                        .put("number_of_shards", 1)
-//                                        .put("number_of_replicas", 0)
-//                                        .put("index.knn", true)
-//                                        .build();
-//            String index = "testindex";
-//            createIndex(index, settings);
-//
-//            // Put KNN mapping
-//            Request mappingRequest = new Request(
-//                    "PUT",
-//                    "/" + index + "/_mapping"
-//            );
-//
-//            XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-//                                                     .startObject("properties")
-//                                                     .startObject("my_vector")
-//                                                     .field("type", "knn_vector")
-//                                                     .field("dimension", "2")
-//                                                     .endObject()
-//                                                     .endObject()
-//                                                     .endObject();
-//
-//            mappingRequest.setJsonEntity(Strings.toString(builder));
-//            Response response = client().performRequest(mappingRequest);
-//            assertEquals(mappingRequest.getEndpoint() + ": failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
-//
-//            // Index test document
-//            Request indexRequest = new Request(
-//                    "POST",
-//                    "/" + index + "/_doc/1?refresh=true" // refresh=true ensures document is searchable immediately after index
-//            );
-//
-//            float[] vector = {6.0f, 6.0f};
-//
-//            builder = XContentFactory.jsonBuilder().startObject()
-//                                     .field("my_vector", vector)
-//                                     .endObject();
-//
-//            indexRequest.setJsonEntity(Strings.toString(builder));
-//
-//            response = client().performRequest(indexRequest);
-//            assertEquals(indexRequest.getEndpoint() + ": failed", RestStatus.CREATED, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
-//
-//            // First search: Ensure that misses=1
-//            response = makeGenericKnnQuery(index, vector, 1);
-//            assertEquals("knn query failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
-//
-//            statsResponseBody = makeRequestAndReturnResponseBody(statsRequest);
-//            Map<String, Object> responseMap1 = createParser(XContentType.JSON.xContent(), statsResponseBody).map();
-//            assertNotNull("Stats response 1 is null", responseMap1);
-//
-//            @SuppressWarnings("unchecked")
-//            Map<String, Object> nodesResponseMap1 = (HashMap<String, Object>)responseMap1.get("nodes");
-//            assertNotNull("Stats node response 1 is null", nodesResponseMap1);
-//
-//            @SuppressWarnings("unchecked")
-//            HashMap<String, Object> metricMap1 = (HashMap<String, Object>) nodesResponseMap1.get(key);
-//            assertNotNull("Stats metric map response 1 is null", metricMap1);
-//            assertTrue("Miss and hit count does not return expected",  (Integer) metricMap1.get("missCount") == initialMissCount + 1
-//                    && metricMap1.get("hitCount") == initialHitCount);
-//
-//            // Second search: Ensure that hits=1
-//            response = makeGenericKnnQuery(index, vector, 1);
-//            assertEquals("knn query failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
-//
-//            statsResponseBody = makeRequestAndReturnResponseBody(statsRequest);
-//            Map<String, Object> responseMap2 = createParser(XContentType.JSON.xContent(), statsResponseBody).map();
-//            assertNotNull("Stats response 2 is null", responseMap2);
-//
-//            @SuppressWarnings("unchecked")
-//            Map<String, Object> nodesResponseMap2 = (HashMap<String, Object>)responseMap2.get("nodes");
-//            assertNotNull("Stats node response 2 is null", nodesResponseMap2);
-//
-//            @SuppressWarnings("unchecked")
-//            HashMap<String, Object> metricMap2 = (HashMap<String, Object>) nodesResponseMap2.get(key);
-//            assertNotNull("Stats metric map response 2 is null", metricMap2);
-//            assertTrue("Miss and hit count does not return expected", (Integer) metricMap2.get("hitCount") == initialHitCount + 1
-//                    && (Integer) metricMap2.get("missCount") == initialMissCount + 1);
-//        } catch (Exception ex) {
-//            fail("Exception not expected as valid index arguments passed " + ex);
-//        }
-// >>>>>>> codec-version
     }
+
 
     /**
      *  Test checks that handler correctly returns selected metrics
