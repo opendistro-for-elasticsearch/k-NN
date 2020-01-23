@@ -34,8 +34,14 @@ public class KNNStatsNodeResponse extends BaseNodeResponse implements ToXContent
 
     /**
      * Constructor
+     *
+     * @param in  stream
+     * @throws IOException in case of I/O errors
      */
-    public KNNStatsNodeResponse() {}
+    public KNNStatsNodeResponse(StreamInput in) throws IOException {
+        super(in);
+        this.statsMap    = in.readMap(StreamInput::readString, StreamInput::readGenericValue);
+    }
 
     /**
      * Constructor
@@ -56,8 +62,7 @@ public class KNNStatsNodeResponse extends BaseNodeResponse implements ToXContent
      * @throws IOException throws an IO exception if the StreamInput cannot be read from
      */
     public static KNNStatsNodeResponse readStats(StreamInput in) throws IOException {
-        KNNStatsNodeResponse knnStats = new KNNStatsNodeResponse();
-        knnStats.readFrom(in);
+        KNNStatsNodeResponse knnStats = new KNNStatsNodeResponse(in);
         return knnStats;
     }
 
@@ -68,12 +73,6 @@ public class KNNStatsNodeResponse extends BaseNodeResponse implements ToXContent
      */
     public Map<String, Object> getStatsMap() {
         return statsMap;
-    }
-
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-        this.statsMap    = in.readMap(StreamInput::readString, StreamInput::readGenericValue);
     }
 
     @Override
@@ -98,4 +97,3 @@ public class KNNStatsNodeResponse extends BaseNodeResponse implements ToXContent
         return builder;
     }
 }
-
