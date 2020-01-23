@@ -69,7 +69,7 @@ public class KNNStatsResponse extends BaseNodesResponse<KNNStatsNodeResponse> im
 
     @Override
     public void writeNodesTo(StreamOutput out, List<KNNStatsNodeResponse> nodes) throws IOException {
-        out.writeStreamableList(nodes);
+        out.writeList(nodes);
     }
 
     @Override

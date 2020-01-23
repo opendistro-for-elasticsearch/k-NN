@@ -28,11 +28,11 @@ import java.util.List;
 /**
  * Reader for KNNDocValues from the segments
  */
-class KNNDocValuesReader extends EmptyDocValuesProducer {
+class KNN80DocValuesReader extends EmptyDocValuesProducer {
 
     private MergeState mergeState;
 
-    KNNDocValuesReader(MergeState mergeState) {
+    KNN80DocValuesReader(MergeState mergeState) {
         this.mergeState = mergeState;
     }
 
@@ -49,7 +49,7 @@ class KNNDocValuesReader extends EmptyDocValuesProducer {
                     }
                 }
             }
-            return new KNNBinaryDocValues(DocIDMerger.of(subs, mergeState.needsIndexSort));
+            return new KNN80BinaryDocValues(DocIDMerger.of(subs, mergeState.needsIndexSort));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -74,6 +74,7 @@ public class KNNSettings {
     public static final String KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES = "knn.cache.item.expiry.minutes";
     public static final String KNN_PLUGIN_ENABLED = "knn.plugin.enabled";
     public static final String KNN_CIRCUIT_BREAKER_UNSET_PERCENTAGE = "knn.circuit_breaker.unset.percentage";
+    public static final String KNN_INDEX = "index.knn";
 
     /**
      * Settings Definition
@@ -108,6 +109,12 @@ public class KNNSettings {
             512,
             2,
             IndexScope);
+
+    /**
+     * This setting identifies KNN index.
+     */
+    public static final Setting<Boolean> IS_KNN_INDEX_SETTING =  Setting.boolSetting(KNN_INDEX, false, IndexScope);
+
 
     /**
      * index_thread_quantity - the parameter specifies how many threads the nms library should use to create the graph.
@@ -245,7 +252,8 @@ public class KNNSettings {
                 INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING,
                 KNN_ALGO_PARAM_INDEX_THREAD_QTY_SETTING,
                 KNN_CIRCUIT_BREAKER_TRIGGERED_SETTING,
-                KNN_CIRCUIT_BREAKER_UNSET_PERCENTAGE_SETTING);
+                KNN_CIRCUIT_BREAKER_UNSET_PERCENTAGE_SETTING,
+                IS_KNN_INDEX_SETTING);
         return Stream.concat(settings.stream(), dynamicCacheSettings.values().stream())
                      .collect(Collectors.toList());
     }

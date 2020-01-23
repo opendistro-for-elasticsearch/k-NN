@@ -24,11 +24,11 @@ import java.io.IOException;
 /**
  * A per-document kNN numeric value.
  */
-class KNNBinaryDocValues extends BinaryDocValues {
+class KNN80BinaryDocValues extends BinaryDocValues {
 
     private DocIDMerger<BinaryDocValuesSub> docIDMerger;
 
-    KNNBinaryDocValues(DocIDMerger<BinaryDocValuesSub> docIdMerger) {
+    KNN80BinaryDocValues(DocIDMerger<BinaryDocValuesSub> docIdMerger) {
         this.docIDMerger = docIdMerger;
     }
 

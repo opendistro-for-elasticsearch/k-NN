@@ -65,3 +65,4 @@ class KNNStatsNodeRequest extends BaseNodeRequest {
         request.writeTo(out);
     }
 }
+

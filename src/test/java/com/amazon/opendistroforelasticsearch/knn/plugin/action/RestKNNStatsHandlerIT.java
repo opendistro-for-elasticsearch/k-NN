@@ -40,8 +40,10 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.rest.ESRestTestCase;
+import org.junit.rules.DisableOnDebug;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -154,7 +156,7 @@ public class RestKNNStatsHandlerIT extends ESRestTestCase {
         Settings settings = Settings.builder()
                                     .put("number_of_shards", 1)
                                     .put("number_of_replicas", 0)
-                                    .put("index.codec", "KNNCodec")
+                                    .put("index.knn", true)
                                     .build();
         String index = "testindex";
         createIndex(index, settings);
@@ -233,6 +235,7 @@ public class RestKNNStatsHandlerIT extends ESRestTestCase {
                 (Integer) metricMap2.get(StatNames.HIT_COUNT.getName()) == initialHitCount + 1 &&
                         (Integer) metricMap2.get(StatNames.MISS_COUNT.getName()) == initialMissCount + 1);
     }
+
 
     /**
      *  Test checks that handler correctly returns selected metrics

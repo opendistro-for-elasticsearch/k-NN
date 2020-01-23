@@ -98,3 +98,4 @@ public class KNNStatsNodeResponse extends BaseNodeResponse implements ToXContent
         return builder;
     }
 }
+

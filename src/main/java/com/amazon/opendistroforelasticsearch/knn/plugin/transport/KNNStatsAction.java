@@ -38,3 +38,4 @@ public class KNNStatsAction extends ActionType<KNNStatsResponse> {
         return KNNStatsResponse::new;
     }
 }
+

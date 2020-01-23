@@ -39,7 +39,7 @@ public class KNNESSettingsTestIT extends ESRestTestCase {
         Settings settings = Settings.builder()
                                     .put("number_of_shards", 1)
                                     .put("number_of_replicas", 0)
-                                    .put("index.codec", "KNNCodec")
+                                    .put("index.knn", true)
                                     .build();
         String mapping = "\"properties\":{\"my_vector\":{\"type\":\"knn_vector\",\"dimension\":\"2\"}}";
         createIndex(indexName, settings, mapping);

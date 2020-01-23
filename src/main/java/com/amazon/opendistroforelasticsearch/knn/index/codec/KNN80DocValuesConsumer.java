@@ -48,15 +48,15 @@ import java.util.Map;
 /**
  * This class writes the KNN docvalues to the segments
  */
-class KNNDocValuesConsumer extends DocValuesConsumer implements Closeable {
+class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
 
-    private final Logger logger = LogManager.getLogger(KNNDocValuesConsumer.class);
+    private final Logger logger = LogManager.getLogger(KNN80DocValuesConsumer.class);
 
     private final String TEMP_SUFFIX = "tmp";
     private DocValuesConsumer delegatee;
     private SegmentWriteState state;
 
-    KNNDocValuesConsumer(DocValuesConsumer delegatee, SegmentWriteState state) throws IOException {
+    KNN80DocValuesConsumer(DocValuesConsumer delegatee, SegmentWriteState state) throws IOException {
         this.delegatee = delegatee;
         this.state = state;
     }
@@ -80,11 +80,11 @@ class KNNDocValuesConsumer extends DocValuesConsumer implements Closeable {
 
             BinaryDocValues values = valuesProducer.getBinary(field);
             String hnswFileName = String.format("%s_%s_%s%s", state.segmentInfo.name, NmsLibVersion.LATEST.buildVersion,
-                    field.name, KNNCodec.HNSW_EXTENSION);
+                    field.name, KNNCodecUtil.HNSW_EXTENSION);
             String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(state.directory))).getDirectory().toString(),
                     hnswFileName).toString();
 
-            KNNCodec.Pair pair = KNNCodec.getFloats(values);
+            KNNCodecUtil.Pair pair = KNN80Codec.getFloats(values);
             if (pair == null || pair.vectors.length == 0 || pair.docs.length == 0) {
                 logger.info("Skipping hnsw index creation as there are no vectors or docs in the documents");
                 return;
@@ -137,7 +137,7 @@ class KNNDocValuesConsumer extends DocValuesConsumer implements Closeable {
             for (FieldInfo fieldInfo : mergeState.mergeFieldInfos) {
                 DocValuesType type = fieldInfo.getDocValuesType();
                 if (type == DocValuesType.BINARY) {
-                    addKNNBinaryField(fieldInfo, new KNNDocValuesReader(mergeState));
+                    addKNNBinaryField(fieldInfo, new KNN80DocValuesReader(mergeState));
                 }
             }
         } catch (Exception e) {
