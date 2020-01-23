@@ -15,13 +15,13 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.transport;
 
-import org.elasticsearch.action.Action;
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.common.io.stream.Writeable;
 
 /**
  * KNNStatsAction class
  */
-public class KNNStatsAction extends Action<KNNStatsResponse> {
+public class KNNStatsAction extends ActionType<KNNStatsResponse> {
 
     public static final KNNStatsAction INSTANCE = new KNNStatsAction();
     public static final String NAME = "cluster:admin/knn_stats_action";
@@ -30,13 +30,13 @@ public class KNNStatsAction extends Action<KNNStatsResponse> {
      * Constructor
      */
     private KNNStatsAction() {
-        super(NAME);
+        super(NAME, KNNStatsResponse::new);
     }
 
-    @Override
-    public KNNStatsResponse newResponse() {
-        throw new UnsupportedOperationException("Usage of Streamable is to be replaced by Writeable");
-    }
+//    @Override
+//    public KNNStatsResponse newResponse() {
+//        throw new UnsupportedOperationException("Usage of Streamable is to be replaced by Writeable");
+//    }
 
     @Override
     public Writeable.Reader<KNNStatsResponse> getResponseReader() {

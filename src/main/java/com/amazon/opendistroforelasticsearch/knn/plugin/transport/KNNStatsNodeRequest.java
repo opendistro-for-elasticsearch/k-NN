@@ -37,11 +37,9 @@ class KNNStatsNodeRequest extends BaseNodeRequest {
     /**
      * Constructor
      *
-     * @param nodeId Node ID
      * @param request KNNStatsRequest
      */
-    public KNNStatsNodeRequest(String nodeId, KNNStatsRequest request) {
-        super(nodeId);
+    public KNNStatsNodeRequest(KNNStatsRequest request) {
         this.request = request;
     }
 
