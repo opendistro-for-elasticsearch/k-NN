@@ -59,7 +59,7 @@ PUT /myindex
 {
   "settings" : {
     "index": {
-      "codec": "KNNCodec"
+      "knn": true
     }
   },
   "mappings": {
