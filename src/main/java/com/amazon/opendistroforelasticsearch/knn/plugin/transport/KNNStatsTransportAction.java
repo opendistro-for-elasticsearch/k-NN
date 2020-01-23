@@ -82,8 +82,8 @@ public class KNNStatsTransportAction extends TransportNodesAction<KNNStatsReques
     }
 
     @Override
-    protected KNNStatsNodeRequest newNodeRequest(String nodeId, KNNStatsRequest request) {
-        return new KNNStatsNodeRequest(nodeId, request);
+    protected KNNStatsNodeRequest newNodeRequest(KNNStatsRequest request) {
+        return new KNNStatsNodeRequest(request);
     }
 
     @Override

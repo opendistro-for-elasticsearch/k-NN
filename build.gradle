@@ -15,7 +15,7 @@
 
 buildscript {
     ext {
-        es_version = System.getProperty("es.version", "7.2.0")
+        es_version = System.getProperty("es.version", "7.3.2")
         es_group = "org.elasticsearch"
         distribution = 'oss-zip'
     }
@@ -45,7 +45,7 @@ plugins {
 }
 
 ext {
-    opendistroVersion = '1.1.0'
+    opendistroVersion = '1.3.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 

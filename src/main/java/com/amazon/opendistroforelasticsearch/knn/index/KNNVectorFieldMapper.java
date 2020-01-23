@@ -136,10 +136,9 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
         public Mapper.Builder<?, ?> parse(String name, Map<String, Object> node, ParserContext parserContext)
                 throws MapperParsingException {
             Builder builder = new KNNVectorFieldMapper.Builder(name);
-            builder.algoParams(KNNConstants.HNSW_ALGO_M, parserContext.getIndexAnalyzers().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING));
-            builder.algoParams(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, parserContext.getIndexAnalyzers().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING));
-            builder.algoParams(KNNConstants.HNSW_ALGO_EF_SEARCH, parserContext.getIndexAnalyzers().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING));
-
+            builder.algoParams(KNNConstants.HNSW_ALGO_M, parserContext.mapperService().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING));
+            builder.algoParams(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, parserContext.mapperService().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING));
+            builder.algoParams(KNNConstants.HNSW_ALGO_EF_SEARCH, parserContext.mapperService().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING));
 
             /**
              * If dimension not provided. Throw Exception
