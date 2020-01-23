@@ -121,3 +121,4 @@ public class RestKNNStatsHandler extends BaseRestHandler {
         return knnStatsRequest;
     }
 }
+

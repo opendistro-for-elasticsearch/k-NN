@@ -31,11 +31,11 @@ import java.util.stream.Collectors;
 /**
  * Class to encode/decode compound file
  */
-public class KNNCompoundFormat extends CompoundFormat {
+public class KNN80CompoundFormat extends CompoundFormat {
 
-    private final Logger logger = LogManager.getLogger(KNNCompoundFormat.class);
+    private final Logger logger = LogManager.getLogger(KNN80CompoundFormat.class);
 
-    KNNCompoundFormat() {
+    KNN80CompoundFormat() {
     }
 
     @Override
@@ -49,7 +49,7 @@ public class KNNCompoundFormat extends CompoundFormat {
          * If hnsw file present, remove it from the compounding file list to avoid header/footer checks
          * and create a new compounding file format with extension .hnswc.
          */
-        Set<String> hnswFiles = si.files().stream().filter(file -> file.endsWith(KNNCodec.HNSW_EXTENSION))
+        Set<String> hnswFiles = si.files().stream().filter(file -> file.endsWith(KNNCodecUtil.HNSW_EXTENSION))
                                      .collect(Collectors.toSet());
 
         Set<String> segmentFiles = new HashSet<>();

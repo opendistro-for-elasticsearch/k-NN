@@ -42,35 +42,36 @@ import java.util.ArrayList;
  * based on the mappings.
  *
  */
-public final class KNNCodec extends Codec {
+public final class KNN80Codec extends Codec {
 
-    private static final Logger logger = LogManager.getLogger(KNNCodec.class);
-    private static final String KNN_CODEC = "KNNCodec";
-
-    public static final String HNSW_EXTENSION = ".hnsw";
-    public static final String HNSW_COMPOUND_EXTENSION = ".hnswc";
-
+    private static final Logger logger = LogManager.getLogger(KNN80Codec.class);
     private final DocValuesFormat docValuesFormat;
     private final DocValuesFormat perFieldDocValuesFormat;
     private final CompoundFormat compoundFormat;
+    private Codec lucene80Codec;
 
-    public KNNCodec() {
-        super(KNN_CODEC);
-        this.docValuesFormat = new KNNDocValuesFormat();
+    public static final String CODEC_NAME = "KNN80Codec";
+    public static final String LUCENE_CODEC = "Lucene80";
+
+    public KNN80Codec() {
+        super(CODEC_NAME);
+        this.docValuesFormat = new KNN80DocValuesFormat();
         this.perFieldDocValuesFormat = new PerFieldDocValuesFormat() {
             @Override
             public DocValuesFormat getDocValuesFormatForField(String field) {
                 return docValuesFormat;
             }
         };
-        this.compoundFormat = new KNNCompoundFormat();
+        this.compoundFormat = new KNN80CompoundFormat();
     }
 
     /*
-     * This function returns the latest Codec supported by current ES version.
+     * This function returns the Lucene80 Codec.
      */
     public Codec getDelegatee() {
-        return Codec.getDefault();
+        if (lucene80Codec == null)
+            lucene80Codec = Codec.forName(LUCENE_CODEC);
+        return lucene80Codec;
     }
 
     @Override
@@ -129,17 +130,7 @@ public final class KNNCodec extends Codec {
         return getDelegatee().pointsFormat();
     }
 
-    public static final class Pair {
-        public Pair(int[] docs, float[][] vectors) {
-            this.docs = docs;
-            this.vectors = vectors;
-        }
-
-        public int[] docs;
-        public float[][] vectors;
-    }
-
-    public static KNNCodec.Pair getFloats(BinaryDocValues values) throws IOException {
+    public static KNNCodecUtil.Pair getFloats(BinaryDocValues values) throws IOException {
         ArrayList<float[]> vectorList = new ArrayList<>();
         ArrayList<Integer> docIdList = new ArrayList<>();
         for (int doc = values.nextDoc(); doc != DocIdSetIterator.NO_MORE_DOCS; doc = values.nextDoc()) {
@@ -154,6 +145,6 @@ public final class KNNCodec extends Codec {
             }
             docIdList.add(doc);
         }
-        return new KNNCodec.Pair(docIdList.stream().mapToInt(Integer::intValue).toArray(), vectorList.toArray(new float[][]{}));
+        return new KNNCodecUtil.Pair(docIdList.stream().mapToInt(Integer::intValue).toArray(), vectorList.toArray(new float[][]{}));
     }
 }

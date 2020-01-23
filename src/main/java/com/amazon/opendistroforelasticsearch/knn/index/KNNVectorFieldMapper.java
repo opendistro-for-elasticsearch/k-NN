@@ -286,3 +286,4 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
         builder.field("dimension", fieldType().dimension);
     }
 }
+

@@ -34,6 +34,10 @@ import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsTransp
 import com.google.common.cache.CacheStats;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
+import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsAction;
+import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsTransportAction;
+import com.amazon.opendistroforelasticsearch.knn.plugin.rest.RestKNNStatsHandler;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.client.Client;
@@ -43,14 +47,17 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
+import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
-import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
+import org.elasticsearch.index.IndexSettings;
+import org.elasticsearch.index.engine.EngineFactory;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.plugins.ActionPlugin;
+import org.elasticsearch.plugins.EnginePlugin;
 import org.elasticsearch.plugins.MapperPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.SearchPlugin;
@@ -65,6 +72,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static java.util.Collections.singletonList;
@@ -75,7 +83,11 @@ import static java.util.Collections.singletonList;
  *
  *
  * Example Mapping for knn_vector type
- *
+ * "settings" : {
+ *    "index": {
+ *       "knn": true
+ *     }
+ *   },
  * "mappings": {
  *   "properties": {
  *     "my_vector": {
@@ -95,7 +107,7 @@ import static java.util.Collections.singletonList;
  *   }
  *
  */
-public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, ActionPlugin {
+public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, ActionPlugin, EnginePlugin {
 
     public static final String KNN_BASE_URI = "/_opendistro/_knn";
 
@@ -172,5 +184,13 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
         return Arrays.asList(
                 new ActionHandler<>(KNNStatsAction.INSTANCE, KNNStatsTransportAction.class)
         );
+    }
+
+    @Override
+    public Optional<EngineFactory> getEngineFactory(IndexSettings indexSettings) {
+        if (indexSettings.getValue(KNNSettings.IS_KNN_INDEX_SETTING)) {
+            return Optional.of(new KNNEngineFactory());
+        }
+        return Optional.empty();
     }
 }

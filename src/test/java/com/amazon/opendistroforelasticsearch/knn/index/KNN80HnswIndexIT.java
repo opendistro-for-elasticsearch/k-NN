@@ -15,8 +15,9 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodec;
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.FilterLeafReader;
@@ -39,13 +40,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @ESIntegTestCase.ClusterScope(scope=ESIntegTestCase.Scope.SUITE, numDataNodes=1)
-public class KNNHnswIndexIT extends ESIntegTestCase {
+public class KNN80HnswIndexIT extends ESIntegTestCase {
 
     public void testFooter() throws Exception {
         Directory dir = newFSDirectory(createTempDir());
         IndexWriterConfig iwc = newIndexWriterConfig();
         iwc.setMergeScheduler(new SerialMergeScheduler());
-        iwc.setCodec(new KNNCodec());
+        iwc.setCodec(new KNN80Codec());
 
         float[] array = {1.0f, 2.0f, 3.0f};
         VectorField vectorField = new VectorField("test_vector", array, KNNVectorFieldMapper.Defaults.FIELD_TYPE);
@@ -59,7 +60,7 @@ public class KNNHnswIndexIT extends ESIntegTestCase {
         LeafReaderContext lrc = reader.getContext().leaves().iterator().next(); // leaf reader context
         SegmentReader segmentReader = (SegmentReader) FilterLeafReader.unwrap(lrc.reader());
         String hnswFileExtension = segmentReader.getSegmentInfo().info.getUseCompoundFile()
-                                           ? KNNCodec.HNSW_COMPOUND_EXTENSION : KNNCodec.HNSW_EXTENSION;
+                                           ? KNNCodecUtil.HNSW_COMPOUND_EXTENSION : KNNCodecUtil.HNSW_EXTENSION;
         String hnswSuffix = "test_vector" + hnswFileExtension;
         List<String> hnswFiles = segmentReader.getSegmentInfo().files().stream()
                                               .filter(fileName -> fileName.endsWith(hnswSuffix))
@@ -82,7 +83,7 @@ public class KNNHnswIndexIT extends ESIntegTestCase {
         Directory dir = newFSDirectory(createTempDir());
         IndexWriterConfig iwc = newIndexWriterConfig();
         iwc.setMergeScheduler(new SerialMergeScheduler());
-        iwc.setCodec(new KNNCodec());
+        iwc.setCodec(new KNN80Codec());
 
         /**
          * Add doc with field "test_vector"
@@ -100,7 +101,7 @@ public class KNNHnswIndexIT extends ESIntegTestCase {
          */
         IndexWriterConfig iwc1 = newIndexWriterConfig();
         iwc1.setMergeScheduler(new SerialMergeScheduler());
-        iwc1.setCodec(new KNNCodec());
+        iwc1.setCodec(new KNN80Codec());
         writer = new RandomIndexWriter(random(), dir, iwc1);
         float[] array1 = {6.0f, 14.0f};
         VectorField vectorField1 = new VectorField("my_vector", array1, KNNVectorFieldMapper.Defaults.FIELD_TYPE);

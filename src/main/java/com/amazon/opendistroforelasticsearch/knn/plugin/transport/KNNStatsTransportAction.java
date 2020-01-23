@@ -109,3 +109,4 @@ public class KNNStatsTransportAction extends TransportNodesAction<KNNStatsReques
         return new KNNStatsNodeResponse(clusterService.localNode(), statValues);
     }
 }
+

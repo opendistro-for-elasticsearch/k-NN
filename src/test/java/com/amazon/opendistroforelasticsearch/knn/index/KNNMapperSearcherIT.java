@@ -49,7 +49,7 @@ public class KNNMapperSearcherIT extends ESIntegTestCase {
                        .put(super.indexSettings())
                        .put("number_of_shards", 1)
                        .put("number_of_replicas", 0)
-                       .put("index.codec", "KNNCodec")
+                       .put("index.knn", true)
                        .build();
     }
 

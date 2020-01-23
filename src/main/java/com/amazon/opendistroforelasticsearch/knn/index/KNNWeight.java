@@ -15,10 +15,9 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodec;
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.FieldInfo;
@@ -81,7 +80,7 @@ public class KNNWeight extends Weight {
              * In case of compound file, extension would be .hnswc otherwise .hnsw
              */
             String hnswFileExtension = reader.getSegmentInfo().info.getUseCompoundFile()
-                                               ? KNNCodec.HNSW_COMPOUND_EXTENSION : KNNCodec.HNSW_EXTENSION;
+                                               ? KNNCodecUtil.HNSW_COMPOUND_EXTENSION : KNNCodecUtil.HNSW_EXTENSION;
             String hnswSuffix = knnQuery.getField() + hnswFileExtension;
             List<String> hnswFiles = reader.getSegmentInfo().files().stream()
                                            .filter(fileName -> fileName.endsWith(hnswSuffix))

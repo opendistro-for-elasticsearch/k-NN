@@ -104,3 +104,4 @@ public class KNNStatsRequest extends BaseNodesRequest<KNNStatsRequest> {
         out.writeStringCollection(statsToBeRetrieved);
     }
 }
+

@@ -79,7 +79,7 @@ public class BaseKNNIntegTestIT extends ESIntegTestCase {
     protected Settings createIndexDefaultSettings() {
         Settings settings = Settings.builder()
                                     .put(super.indexSettings())
-                                    .put("index.codec", "KNNCodec")
+                                    .put("index.knn", true)
                                     .build();
         return settings;
     }

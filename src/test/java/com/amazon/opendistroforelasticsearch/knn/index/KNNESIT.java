@@ -35,7 +35,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
                        .put(super.indexSettings())
                        .put("number_of_shards", 1)
                        .put("number_of_replicas", 0)
-                       .put("index.codec", "KNNCodec")
+                       .put("index.knn", true)
                        .build();
     }
 
@@ -83,7 +83,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
         try {
             Settings settings = Settings.builder()
                                         .put(super.indexSettings())
-                                        .put("index.codec", "KNNCodec")
+                                        .put("index.knn", true)
                                         .put("index.knn.algo_param.m", 32)
                                         .put("index.knn.algo_param.ef_construction", 400)
                                         .build();
@@ -102,7 +102,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
         try {
             Settings settings = Settings.builder()
                                         .put(super.indexSettings())
-                                        .put("index.codec", "KNNCodec")
+                                        .put("index.knn", true)
                                         .put("index.knn.algo_param.ef_search", 300)
                                         .build();
             createKnnIndex("testindex", settings);
@@ -121,7 +121,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
     public void testIndexingVectorValidationDifferentSizes() throws Exception {
         Settings settings = Settings.builder()
                                     .put(super.indexSettings())
-                                    .put("index.codec", "KNNCodec")
+                                    .put("index.knn", true)
                                     .build();
 
         String index = "testindex";
@@ -155,7 +155,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
     public void testVectorMappingValidationNoDimension() throws Exception {
         Settings settings = Settings.builder()
                                     .put(super.indexSettings())
-                                    .put("index.codec", "KNNCodec")
+                                    .put("index.knn", true)
                                     .build();
 
         String index = "testindex";
@@ -170,7 +170,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
     public void testVectorMappingValidationInvalidDimension() throws Exception {
         Settings settings = Settings.builder()
                 .put(super.indexSettings())
-                .put("index.codec", "KNNCodec")
+                .put("index.knn", true)
                 .build();
 
         String index = "testindex";
@@ -186,7 +186,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
     public void testVectorMappingValidationUpdateDimension() throws Exception {
         Settings settings = Settings.builder()
                                     .put(super.indexSettings())
-                                    .put("index.codec", "KNNCodec")
+                                    .put("index.knn", true)
                                     .build();
 
         String index = "testindex";
@@ -208,7 +208,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
     public void testVectorMappingValidationMultiFieldsDifferentDimension() throws Exception {
         Settings settings = Settings.builder()
                                     .put(super.indexSettings())
-                                    .put("index.codec", "KNNCodec")
+                                    .put("index.knn", true)
                                     .build();
 
         String index = "testindex";
@@ -237,7 +237,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
         String index = "testindex";
         Settings settings = Settings.builder()
                 .put(super.indexSettings())
-                .put("index.codec", "KNNCodec")
+                .put("index.knn", true)
                 .put("index.knn.algo_param.m", "-1")
                 .build();
         Exception ex = expectThrows(IllegalArgumentException.class, () -> createIndex(index, settings));
@@ -248,7 +248,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
         String index = "testindex";
         Settings settings = Settings.builder()
                                     .put(super.indexSettings())
-                                    .put("index.codec", "KNNCodec")
+                                    .put("index.knn", true)
                                     .put("index.knn.algo_param.ef_search", "-1")
                                     .build();
         Exception ex = expectThrows(IllegalArgumentException.class, () -> createIndex(index, settings));

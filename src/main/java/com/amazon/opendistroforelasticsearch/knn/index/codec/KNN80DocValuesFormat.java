@@ -22,24 +22,23 @@ import org.apache.lucene.codecs.DocValuesFormat;
 import org.apache.lucene.codecs.DocValuesProducer;
 import org.apache.lucene.index.SegmentReadState;
 import org.apache.lucene.index.SegmentWriteState;
-import org.elasticsearch.common.lucene.Lucene;
 
 import java.io.IOException;
 
 /**
  * Encodes/Decodes per document values
  */
-class KNNDocValuesFormat extends DocValuesFormat {
-    private final Logger logger = LogManager.getLogger(KNNDocValuesFormat.class);
-    private final DocValuesFormat delegate = DocValuesFormat.forName(Lucene.LATEST_CODEC);
+class KNN80DocValuesFormat extends DocValuesFormat {
+    private final Logger logger = LogManager.getLogger(KNN80DocValuesFormat.class);
+    private final DocValuesFormat delegate = DocValuesFormat.forName(KNN80Codec.LUCENE_CODEC);
 
-    KNNDocValuesFormat() {
-        super(Lucene.LATEST_CODEC);
+    KNN80DocValuesFormat() {
+        super(KNN80Codec.LUCENE_CODEC);
     }
 
     @Override
     public DocValuesConsumer fieldsConsumer(SegmentWriteState state) throws IOException {
-        return new KNNDocValuesConsumer(delegate.fieldsConsumer(state), state);
+        return new KNN80DocValuesConsumer(delegate.fieldsConsumer(state), state);
     }
 
     @Override
