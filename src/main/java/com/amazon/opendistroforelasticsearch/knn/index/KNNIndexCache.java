@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.Strings;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
@@ -104,8 +105,10 @@ public class KNNIndexCache {
      *
      * @param removalNotification key, value that got evicted.
      */
-    public void onRemoval(RemovalNotification<String, KNNIndex> removalNotification) {
-        try {            KNNIndex knnIndex = removalNotification.getValue();
+    private void onRemoval(RemovalNotification<String, KNNIndex> removalNotification) {
+            KNNIndex knnIndex = removalNotification.getValue();
+
+            executor.execute(() -> knnIndex.close());
 
             if (RemovalCause.SIZE == removalNotification.getCause()) {
                 KNNSettings.state().updateCircuitBreakerSettings(true);
@@ -114,30 +117,23 @@ public class KNNIndexCache {
             // TODO will change below logger to debug when close to ship it
             logger.info("[KNN] Cache evicted. Key {}, Reason: {}", removalNotification.getKey()
                     ,removalNotification.getCause());
-
-            // This flag is to ensure, callers already holding the object do not query if index
-            // is deleted
-            knnIndex.isDeleted.set(true);
-            executor.execute(() -> knnIndex.gc());
-
-        } catch(Exception ex) {
-            logger.error("Exception occured while performing gc for hnsw index " + removalNotification.getKey());
-        }
     }
 
     /**
      * Loads corresponding index for the given key to memory and returns the index object.
      *
      * @param key indexPath where the serialized hnsw graph is stored
-     * @return KNNIndex holding the heap pointer of the loaded graph
+     * @return KNNIndex holding the heap pointer of the loaded graph or empty if there was
+     * a failure to load the
+     * @throws RuntimeException if there's an unexpected failure in loading, which implies that the value for
+     * the key will be both out of the cache and the underlying index will not be loaded
      */
     public KNNIndex getIndex(String key) {
         try {
-            return cache.get(key, () -> computeIndex(key));
+            return cache.get(key, () -> loadIndex(key));
         } catch (ExecutionException e) {
-            logger.error("Exception occured while computing the index. Skipped Adding to cache");
+            throw new RuntimeException(e);
         }
-        return null;
     }
 
     /**
@@ -182,9 +178,9 @@ public class KNNIndexCache {
      * @param indexPathUrl path for serialized hnsw graph
      * @return KNNIndex holding the heap pointer of the loaded graph
      * @throws Exception Exception could occur when registering the index path
-     * to Resource watcher
+     * to Resource watcher or if the JNI call throws
      */
-    public KNNIndex computeIndex(String indexPathUrl) throws Exception {
+    public KNNIndex loadIndex(String indexPathUrl) throws Exception {
         if(Strings.isNullOrEmpty(indexPathUrl))
             throw new IllegalStateException("indexPath is null while performing load index");
         logger.debug("Loading index on cache miss .. {}", indexPathUrl);

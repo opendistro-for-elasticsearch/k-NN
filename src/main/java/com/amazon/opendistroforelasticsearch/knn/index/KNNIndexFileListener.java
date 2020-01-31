@@ -38,16 +38,10 @@ public class KNNIndexFileListener implements FileChangesListener {
     }
 
     public void register(Path filePath) throws Exception {
-
         final FileWatcher watcher = new FileWatcher(filePath);
         watcher.addListener(this);
         watcher.init();
-        try {
-            resourceWatcherService.add(watcher, ResourceWatcherService.Frequency.HIGH);
-
-        } catch (IOException e) {
-            logger.error("couldn't initialize resource watcher for file " + filePath.toString(), e);
-        }
+        resourceWatcherService.add(watcher, ResourceWatcherService.Frequency.HIGH);
         logger.debug("[KNN] Registered file {}", filePath.toString());
     }
 

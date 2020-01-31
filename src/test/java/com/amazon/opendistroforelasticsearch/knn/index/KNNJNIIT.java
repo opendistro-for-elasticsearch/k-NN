@@ -91,15 +91,8 @@ public class KNNJNIIT extends ESIntegTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=20"};
 
-        KNNQueryResult[] results = AccessController.doPrivileged(
-                new PrivilegedAction<KNNQueryResult[]>() {
-                    public KNNQueryResult[] run() {
-                        KNNIndex index = KNNIndex.loadIndex(indexPath.toString());
-                        logger.info(index.getIndex());
-                        return index.queryIndex(queryVector, 30, algoQueryParams);
-                    }
-                }
-        );
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath);
+        final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30, algoQueryParams);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
                 Collectors.toMap(result -> result.getId(), result -> result.getScore()));
@@ -171,15 +164,9 @@ public class KNNJNIIT extends ESIntegTestCase {
 
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=200"};
-        KNNQueryResult[] results = AccessController.doPrivileged(
-                new PrivilegedAction<KNNQueryResult[]>() {
-                    public KNNQueryResult[] run() {
-                        KNNIndex index = KNNIndex.loadIndex(indexPath.toString());
-                        logger.info(index.getIndex());
-                        return index.queryIndex(queryVector, 30, algoQueryParams);
-                    }
-                }
-        );
+
+        final KNNIndex index = KNNIndex.loadIndex(indexPath);
+        final KNNQueryResult[] results = index.queryIndex(queryVector, 30, algoQueryParams);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
                 Collectors.toMap(result -> result.getId(), result -> result.getScore()));

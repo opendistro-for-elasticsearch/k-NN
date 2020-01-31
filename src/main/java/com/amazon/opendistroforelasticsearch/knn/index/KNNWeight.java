@@ -72,7 +72,6 @@ public class KNNWeight extends Weight {
 
     @Override
     public Scorer scorer(LeafReaderContext context) throws IOException {
-        try {
             SegmentReader reader = (SegmentReader) FilterLeafReader.unwrap(context.reader());
             String directory = ((FSDirectory) FilterDirectory.unwrap(reader.directory())).getDirectory().toString();
 
@@ -83,11 +82,11 @@ public class KNNWeight extends Weight {
                                                ? KNNCodecUtil.HNSW_COMPOUND_EXTENSION : KNNCodecUtil.HNSW_EXTENSION;
             String hnswSuffix = knnQuery.getField() + hnswFileExtension;
             List<String> hnswFiles = reader.getSegmentInfo().files().stream()
-                                           .filter(fileName -> fileName.endsWith(hnswSuffix))
-                                          .collect(Collectors.toList());
+                    .filter(fileName -> fileName.endsWith(hnswSuffix))
+                    .collect(Collectors.toList());
 
             if(hnswFiles.isEmpty()) {
-                logger.debug("[KNN] No hsnw index found for field {} for segment {}",
+                logger.debug("[KNN] No hnsw index found for field {} for segment {}",
                         knnQuery.getField(), reader.getSegmentName());
                 return null;
             }
@@ -101,31 +100,13 @@ public class KNNWeight extends Weight {
              */
 
             Path indexPath = PathUtils.get(directory, hnswFiles.get(0));
-            KNNQueryResult[] results = AccessController.doPrivileged(
-                    new PrivilegedAction<KNNQueryResult[]>() {
-                        public KNNQueryResult[] run() {
-                            KNNIndex index = knnIndexCache.getIndex(indexPath.toString());
-                            if(index.isDeleted.get()) {
-                                // Race condition occured. Looks like entry got evicted from cache and
-                                // possibly gc. Try to read again
-                                logger.info("[KNN] Race condition occured. Looks like entry got evicted " +
-                                                    "from cache and possible gc. Trying to read again");
-                                index = knnIndexCache.getIndex(indexPath.toString());
-                                if(index.isDeleted.get()) {
-                                    logger.info("Index deleted. Possibly getting evicted as segment exceeds the cache max weight. Path: " + indexPath.toString());
-                                    return  null;
-                                }
-                            }
-                            return index.queryIndex(knnQuery.getQueryVector(), knnQuery.getK(), getQueryParams(queryFieldInfo));
-                        }
-                    }
-            );
 
-            if (results == null) {
-                logger.debug("No results for field {} for segment {}",
-                        knnQuery.getField(), reader.getSegmentName());
-                return  null;
-            }
+            final KNNIndex index = knnIndexCache.getIndex(indexPath.toString());
+            final KNNQueryResult[] results = index.queryIndex(
+                    knnQuery.getQueryVector(),
+                    knnQuery.getK(),
+                    getQueryParams(queryFieldInfo)
+            );
 
             /**
              * Scores represent the distance of the documents with respect to given query vector.
@@ -141,9 +122,6 @@ public class KNNWeight extends Weight {
             Arrays.stream(results).forEach(result -> setAdder.add(result.getId()));
             DocIdSetIterator docIdSetIter = docIdSetBuilder.build().iterator();
             return new KNNScorer(this, docIdSetIter, scores, boost);
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
     }
 
     @Override

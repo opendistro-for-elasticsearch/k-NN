@@ -19,33 +19,32 @@ import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
 
 import java.io.File;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * JNI layer to communicate with the nmslib
  * This class refers to the nms library build with version tag 1.7.3.6
  * See <a href="https://github.com/nmslib/nmslib/tree/v1.7.3.6">tag1.7.3.6</a>
  */
-public class KNNIndex {
+public class KNNIndex implements AutoCloseable {
     public static NmsLibVersion VERSION = NmsLibVersion.V1736;
     static {
         System.loadLibrary(NmsLibVersion.V1736.indexLibraryVersion());
     }
 
-    public AtomicBoolean isDeleted = new AtomicBoolean(false);
+    private volatile boolean isClosed = false;
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
-    private long index;
-    private long indexSize;
+    private final long indexPointer;
+    private final long indexSize;
 
-    public long getIndex() {
-        return index;
-    }
-
-    public void setIndex(long index) {
-        this.index = index;
-    }
-
-    public void setIndexSize(long indexSize) {
+    private KNNIndex(final long indexPointer, final long indexSize) {
+        this.indexPointer = indexPointer;
         this.indexSize = indexSize;
     }
 
@@ -61,25 +60,38 @@ public class KNNIndex {
         return this.indexSize;
     }
 
-    /**
-     * determines the size of the hnsw index on disk
-     * @param indexPath absolute path of the index
-     *
-     */
-    public void computeFileSize(String indexPath) {
-        if (indexPath != null && !indexPath.isEmpty()) {
-            File file = new File(indexPath);
-            if (!file.exists() || !file.isFile()) {
-                setIndexSize(0);
-            } else {
-                setIndexSize(file.length()/1024 + 1); // convert to KB and round up
+    public KNNQueryResult[] queryIndex(final float[] query, final int k, final String[] algoParams) throws IOException {
+        Lock readLock = readWriteLock.readLock();
+        readLock.lock();
+
+        try {
+            if (this.isClosed) {
+                throw new IOException("Index is already closed");
             }
+            final long indexPointer = this.indexPointer;
+            return AccessController.doPrivileged(
+                    new PrivilegedAction<KNNQueryResult[]>() {
+                        public KNNQueryResult[] run() {
+                            return queryIndex(indexPointer, query, k, algoParams);
+                        }
+                    }
+            );
+
+        } finally {
+            readLock.unlock();
         }
     }
 
-    public static native void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams);
-
-    public native KNNQueryResult[] queryIndex(float[] query, int k, String[] algoParams);
+    @Override
+    public void close() {
+        Lock writeLock = readWriteLock.writeLock();
+        try {
+            gc(this.indexPointer);
+        } finally {
+            this.isClosed = true;
+            writeLock.unlock();
+        }
+    }
 
     /**
      * Loads the knn index to memory for querying the neighbours
@@ -88,13 +100,37 @@ public class KNNIndex {
      * @return knn index that can be queried for k nearest neighbours
      */
     public static KNNIndex loadIndex(String indexPath) {
-        KNNIndex index = new KNNIndex();
-        index.init(indexPath);
-        index.computeFileSize(indexPath); // File size is treated as weight
-        return index;
+        long fileSize = computeFileSize(indexPath);
+        long indexPointer = init(indexPath);
+        return new KNNIndex(indexPointer, fileSize);
     }
 
-    public native void init(String indexPath);
+    /**
+     * determines the size of the hnsw index on disk
+     * @param indexPath absolute path of the index
+     *
+     */
+    private static long computeFileSize(String indexPath) {
+        if (indexPath == null || indexPath.isEmpty()) {
+            return 0;
+        }
+        File file = new File(indexPath);
+        if (!file.exists() || !file.isFile()) {
+            return 0;
+        }
 
-    public native void gc();
+        return file.length() / 1024 + 1;
+    }
+
+    // Builds index and writes to disk (no index pointer escapes).
+    public static native void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams);
+
+    // Queries index (thread safe with other readers, blocked by write lock)
+    private static native KNNQueryResult[] queryIndex(long indexPointer, float[] query, int k, String[] algoParams);
+
+    // Loads index and returns pointer to index
+    private static native long init(String indexPath);
+
+    // Deletes memory pointed to by index pointer (needs write lock)
+    private static native void gc(long indexPointer);
 }
