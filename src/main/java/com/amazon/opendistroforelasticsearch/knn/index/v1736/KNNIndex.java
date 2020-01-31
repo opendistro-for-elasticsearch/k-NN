@@ -85,6 +85,7 @@ public class KNNIndex implements AutoCloseable {
     @Override
     public void close() {
         Lock writeLock = readWriteLock.writeLock();
+        writeLock.lock();
         try {
             gc(this.indexPointer);
         } finally {
