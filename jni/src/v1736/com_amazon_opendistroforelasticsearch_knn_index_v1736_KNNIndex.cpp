@@ -184,7 +184,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
     return NULL;
 }
 
-JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_init(JNIEnv* env, jobject indexObject, jstring indexPath)
+JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_init(JNIEnv* env, jstring indexPath)
 {
     Space<float>* space = NULL;
     ObjectVector* dataset = NULL;
@@ -200,11 +200,11 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v17
         env->ReleaseStringUTFChars(indexPath, indexString);
         has_exception_in_stack(env);
 
-        return (jlong) index;
-
         // free up memory
         delete space;
         delete dataset;
+
+        return (jlong) index;
     }
     catch (...) {
         if (space) { delete space; }
