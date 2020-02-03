@@ -54,6 +54,14 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_gc
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex
+ * Method:    initLibrary
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_initLibrary
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif

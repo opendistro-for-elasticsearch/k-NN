@@ -30,6 +30,7 @@ public class KNNIndex {
     public static NmsLibVersion VERSION = NmsLibVersion.V1736;
     static {
         System.loadLibrary(NmsLibVersion.V1736.indexLibraryVersion());
+        initLibrary();
     }
 
     public AtomicBoolean isDeleted = new AtomicBoolean(false);
@@ -97,4 +98,7 @@ public class KNNIndex {
     public native void init(String indexPath);
 
     public native void gc();
+
+    // Calls nmslib's initLibrary function: https://github.com/nmslib/nmslib/blob/v1.7.3.6/similarity_search/include/init.h#L27
+    private static native void initLibrary();
 }
