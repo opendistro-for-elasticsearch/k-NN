@@ -35,6 +35,7 @@ public class KNNIndex implements AutoCloseable {
     public static NmsLibVersion VERSION = NmsLibVersion.V1736;
     static {
         System.loadLibrary(NmsLibVersion.V1736.indexLibraryVersion());
+        initLibrary();
     }
 
     private volatile boolean isClosed = false;
@@ -134,5 +135,7 @@ public class KNNIndex implements AutoCloseable {
 
     // Deletes memory pointed to by index pointer (needs write lock)
     private static native void gc(long indexPointer);
-}
 
+    // Calls nmslib's initLibrary function: https://github.com/nmslib/nmslib/blob/v1.7.3.6/similarity_search/include/init.h#L27
+    private static native void initLibrary();
+}

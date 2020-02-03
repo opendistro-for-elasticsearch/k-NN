@@ -82,7 +82,6 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
     int* object_ids = NULL;
 
     try {
-        initLibrary();
         space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
         object_ids = env->GetIntArrayElements(ids, 0);
         for (int i = 0; i < env->GetArrayLength(vectors); i++) {
@@ -191,7 +190,6 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v17
     Index<float>* index = NULL;
 
     try {
-        initLibrary();
         space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
         dataset = new ObjectVector();
         Index<float>* index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", "l2", *space, *dataset);
@@ -211,6 +209,7 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v17
         if (dataset) { delete dataset; }
         catch_cpp_exception_and_throw_java(env);
     }
+    return NULL;
 }
 
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_gc(JNIEnv* env, jclass cls,  jlong indexPointer)
@@ -226,3 +225,8 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
     }
 }
 
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_initLibrary(JNIEnv *, jclass)
+{
+    initLibrary();
+
+}
