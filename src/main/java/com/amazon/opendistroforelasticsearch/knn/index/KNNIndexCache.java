@@ -29,7 +29,6 @@ import org.elasticsearch.watcher.FileWatcher;
 import org.elasticsearch.watcher.ResourceWatcherService;
 import org.elasticsearch.watcher.WatcherHandle;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
@@ -129,8 +128,6 @@ public class KNNIndexCache {
      * @param key indexPath where the serialized hnsw graph is stored
      * @param algoParams hnsw algorithm parameters
      * @return KNNIndex holding the heap pointer of the loaded graph
-     * @throws IOException if there's an unexpected failure in loading the index, which implies that the value for
-     * the key will be both out of the cache and the underlying index will not be loaded
      */
     public KNNIndex getIndex(String key, final String[] algoParams) {
         try {
