@@ -137,9 +137,12 @@ public class KNN80HnswIndexIT extends ESIntegTestCase {
     }
 
     private ResourceWatcherService createDisabledResourceWatcherService() {
+        final Settings settings = Settings.builder()
+                .put("resource.reload.enabled", false)
+                .build();
         return new ResourceWatcherService(
-                Settings.EMPTY,
-                new ThreadPool(Settings.EMPTY)
+                settings,
+                null
         );
     }
 }

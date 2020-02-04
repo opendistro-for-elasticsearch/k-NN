@@ -206,6 +206,11 @@ public class KNNIndexCache {
         return new KNNIndexCacheEntry(knnIndex, watcherHandle);
     }
 
+    /**
+     * KNNIndexCacheEntry is the value type for entries in the cache held by {@link KNNIndexCache}.
+     * It holds a reference to both the KNNIndex and the WatcherHandle so that each can be cleaned up
+     * upon expiration of the cache.
+     */
     private static class KNNIndexCacheEntry {
         private final KNNIndex knnIndex;
         private final WatcherHandle<FileWatcher> fileWatcherHandle;
