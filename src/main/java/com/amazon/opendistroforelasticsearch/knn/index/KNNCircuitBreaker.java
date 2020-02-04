@@ -15,8 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
-
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsAction;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsNodeResponse;
@@ -31,7 +29,6 @@ import org.elasticsearch.threadpool.ThreadPool;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Runs the circuit breaker logic and updates the settings
@@ -69,7 +66,7 @@ public class KNNCircuitBreaker {
         this.client = client;
         Runnable runnable = () -> {
             if (KNNWeight.knnIndexCache.isCacheCapacityReached() && clusterService.localNode().isDataNode()) {
-                long currentSizeKiloBytes =  KNNWeight.knnIndexCache.cache.asMap().values().stream().collect(Collectors.summingLong(KNNIndex::getIndexSize));
+                long currentSizeKiloBytes =  KNNWeight.knnIndexCache.getWeightInKilobytes();
                 long circuitBreakerLimitSizeKiloBytes = KNNSettings.getCircuitBreakerLimit().getKb();
                 long circuitBreakerUnsetSizeKiloBytes = (long) ((KNNSettings.getCircuitBreakerUnsetPercentage()/100) * circuitBreakerLimitSizeKiloBytes);
                 /**

@@ -24,7 +24,12 @@ import com.google.common.cache.RemovalNotification;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.watcher.FileChangesListener;
+import org.elasticsearch.watcher.FileWatcher;
+import org.elasticsearch.watcher.ResourceWatcherService;
+import org.elasticsearch.watcher.WatcherHandle;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
@@ -39,22 +44,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * or when weightCircuitBreaker is hit.
  */
 public class KNNIndexCache {
-
-    private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private AtomicBoolean cacheCapacityReached;
-
     private static Logger logger = LogManager.getLogger(KNNIndexCache.class);
-    private static KNNIndexFileListener knnIndexFileListener = null;
 
     private static KNNIndexCache INSTANCE;
-    public Cache<String, KNNIndex> cache;
 
-    public static void setKnnIndexFileListener(KNNIndexFileListener knnIndexFileListener) {
-        KNNIndexCache.knnIndexFileListener = knnIndexFileListener;
-    }
+    private Cache<String, KNNIndexCacheEntry> cache;
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private AtomicBoolean cacheCapacityReached;
+    private ResourceWatcherService resourceWatcherService;
 
     private KNNIndexCache() {
         initCache();
+    }
+
+    public static void setResourceWatcherService(final ResourceWatcherService resourceWatcherService) {
+        INSTANCE.resourceWatcherService = resourceWatcherService;
     }
 
     /**
@@ -68,13 +72,13 @@ public class KNNIndexCache {
         return INSTANCE;
     }
 
-    public void initCache() {
-        CacheBuilder<String, KNNIndex> cacheBuilder = CacheBuilder.newBuilder()
-                                                                  .recordStats()
-                                                                  .concurrencyLevel(1)
-                                                                  .removalListener(k -> onRemoval(k));
+    private void initCache() {
+        CacheBuilder<String, KNNIndexCacheEntry> cacheBuilder = CacheBuilder.newBuilder()
+                .recordStats()
+                .concurrencyLevel(1)
+                .removalListener(k -> onRemoval(k));
         if(KNNSettings.state().getSettingValue(KNNSettings.KNN_MEMORY_CIRCUIT_BREAKER_ENABLED)) {
-            cacheBuilder.maximumWeight(KNNSettings.getCircuitBreakerLimit().getKb()).weigher((k, v) -> (int)v.getIndexSize());
+            cacheBuilder.maximumWeight(KNNSettings.getCircuitBreakerLimit().getKb()).weigher((k, v) -> (int)v.getKnnIndex().getIndexSize());
         }
 
         if(KNNSettings.state().getSettingValue(KNNSettings.KNN_CACHE_ITEM_EXPIRY_ENABLED)) {
@@ -103,10 +107,12 @@ public class KNNIndexCache {
      *
      * @param removalNotification key, value that got evicted.
      */
-    private void onRemoval(RemovalNotification<String, KNNIndex> removalNotification) {
-        KNNIndex knnIndex = removalNotification.getValue();
+    private void onRemoval(RemovalNotification<String, KNNIndexCacheEntry> removalNotification) {
+        KNNIndexCacheEntry knnIndexCacheEntry = removalNotification.getValue();
 
-        executor.execute(() -> knnIndex.close());
+        knnIndexCacheEntry.getFileWatcherHandle().stop();
+
+        executor.execute(() -> knnIndexCacheEntry.getKnnIndex().close());
 
         if (RemovalCause.SIZE == removalNotification.getCause()) {
             KNNSettings.state().updateCircuitBreakerSettings(true);
@@ -121,15 +127,15 @@ public class KNNIndexCache {
      * Loads corresponding index for the given key to memory and returns the index object.
      *
      * @param key indexPath where the serialized hnsw graph is stored
-     * @param algoParams hnsw algoparams
-     * @return KNNIndex holding the heap pointer of the loaded graph or empty if there was
-     * a failure to load the
-     * @throws RuntimeException if there's an unexpected failure in loading, which implies that the value for
+     * @param algoParams hnsw algorithm parameters
+     * @return KNNIndex holding the heap pointer of the loaded graph
+     * @throws IOException if there's an unexpected failure in loading the index, which implies that the value for
      * the key will be both out of the cache and the underlying index will not be loaded
      */
     public KNNIndex getIndex(String key, final String[] algoParams) {
         try {
-            return cache.get(key, () -> loadIndex(key, algoParams));
+            final KNNIndexCacheEntry knnIndexCacheEntry = cache.get(key, () -> loadIndex(key, algoParams));
+            return knnIndexCacheEntry.getKnnIndex();
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -147,10 +153,10 @@ public class KNNIndexCache {
     /**
      * Returns the current weight of the cache in KiloBytes
      *
-     * @return Weight of the cache
+     * @return Weight of the cache in kilobytes
      */
-    public Long getWeight() {
-        return cache.asMap().values().stream().mapToLong(KNNIndex::getIndexSize).sum();
+    public Long getWeightInKilobytes() {
+        return cache.asMap().values().stream().map(KNNIndexCacheEntry::getKnnIndex).mapToLong(KNNIndex::getIndexSize).sum();
     }
 
     /**
@@ -175,18 +181,57 @@ public class KNNIndexCache {
      * Loads hnsw index to memory. Registers the location of the serialized graph with ResourceWatcher.
      *
      * @param indexPathUrl path for serialized hnsw graph
-     * @param algoParams hnsw algoparams
+     * @param algoParams hnsw algorithm parameters
      * @return KNNIndex holding the heap pointer of the loaded graph
      * @throws Exception Exception could occur when registering the index path
      * to Resource watcher or if the JNI call throws
      */
-    public KNNIndex loadIndex(String indexPathUrl, final String[] algoParams) throws Exception {
+    public KNNIndexCacheEntry loadIndex(String indexPathUrl, final String[] algoParams) throws Exception {
         if(Strings.isNullOrEmpty(indexPathUrl))
             throw new IllegalStateException("indexPath is null while performing load index");
         logger.debug("Loading index on cache miss .. {}", indexPathUrl);
         Path indexPath = Paths.get(indexPathUrl);
-        knnIndexFileListener.register(indexPath);
-        return KNNIndex.loadIndex(indexPathUrl, algoParams);
-    }
-}
+        FileWatcher fileWatcher = new FileWatcher(indexPath);
+        fileWatcher.addListener(KNN_INDEX_FILE_DELETED_LISTENER);
 
+        // Calling init() on the FileWatcher will bootstrap initial state that indicates whether or not the file
+        // is present. If it is not present at time of init(), then KNNIndex.loadIndex will fail and we won't cache
+        // the entry
+        fileWatcher.init();
+
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPathUrl, algoParams);
+
+        // TODO verify that this is safe - ideally we'd explicitly ensure that the FileWatcher is only checked
+        // after the guava cache has finished loading the key to avoid a race condition where the watcher
+        // causes us to invalidate an entry before the key has been fully loaded.
+        final WatcherHandle<FileWatcher> watcherHandle = resourceWatcherService.add(fileWatcher);
+
+        return new KNNIndexCacheEntry(knnIndex, watcherHandle);
+    }
+
+    private static class KNNIndexCacheEntry {
+        private final KNNIndex knnIndex;
+        private final WatcherHandle<FileWatcher> fileWatcherHandle;
+
+        private KNNIndexCacheEntry(final KNNIndex knnIndex, final WatcherHandle<FileWatcher> fileWatcherHandle) {
+            this.knnIndex = knnIndex;
+            this.fileWatcherHandle = fileWatcherHandle;
+        }
+
+        private KNNIndex getKnnIndex() {
+            return knnIndex;
+        }
+
+        private WatcherHandle<FileWatcher> getFileWatcherHandle() {
+            return fileWatcherHandle;
+        }
+    }
+
+    private static FileChangesListener KNN_INDEX_FILE_DELETED_LISTENER = new FileChangesListener() {
+        @Override
+        public void onFileDeleted(Path indexFilePath) {
+            logger.debug("[KNN] Invalidated because file {} is deleted", indexFilePath.toString());
+            INSTANCE.cache.invalidate(indexFilePath.toString());
+        }
+    };
+}

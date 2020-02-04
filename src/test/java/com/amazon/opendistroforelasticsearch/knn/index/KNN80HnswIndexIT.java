@@ -55,7 +55,6 @@ public class KNN80HnswIndexIT extends ESIntegTestCase {
         doc.add(vectorField);
         writer.addDocument(doc);
 
-        KNNIndexCache.setKnnIndexFileListener(new MockKNNIndexFileListener(null));
         IndexReader reader = writer.getReader();
         LeafReaderContext lrc = reader.getContext().leaves().iterator().next(); // leaf reader context
         SegmentReader segmentReader = (SegmentReader) FilterLeafReader.unwrap(lrc.reader());
@@ -110,7 +109,6 @@ public class KNN80HnswIndexIT extends ESIntegTestCase {
         writer.addDocument(doc1);
 
 
-        KNNIndexCache.setKnnIndexFileListener(new MockKNNIndexFileListener(null));
         IndexReader reader = writer.getReader();
         List<String> hnswfiles = Arrays.stream(dir.listAll()).filter(x -> x.contains("hnsw")).collect(Collectors.toList());
 
@@ -133,20 +131,5 @@ public class KNN80HnswIndexIT extends ESIntegTestCase {
         reader.close();
         writer.close();
         dir.close();
-    }
-}
-
-class MockKNNIndexFileListener extends KNNIndexFileListener {
-
-    public MockKNNIndexFileListener(ResourceWatcherService resourceWatcherService) {
-        super(resourceWatcherService);
-    }
-
-    public void register(Path filePath) throws Exception {
-    }
-
-    @Override
-    public void onFileDeleted(Path indexFilePath) {
-
     }
 }
