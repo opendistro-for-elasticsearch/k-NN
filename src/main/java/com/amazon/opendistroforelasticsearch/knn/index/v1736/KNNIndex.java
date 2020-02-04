@@ -99,6 +99,7 @@ public class KNNIndex implements AutoCloseable {
      * Loads the knn index to memory for querying the neighbours
      *
      * @param indexPath path where the hnsw index is stored
+     * @param algoParams hnsw algorithm parameters
      * @return knn index that can be queried for k nearest neighbours
      */
     public static KNNIndex loadIndex(String indexPath, final String[] algoParams) {
