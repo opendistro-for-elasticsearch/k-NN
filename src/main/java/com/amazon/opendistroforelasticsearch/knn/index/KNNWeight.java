@@ -101,11 +101,10 @@ public class KNNWeight extends Weight {
 
             Path indexPath = PathUtils.get(directory, hnswFiles.get(0));
 
-            final KNNIndex index = knnIndexCache.getIndex(indexPath.toString());
+            final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), getQueryParams(queryFieldInfo));
             final KNNQueryResult[] results = index.queryIndex(
                     knnQuery.getQueryVector(),
-                    knnQuery.getK(),
-                    getQueryParams(queryFieldInfo)
+                    knnQuery.getK()
             );
 
             /**
