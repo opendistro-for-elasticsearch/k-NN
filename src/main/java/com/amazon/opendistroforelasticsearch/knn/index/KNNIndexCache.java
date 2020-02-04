@@ -15,18 +15,16 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheStats;
 import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalNotification;
-import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.Strings;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
@@ -106,31 +104,32 @@ public class KNNIndexCache {
      * @param removalNotification key, value that got evicted.
      */
     private void onRemoval(RemovalNotification<String, KNNIndex> removalNotification) {
-            KNNIndex knnIndex = removalNotification.getValue();
+        KNNIndex knnIndex = removalNotification.getValue();
 
-            executor.execute(() -> knnIndex.close());
+        executor.execute(() -> knnIndex.close());
 
-            if (RemovalCause.SIZE == removalNotification.getCause()) {
-                KNNSettings.state().updateCircuitBreakerSettings(true);
-                setCacheCapacityReached(true);
-            }
-            // TODO will change below logger to debug when close to ship it
-            logger.info("[KNN] Cache evicted. Key {}, Reason: {}", removalNotification.getKey()
-                    ,removalNotification.getCause());
+        if (RemovalCause.SIZE == removalNotification.getCause()) {
+            KNNSettings.state().updateCircuitBreakerSettings(true);
+            setCacheCapacityReached(true);
+        }
+        // TODO will change below logger to debug when close to ship it
+        logger.info("[KNN] Cache evicted. Key {}, Reason: {}", removalNotification.getKey()
+                ,removalNotification.getCause());
     }
 
     /**
      * Loads corresponding index for the given key to memory and returns the index object.
      *
      * @param key indexPath where the serialized hnsw graph is stored
+     * @param algoParams hnsw algoparams
      * @return KNNIndex holding the heap pointer of the loaded graph or empty if there was
      * a failure to load the
      * @throws RuntimeException if there's an unexpected failure in loading, which implies that the value for
      * the key will be both out of the cache and the underlying index will not be loaded
      */
-    public KNNIndex getIndex(String key) {
+    public KNNIndex getIndex(String key, final String[] algoParams) {
         try {
-            return cache.get(key, () -> loadIndex(key));
+            return cache.get(key, () -> loadIndex(key, algoParams));
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -176,17 +175,18 @@ public class KNNIndexCache {
      * Loads hnsw index to memory. Registers the location of the serialized graph with ResourceWatcher.
      *
      * @param indexPathUrl path for serialized hnsw graph
+     * @param algoParams hnsw algoparams
      * @return KNNIndex holding the heap pointer of the loaded graph
      * @throws Exception Exception could occur when registering the index path
      * to Resource watcher or if the JNI call throws
      */
-    public KNNIndex loadIndex(String indexPathUrl) throws Exception {
+    public KNNIndex loadIndex(String indexPathUrl, final String[] algoParams) throws Exception {
         if(Strings.isNullOrEmpty(indexPathUrl))
             throw new IllegalStateException("indexPath is null while performing load index");
         logger.debug("Loading index on cache miss .. {}", indexPathUrl);
         Path indexPath = Paths.get(indexPathUrl);
         knnIndexFileListener.register(indexPath);
-        return KNNIndex.loadIndex(indexPathUrl);
+        return KNNIndex.loadIndex(indexPathUrl, algoParams);
     }
 }
 

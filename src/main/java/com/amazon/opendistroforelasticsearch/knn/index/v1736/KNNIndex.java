@@ -61,7 +61,7 @@ public class KNNIndex implements AutoCloseable {
         return this.indexSize;
     }
 
-    public KNNQueryResult[] queryIndex(final float[] query, final int k, final String[] algoParams) throws IOException {
+    public KNNQueryResult[] queryIndex(final float[] query, final int k) throws IOException {
         Lock readLock = readWriteLock.readLock();
         readLock.lock();
 
@@ -73,7 +73,7 @@ public class KNNIndex implements AutoCloseable {
             return AccessController.doPrivileged(
                     new PrivilegedAction<KNNQueryResult[]>() {
                         public KNNQueryResult[] run() {
-                            return queryIndex(indexPointer, query, k, algoParams);
+                            return queryIndex(indexPointer, query, k);
                         }
                     }
             );
@@ -99,11 +99,12 @@ public class KNNIndex implements AutoCloseable {
      * Loads the knn index to memory for querying the neighbours
      *
      * @param indexPath path where the hnsw index is stored
+     * @param algoParams hnsw algorithm parameters
      * @return knn index that can be queried for k nearest neighbours
      */
-    public static KNNIndex loadIndex(String indexPath) {
+    public static KNNIndex loadIndex(String indexPath, final String[] algoParams) {
         long fileSize = computeFileSize(indexPath);
-        long indexPointer = init(indexPath);
+        long indexPointer = init(indexPath, algoParams);
         return new KNNIndex(indexPointer, fileSize);
     }
 
@@ -128,10 +129,10 @@ public class KNNIndex implements AutoCloseable {
     public static native void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams);
 
     // Queries index (thread safe with other readers, blocked by write lock)
-    private static native KNNQueryResult[] queryIndex(long indexPointer, float[] query, int k, String[] algoParams);
+    private static native KNNQueryResult[] queryIndex(long indexPointer, float[] query, int k);
 
     // Loads index and returns pointer to index
-    private static native long init(String indexPath);
+    private static native long init(String indexPath, String[] algoParams);
 
     // Deletes memory pointed to by index pointer (needs write lock)
     private static native void gc(long indexPointer);

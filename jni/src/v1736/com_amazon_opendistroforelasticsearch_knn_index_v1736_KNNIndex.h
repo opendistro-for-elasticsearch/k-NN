@@ -37,7 +37,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
  * Signature: (J[FI[Ljava/lang/String;)[Lcom/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_queryIndex
-  (JNIEnv *, jclass, jlong, jfloatArray, jint, jobjectArray);
+  (JNIEnv *, jclass, jlong, jfloatArray, jint);
 
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex
@@ -45,7 +45,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
  * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_init
-  (JNIEnv *, jclass, jstring);
+  (JNIEnv *, jclass, jstring, jobjectArray);
 
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex
