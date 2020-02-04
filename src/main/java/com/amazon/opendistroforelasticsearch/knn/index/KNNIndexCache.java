@@ -57,7 +57,7 @@ public class KNNIndexCache {
     }
 
     public static void setResourceWatcherService(final ResourceWatcherService resourceWatcherService) {
-        INSTANCE.resourceWatcherService = resourceWatcherService;
+        getInstance().resourceWatcherService = resourceWatcherService;
     }
 
     /**
@@ -228,7 +228,7 @@ public class KNNIndexCache {
         @Override
         public void onFileDeleted(Path indexFilePath) {
             logger.debug("[KNN] Invalidated because file {} is deleted", indexFilePath.toString());
-            INSTANCE.cache.invalidate(indexFilePath.toString());
+            getInstance().cache.invalidate(indexFilePath.toString());
         }
     };
 }
