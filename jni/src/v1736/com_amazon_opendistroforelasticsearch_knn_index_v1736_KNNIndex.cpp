@@ -40,6 +40,17 @@ using similarity::KNNQueue;
 
 extern "C"
 
+struct IndexWrapper {
+  IndexWrapper() {
+    space.reset(SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams()));
+    index.reset(MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", "l2", *space, data));
+  }
+  std::unique_ptr<Space<float>> space;
+  std::unique_ptr<Index<float>> index;
+  // Index gets constructed with a reference to data (see above) but is otherwise unused
+  ObjectVector data;
+};
+
 struct JavaException {
     JavaException(JNIEnv* env, const char* type = "", const char* message = "")
     {
@@ -131,21 +142,17 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
 
 JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_queryIndex(JNIEnv* env, jclass cls, jlong indexPointer, jfloatArray queryVector, jint k)
 {
-    Space<float>* space = NULL;
-    KNNQueue<float>* result = NULL;
-    Object* queryObject = NULL;
-
     try {
-        Index<float>* index = reinterpret_cast<Index<float>*>(indexPointer);
+        IndexWrapper *indexWrapper = reinterpret_cast<IndexWrapper*>(indexPointer);
+
         float* rawQueryvector = env->GetFloatArrayElements(queryVector, 0);
-        space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
-        queryObject = new Object(-1, -1, env->GetArrayLength(queryVector)*sizeof(float), rawQueryvector);
-        KNNQuery<float> query(*space, queryObject, k);
+        std::unique_ptr<const Object> queryObject(new Object(-1, -1, env->GetArrayLength(queryVector)*sizeof(float), rawQueryvector));
         env->ReleaseFloatArrayElements(queryVector, rawQueryvector, 0);
         has_exception_in_stack(env);
 
-        index->Search(&query);
-        result = query.Result()->Clone();
+        KNNQuery<float> knnQuery(*(indexWrapper->space), queryObject.get(), k);
+        indexWrapper->index->Search(&knnQuery);
+        std::unique_ptr<KNNQueue<float>> result(knnQuery.Result()->Clone());
         has_exception_in_stack(env);
         int resultSize = result->Size();
         jclass resultClass = env->FindClass("com/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult");
@@ -157,18 +164,8 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
             env->SetObjectArrayElement(results, i, env->NewObject(resultClass, allArgs, id, distance));
         }
         has_exception_in_stack(env);
-
-        //free up memory
-        delete space;
-        delete result;
-        delete queryObject;
-
         return results;
-    }
-    catch (...) {
-        if (space) { delete space; }
-        if (result) { delete result; }
-        if (queryObject) { delete queryObject; }
+    } catch(...) {
         catch_cpp_exception_and_throw_java(env);
     }
     return NULL;
@@ -176,19 +173,18 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
 
 JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_init(JNIEnv* env, jclass cls,  jstring indexPath, jobjectArray algoParams)
 {
-    Space<float>* space = NULL;
-    ObjectVector* dataset = NULL;
-    Index<float>* index = NULL;
-
+    IndexWrapper *indexWrapper = NULL;
     try {
-        space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
-        dataset = new ObjectVector();
-        Index<float>* index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", "l2", *space, *dataset);
-        const char *indexString = env->GetStringUTFChars(indexPath, 0);
-        index->LoadIndex(indexString);
-        env->ReleaseStringUTFChars(indexPath, indexString);
+        const char *indexPathCStr = env->GetStringUTFChars(indexPath, 0);
+        string indexPathString(indexPathCStr);
+        env->ReleaseStringUTFChars(indexPath, indexPathCStr);
         has_exception_in_stack(env);
 
+        // Load index from file (may throw)
+        IndexWrapper *indexWrapper = new IndexWrapper();
+        indexWrapper->index->LoadIndex(indexPathString);
+
+        // Parse and set query params
         int paramsCount = env->GetArrayLength(algoParams);
         vector<string> paramsList;
         for (int i=0; i<paramsCount; i++) {
@@ -197,18 +193,15 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v17
             paramsList.push_back(rawString);
             env->ReleaseStringUTFChars(param, rawString);
         }
-        index->SetQueryTimeParams(AnyParams(paramsList));
+        indexWrapper->index->SetQueryTimeParams(AnyParams(paramsList));
         has_exception_in_stack(env);
 
-        // free up memory
-        delete space;
-        delete dataset;
-
-        return (jlong) index;
+        return (jlong) indexWrapper;
     }
+    // nmslib seems to throw std::runtime_error if the index cannot be read (which
+    // is the only known failure mode for init()).
     catch (...) {
-        if (space) { delete space; }
-        if (dataset) { delete dataset; }
+        if (indexWrapper) delete indexWrapper;
         catch_cpp_exception_and_throw_java(env);
     }
     return NULL;
@@ -217,9 +210,9 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v17
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_gc(JNIEnv* env, jclass cls,  jlong indexPointer)
 {
     try {
-        Index<float>* index = reinterpret_cast<Index<float>*>(indexPointer);
+        IndexWrapper *indexWrapper = reinterpret_cast<IndexWrapper*>(indexPointer);
         has_exception_in_stack(env);
-        delete index;
+        delete indexWrapper;
         has_exception_in_stack(env);
     }
     catch (...) {
