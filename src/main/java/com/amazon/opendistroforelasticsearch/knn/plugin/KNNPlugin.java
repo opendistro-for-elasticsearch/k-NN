@@ -17,7 +17,6 @@ package com.amazon.opendistroforelasticsearch.knn.plugin;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNCircuitBreaker;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache;
-import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexFileListener;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
@@ -35,9 +34,6 @@ import com.google.common.cache.CacheStats;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsAction;
-import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsTransportAction;
-import com.amazon.opendistroforelasticsearch.knn.plugin.rest.RestKNNStatsHandler;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.client.Client;
@@ -128,9 +124,8 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
                                                ResourceWatcherService resourceWatcherService, ScriptService scriptService,
                                                NamedXContentRegistry xContentRegistry, Environment environment,
                                                NodeEnvironment nodeEnvironment, NamedWriteableRegistry namedWriteableRegistry) {
-        KNNIndexFileListener knnIndexFileListener = new KNNIndexFileListener(resourceWatcherService);
+        KNNIndexCache.setResourceWatcherService(resourceWatcherService);
         KNNSettings.state().initialize(client, clusterService);
-        KNNIndexCache.setKnnIndexFileListener(knnIndexFileListener);
         KNNCircuitBreaker.getInstance().initialize(threadPool, clusterService, client);
 
         Map<String, KNNStat<?>> stats = ImmutableMap.<String, KNNStat<?>>builder()
@@ -147,7 +142,7 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
                 .put(StatNames.EVICTION_COUNT.getName(), new KNNStat<>(false,
                         new KNNInnerCacheStatsSupplier(CacheStats::evictionCount)))
                 .put(StatNames.GRAPH_MEMORY_USAGE.getName(), new KNNStat<>(false,
-                        new KNNCacheSupplier<>(KNNIndexCache::getWeight)))
+                        new KNNCacheSupplier<>(KNNIndexCache::getWeightInKilobytes)))
                 .put(StatNames.CACHE_CAPACITY_REACHED.getName(), new KNNStat<>(false,
                         new KNNCacheSupplier<>(KNNIndexCache::isCacheCapacityReached)))
                 .put(StatNames.CIRCUIT_BREAKER_TRIGGERED.getName(), new KNNStat<>(true,
@@ -155,7 +150,7 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
 
         knnStats = new KNNStats(stats);
 
-        return ImmutableList.of(knnIndexFileListener, knnStats);
+        return ImmutableList.of(knnStats);
     }
 
     @Override

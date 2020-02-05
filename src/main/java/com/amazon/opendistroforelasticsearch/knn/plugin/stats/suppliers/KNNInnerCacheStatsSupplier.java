@@ -37,6 +37,6 @@ public class KNNInnerCacheStatsSupplier implements Supplier<Long> {
 
     @Override
     public Long get() {
-        return getter.apply(KNNIndexCache.getInstance().cache.stats());
+        return getter.apply(KNNIndexCache.getInstance().getStats());
     }
 }

@@ -9,3 +9,4 @@ build
 out/
 buildSrc/es-knn-offline-repo-*
 oss/*
+*.iml
