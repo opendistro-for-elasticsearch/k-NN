@@ -43,13 +43,11 @@ import org.elasticsearch.test.rest.ESRestTestCase;
 import org.junit.rules.DisableOnDebug;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.junit.Before;
-import org.junit.rules.DisableOnDebug;
 
 /**
  * Integration tests to check the correctness of RestKNNStatsHandler
@@ -78,7 +76,7 @@ public class RestKNNStatsHandlerIT extends ESRestTestCase {
             .put(StatNames.EVICTION_COUNT.getName(), new KNNStat<>(false,
                     new KNNInnerCacheStatsSupplier(CacheStats::evictionCount)))
             .put(StatNames.GRAPH_MEMORY_USAGE.getName(), new KNNStat<>(false,
-                    new KNNCacheSupplier<>(KNNIndexCache::getWeight)))
+                    new KNNCacheSupplier<>(KNNIndexCache::getWeightInKilobytes)))
             .put(StatNames.CACHE_CAPACITY_REACHED.getName(), new KNNStat<>(false,
                     new KNNCacheSupplier<>(KNNIndexCache::isCacheCapacityReached)))
             .put(StatNames.CIRCUIT_BREAKER_TRIGGERED.getName(), new KNNStat<>(true,

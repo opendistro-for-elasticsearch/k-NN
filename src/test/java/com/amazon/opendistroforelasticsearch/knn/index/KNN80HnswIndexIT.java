@@ -31,10 +31,10 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.ChecksumIndexInput;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.watcher.ResourceWatcherService;
 
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,16 +55,17 @@ public class KNN80HnswIndexIT extends ESIntegTestCase {
         doc.add(vectorField);
         writer.addDocument(doc);
 
-        KNNIndexCache.setKnnIndexFileListener(new MockKNNIndexFileListener(null));
+
+        KNNIndexCache.setResourceWatcherService(createDisabledResourceWatcherService());
         IndexReader reader = writer.getReader();
         LeafReaderContext lrc = reader.getContext().leaves().iterator().next(); // leaf reader context
         SegmentReader segmentReader = (SegmentReader) FilterLeafReader.unwrap(lrc.reader());
         String hnswFileExtension = segmentReader.getSegmentInfo().info.getUseCompoundFile()
-                                           ? KNNCodecUtil.HNSW_COMPOUND_EXTENSION : KNNCodecUtil.HNSW_EXTENSION;
+                ? KNNCodecUtil.HNSW_COMPOUND_EXTENSION : KNNCodecUtil.HNSW_EXTENSION;
         String hnswSuffix = "test_vector" + hnswFileExtension;
         List<String> hnswFiles = segmentReader.getSegmentInfo().files().stream()
-                                              .filter(fileName -> fileName.endsWith(hnswSuffix))
-                                              .collect(Collectors.toList());
+                .filter(fileName -> fileName.endsWith(hnswSuffix))
+                .collect(Collectors.toList());
         assertTrue(!hnswFiles.isEmpty());
         ChecksumIndexInput indexInput = dir.openChecksumInput(hnswFiles.get(0), IOContext.DEFAULT);
         indexInput.seek(indexInput.length() - CodecUtil.footerLength());
@@ -109,8 +110,7 @@ public class KNN80HnswIndexIT extends ESIntegTestCase {
         doc1.add(vectorField1);
         writer.addDocument(doc1);
 
-
-        KNNIndexCache.setKnnIndexFileListener(new MockKNNIndexFileListener(null));
+        KNNIndexCache.setResourceWatcherService(createDisabledResourceWatcherService());
         IndexReader reader = writer.getReader();
         List<String> hnswfiles = Arrays.stream(dir.listAll()).filter(x -> x.contains("hnsw")).collect(Collectors.toList());
 
@@ -134,19 +134,14 @@ public class KNN80HnswIndexIT extends ESIntegTestCase {
         writer.close();
         dir.close();
     }
-}
 
-class MockKNNIndexFileListener extends KNNIndexFileListener {
-
-    public MockKNNIndexFileListener(ResourceWatcherService resourceWatcherService) {
-        super(resourceWatcherService);
-    }
-
-    public void register(Path filePath) throws Exception {
-    }
-
-    @Override
-    public void onFileDeleted(Path indexFilePath) {
-
+    private ResourceWatcherService createDisabledResourceWatcherService() {
+        final Settings settings = Settings.builder()
+                .put("resource.reload.enabled", false)
+                .build();
+        return new ResourceWatcherService(
+                settings,
+                null
+        );
     }
 }
