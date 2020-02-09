@@ -42,7 +42,7 @@ class KNNStatsNodeRequest extends BaseNodeRequest {
      */
     public KNNStatsNodeRequest(StreamInput in) throws IOException {
         super(in);
-        request = new KNNStatsRequest();
+        request = new KNNStatsRequest(in);
     }
 
     /**
