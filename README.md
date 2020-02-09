@@ -54,18 +54,24 @@ The following code creates a KNN index with fields my_vector1, my_vector2, my_ve
 PUT /myindex
 {
     "settings" : {
-        "number_of_shards" :   1,
-        "number_of_replicas" : 0,
         "index": {
             "knn": true
         }
     },
     "mappings": {
         "properties": {
-            "my_vector": {
+            "my_vector1": {
                 "type": "knn_vector",
                 "dimension": 2
-            }
+            }, 
+            "my_vector2": {
+                "type": "knn_vector",
+                "dimension": 4
+            }, 
+            "my_vector3": {
+                "type": "knn_vector",
+                "dimension": 8
+            } 
         }
     }
 }
@@ -76,7 +82,7 @@ PUT /myindex
 ```
 PUT /myindex/_doc/2?refresh=true
 {
-    "my_vector" : [1.5, 2.5],
+    "my_vector1" : [1.5, 2.5],
     "price":10
 }
 ```
@@ -89,7 +95,7 @@ POST /myindex/_search
     "size" : 10,
     "query": {
         "knn": {
-            "my_vector": {
+            "my_vector1": {
                 "vector": [3, 4],
                 "k": 2
             }
@@ -103,7 +109,7 @@ For plugin installations from archive(.zip), it is necessary to ensure ```.so```
 
 ## Settings
 ### Index Level Settings
-KNN Index level settings should be provided at the time of the index creation. If the settings are not provided, default values will be use. These settings are static which means they cannot be changed after index creation.
+You must provide index-level settings when you create the index. If you don't provide these settings, KNN uses its default values. These settings are static, which means you can't modify them after index creation.
 
 ##### index.knn
 This setting indicates whether the index uses the KNN Codec or not. Possible values are *true*, *false*. Default value is *false*.
@@ -117,17 +123,14 @@ This setting is an HNSW parameter that represents "the size of the dynamic list 
 ##### index.knn.algo_param.ef_construction
 This setting is an HNSW parameter that "the parameter has the same meaning as ef, but controls the index_time/index_accuracy. Bigger ef_construction leads to longer construction, but better index quality." [nmslib/hnswlib](https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md) The default value is *512*.
 
-##### More Information
-For more information, please refer to https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md.
-
 ##### Example
 ```
 PUT /my_index/_settings
 {
     "index" : {
-        "index.knn.algo_param.m": 18, 
-        "index.knn.algo_param.ef_search" : 20,
-        "index.knn.algo_param.ef_construction" : 40,
+        "knn.algo_param.m": 18, 
+        "knn.algo_param.ef_search" : 20,
+        "knn.algo_param.ef_construction" : 40
     }
 }
 ```
@@ -198,10 +201,10 @@ Indicates whether the circuit breaker is triggered.
 The number of evictions that have occurred in the guava cache. *note:* explicit evictions that occur because of index deletion are not counted.
 
 #### hit_count
-The number of cache hits that have occurred on the node.
+The number of cache hits that have occurred on the node. A cache hit occurs when a user queries a graph and it is already loaded into memory. 
 
 #### miss_count
-The number of cache misses that have occurred on the node. 
+The number of cache misses that have occurred on the node. A cache miss occurs when a user queries a graph and it has not yet been loaded into memory.
 
 #### graph_memory_usage
 The current weight of the cache (the total size in native memory of all of the graphs) in Kilobytes.
