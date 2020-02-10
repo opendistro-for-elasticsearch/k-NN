@@ -128,6 +128,7 @@ This setting is an HNSW parameter that "the parameter has the same meaning as ef
 PUT /my_index/_settings
 {
     "index" : {
+        "knn": true,
         "knn.algo_param.m": 18, 
         "knn.algo_param.ef_search" : 20,
         "knn.algo_param.ef_construction" : 40
