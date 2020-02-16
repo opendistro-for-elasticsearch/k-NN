@@ -126,12 +126,12 @@ public class KNNIndexCache {
      * Loads corresponding index for the given key to memory and returns the index object.
      *
      * @param key indexPath where the serialized hnsw graph is stored
-     * @param algoParams hnsw algorithm parameters
+     * @param indexName index name
      * @return KNNIndex holding the heap pointer of the loaded graph
      */
-    public KNNIndex getIndex(String key, final String[] algoParams) {
+    public KNNIndex getIndex(String key, final String indexName) {
         try {
-            final KNNIndexCacheEntry knnIndexCacheEntry = cache.get(key, () -> loadIndex(key, algoParams));
+            final KNNIndexCacheEntry knnIndexCacheEntry = cache.get(key, () -> loadIndex(key, indexName));
             return knnIndexCacheEntry.getKnnIndex();
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
@@ -178,12 +178,12 @@ public class KNNIndexCache {
      * Loads hnsw index to memory. Registers the location of the serialized graph with ResourceWatcher.
      *
      * @param indexPathUrl path for serialized hnsw graph
-     * @param algoParams hnsw algorithm parameters
+     * @param indexName index name
      * @return KNNIndex holding the heap pointer of the loaded graph
      * @throws Exception Exception could occur when registering the index path
      * to Resource watcher or if the JNI call throws
      */
-    public KNNIndexCacheEntry loadIndex(String indexPathUrl, final String[] algoParams) throws Exception {
+    public KNNIndexCacheEntry loadIndex(String indexPathUrl, String indexName) throws Exception {
         if(Strings.isNullOrEmpty(indexPathUrl))
             throw new IllegalStateException("indexPath is null while performing load index");
         logger.debug("Loading index on cache miss .. {}", indexPathUrl);
@@ -196,7 +196,7 @@ public class KNNIndexCache {
         // the entry
         fileWatcher.init();
 
-        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPathUrl, algoParams);
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPathUrl, getQueryParams(indexName));
 
         // TODO verify that this is safe - ideally we'd explicitly ensure that the FileWatcher is only checked
         // after the guava cache has finished loading the key to avoid a race condition where the watcher
@@ -236,4 +236,8 @@ public class KNNIndexCache {
             getInstance().cache.invalidate(indexFilePath.toString());
         }
     };
+
+    private String[] getQueryParams(String indexName) {
+        return new String[] {"efSearch=" + KNNSettings.getEfSearchParam(indexName)};
+    }
 }

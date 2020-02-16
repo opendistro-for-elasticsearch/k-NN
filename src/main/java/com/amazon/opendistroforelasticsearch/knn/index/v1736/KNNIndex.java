@@ -87,11 +87,10 @@ public class KNNIndex implements AutoCloseable {
     public void close() {
         Lock writeLock = readWriteLock.writeLock();
         writeLock.lock();
-
         // Autocloseable documentation recommends making close idempotent. We don't expect to doubly close
-        // but this will help prevent a crash in that situation.
-        if (this.isClosed) {
-            return;
+        // but this will help prevent a crash in that situation.    
+        if (this.isClosed) {    
+            return; 
         }
         try {
             gc(this.indexPointer);

@@ -137,8 +137,7 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
             Builder builder = new KNNVectorFieldMapper.Builder(name);
             builder.algoParams(KNNConstants.HNSW_ALGO_M, parserContext.mapperService().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING));
             builder.algoParams(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, parserContext.mapperService().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING));
-            builder.algoParams(KNNConstants.HNSW_ALGO_EF_SEARCH, parserContext.mapperService().getIndexSettings().getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING));
-            
+
             /**
              * If dimension not provided. Throw Exception
              */

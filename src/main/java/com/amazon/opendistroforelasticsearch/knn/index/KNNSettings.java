@@ -339,4 +339,24 @@ public class KNNSettings {
             }
         });
     }
+
+    /**
+     *
+     * @param index Name of the index
+     * @return efSearch value
+     */
+    public static int getEfSearchParam(String index) {
+        return getIndexSettingValue(index, KNN_ALGO_PARAM_EF_SEARCH, 512);
+    }
+
+    public static int getIndexSettingValue(String index, String settingName, int defaultValue) {
+        return KNNSettings.state().clusterService.state().getMetaData()
+                                                 .index(index).getSettings()
+                                                 .getAsInt(settingName, defaultValue);
+    }
+
+    public void setClusterService(ClusterService clusterService) {
+        this.clusterService = clusterService;
+    }
+
 }
