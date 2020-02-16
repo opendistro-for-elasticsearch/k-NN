@@ -30,11 +30,13 @@ public class KNNQuery extends Query {
     private final String field;
     private final float[] queryVector;
     private final int k;
+    private final String indexName;
 
-    public KNNQuery(String field, float[] queryVector, int k) {
+    public KNNQuery(String field, float[] queryVector, int k, String indexName) {
         this.field = field;
         this.queryVector = queryVector;
         this.k = k;
+        this.indexName = indexName;
     }
 
     public String getField() {
@@ -48,6 +50,8 @@ public class KNNQuery extends Query {
     public int getK() {
         return this.k;
     }
+
+    public String getIndexName() { return this.indexName; }
 
     /**
      * Constructs Weight implementation for this query

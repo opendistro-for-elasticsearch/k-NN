@@ -18,7 +18,10 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
+import org.elasticsearch.index.Index;
+import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.test.ESTestCase;
+import org.mockito.Mockito;
 
 public class KNNQueryBuilderTests extends ESTestCase {
 
@@ -79,7 +82,10 @@ public class KNNQueryBuilderTests extends ESTestCase {
     public void testDoToQuery() throws Exception {
         float[] queryVector = {1.0f, 2.0f, 3.0f, 4.0f};
         KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1);
-        KNNQuery query = (KNNQuery)knnQueryBuilder.doToQuery(null);
+        Index dummyIndex = new Index("dummy", "dummy");
+        QueryShardContext mockQueryShardContext = Mockito.mock(QueryShardContext.class);
+        Mockito.when(mockQueryShardContext.index()).thenReturn(dummyIndex);
+        KNNQuery query = (KNNQuery)knnQueryBuilder.doToQuery(mockQueryShardContext);
         assertEquals(knnQueryBuilder.getK(), query.getK());
         assertEquals(knnQueryBuilder.fieldName(), query.getField());
         assertEquals(knnQueryBuilder.vector(), query.getQueryVector());

@@ -16,7 +16,6 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
-
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.document.Document;
@@ -31,18 +30,32 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.ChecksumIndexInput;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.watcher.ResourceWatcherService;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 @ESIntegTestCase.ClusterScope(scope=ESIntegTestCase.Scope.SUITE, numDataNodes=1)
 public class KNN80HnswIndexIT extends ESIntegTestCase {
 
+    private void setUpMockClusterService() {
+        ClusterService clusterService = mock(ClusterService.class, RETURNS_DEEP_STUBS);
+        Settings settings = Settings.Builder.EMPTY_SETTINGS;
+        when(clusterService.state().getMetaData().index(Mockito.anyString()).getSettings()).thenReturn(settings);
+        KNNSettings.state().setClusterService(clusterService);
+    }
+
     public void testFooter() throws Exception {
+        setUpMockClusterService();
         Directory dir = newFSDirectory(createTempDir());
         IndexWriterConfig iwc = newIndexWriterConfig();
         iwc.setMergeScheduler(new SerialMergeScheduler());
@@ -54,7 +67,6 @@ public class KNN80HnswIndexIT extends ESIntegTestCase {
         Document doc = new Document();
         doc.add(vectorField);
         writer.addDocument(doc);
-
 
         KNNIndexCache.setResourceWatcherService(createDisabledResourceWatcherService());
         IndexReader reader = writer.getReader();
@@ -73,7 +85,7 @@ public class KNN80HnswIndexIT extends ESIntegTestCase {
         indexInput.close();
 
         IndexSearcher searcher = newSearcher(reader);
-        assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 2.5f}, 1)));
+        assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 2.5f}, 1, "myindex")));
 
         reader.close();
         writer.close();
@@ -81,6 +93,7 @@ public class KNN80HnswIndexIT extends ESIntegTestCase {
     }
 
     public void testMultiFieldsKnnIndex() throws Exception {
+        setUpMockClusterService();
         Directory dir = newFSDirectory(createTempDir());
         IndexWriterConfig iwc = newIndexWriterConfig();
         iwc.setMergeScheduler(new SerialMergeScheduler());
@@ -121,14 +134,14 @@ public class KNN80HnswIndexIT extends ESIntegTestCase {
 
         // query to verify distance for each of the field
         IndexSearcher searcher = newSearcher(reader);
-        float score = searcher.search(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1), 10).scoreDocs[0].score;
-        float score1 = searcher.search(new KNNQuery("my_vector", new float[] {1.0f, 2.0f}, 1), 10).scoreDocs[0].score;
+        float score = searcher.search(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, "dummy"), 10).scoreDocs[0].score;
+        float score1 = searcher.search(new KNNQuery("my_vector", new float[] {1.0f, 2.0f}, 1, "dummy"), 10).scoreDocs[0].score;
         assertEquals(score, 0.1667f, 0.01f);
         assertEquals(score1, 0.0714f, 0.01f);
 
         // query to determine the hits
-        assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1)));
-        assertEquals(1, searcher.count(new KNNQuery("my_vector", new float[] {1.0f, 1.0f}, 1)));
+        assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, "dummy")));
+        assertEquals(1, searcher.count(new KNNQuery("my_vector", new float[] {1.0f, 1.0f}, 1, "dummy")));
 
         reader.close();
         writer.close();

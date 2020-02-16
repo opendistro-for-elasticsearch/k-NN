@@ -16,7 +16,6 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
-import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,8 +35,6 @@ import org.elasticsearch.common.io.PathUtils;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -100,8 +97,7 @@ public class KNNWeight extends Weight {
              */
 
             Path indexPath = PathUtils.get(directory, hnswFiles.get(0));
-
-            final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), getQueryParams(queryFieldInfo));
+            final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
             final KNNQueryResult[] results = index.queryIndex(
                     knnQuery.getQueryVector(),
                     knnQuery.getK()
@@ -126,13 +122,6 @@ public class KNNWeight extends Weight {
     @Override
     public boolean isCacheable(LeafReaderContext context) {
         return true;
-    }
-
-    private String[] getQueryParams(FieldInfo fieldInfo) {
-        if (fieldInfo.attributes().containsKey(KNNConstants.HNSW_ALGO_EF_SEARCH)) {
-            return new String[] {"efSearch=" + fieldInfo.attributes().get(KNNConstants.HNSW_ALGO_EF_SEARCH)};
-        }
-        return new String[] {};
     }
 }
 
