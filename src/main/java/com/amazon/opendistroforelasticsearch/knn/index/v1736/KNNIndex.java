@@ -33,8 +33,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class KNNIndex implements AutoCloseable {
     public static NmsLibVersion VERSION = NmsLibVersion.V1736;
+
     static {
-        System.loadLibrary(NmsLibVersion.V1736.indexLibraryVersion());
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                System.loadLibrary(NmsLibVersion.V1736.indexLibraryVersion());
+                return null;
+            }
+        });
         initLibrary();
     }
 
@@ -89,8 +95,8 @@ public class KNNIndex implements AutoCloseable {
         writeLock.lock();
         // Autocloseable documentation recommends making close idempotent. We don't expect to doubly close
         // but this will help prevent a crash in that situation.    
-        if (this.isClosed) {    
-            return; 
+        if (this.isClosed) {
+            return;
         }
         try {
             gc(this.indexPointer);
