@@ -155,6 +155,7 @@ forbiddenPatterns {
 // see https://github.com/elastic/elasticsearch/blob/323f312bbc829a63056a79ebe45adced5099f6e6/buildSrc/src/main/java/org/elasticsearch/gradle/precommit/TestingConventionsTasks.java
 // enable testingConventions check will cause errors like:  "Classes ending with [Tests] must subclass [LuceneTestCase]"
 testingConventions.enabled = false
+licenseHeaders.enabled = true
 
 apply plugin: 'nebula.ospackage'
 
