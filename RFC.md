@@ -1,15 +1,14 @@
 # K-Nearest Neighbors(KNN) Search Plugin
-
-The purpose of this document is to request the community for comments (RFC) for a new Open Distro for Elasticsearch KNN plugin and to collect feedback from the community. This RFC covers the high-level functionality of the KNN plugin and does not cover architecture and implementation details.
+The purpose of this document is to introduce a new Open Distro for Elasticsearch KNN plugin and to request comments from the community (RFC). This RFC covers only the high-level functionality of the KNN plugin and does not cover architecture and implementation details.
 
 ## Problem Statement
-Customers with similarity-based search use cases such as face search, fraud detection and recommendation systems have a need for finding K-Nearest Neighbor (KNN) using the machine learning models. The existing solutions for KNN search were inefficient and did not operate well at scale. Brute-force KNN search using CPU is very computationally intensive and generally too slow for large-scale real-time search applications.
+Customers with similarity-based search use cases like facial recognition, fraud detection and recommendation systems have a need for finding the K-Nearest Neighbor (KNN) of vectors in high dimensional space. The existing solutions for KNN search in distributed systems either do not operate well at scale or are difficult to use and integrate with current systems.
 
 ## Proposed Solution
 
-Open Distro for Elasticsearch enables you to run nearest neighbor search on billions of documents across thousands of dimensions with the same ease as running any regular Elasticsearch query. You can use aggregations and filter clauses to further refine your similarity search operations. Power use-cases include product recommendations, fraud detection, image and video search, related document search, and more.
+The ODFE KNN plugin enables you to run an Approximate K Nearest Neighbor search on billions of documents across thousands of dimensions with the added usability and reliability of Elasticsearch. You can use aggregations and filter clauses to further refine your similarity search operations. Powerful use-cases include product recommendations, fraud detection, image and video search, related document search, and more.
 
-Open Distro for Elasticsearch uses the Non-Metric Space Library (NMSLIB), a highly efficient implementation of k-NN, which has consistently out-performed most of the other solutions as per the ANN-Benchmarks published here. The solution has extended an Apache Lucene codec to introduce a separate file format for storing k-NN indices to deliver high efficiency k-NN search operations on Elasticsearch.
+The KNN Plugin uses the Non-Metric Space Library (NMSLIB), a highly efficient implementation of K-ANNS (K Approximate Nearest Neighbor Search), which has consistently out-performed most of the other solutions as per the ANN-Benchmarks published here. In order to integrate this powerful library into Elasticsearch, the KNN Plugin extends an Apache Lucene codec to introduce a separate file format for storing k-NN indices to deliver high efficiency k-NN search operations.
 
 * Essentially, the KNN feature is powered by 4 customizations to Elasticsearch:
     * [Mapper plugin](https://www.elastic.co/guide/en/elasticsearch/plugins/current/mapper.html) to support new field type, ```knn_vector``` to represent the vector fields in a document.
@@ -22,7 +21,7 @@ Open Distro for Elasticsearch uses the Non-Metric Space Library (NMSLIB), a high
 
 ####Highly scalable
 
-This plugin will enable the user to easily leverage Elasticsearch’s distributed architecture to run high-scale k-NN search operations.  Unlike many of the common k-NN solutions, this Open Distro for Elasticsearch plugin does not plan to use a brute-force approach to compute k-NN during a search operation. This approach could cause exponential degradation in performance with scale. Instead, the solution indexes the k-NN data efficiently, enabling the user to attain low latency even at high scale.
+This plugin will enable the user to easily leverage Elasticsearch’s distributed architecture to run high-scale k-NN search operations.  Unlike many of the common k-NN solutions, this plugin does not plan to use a brute-force approach to compute k-NN during a search operation. This approach causes exponential degradation in performance with scale. Instead, the solution uses approximation methods to index the k-NN data efficiently, enabling the user to attain low latency even at high scale.
 
 ####Run k-NN using familiar Elasticsearch constructs
 
@@ -34,30 +33,36 @@ k-NN functionality integrates seamlessly with other Elasticsearch features. This
 
 ## Usage
 
-KNN indices need ```KNNCodec``` to write and read hnsw indices created part of each segment for a shard. Please find below example to create knn index.
+KNN indices need the ```KNNCodec``` to read and write hnsw indices, which are created as part of each segment for a shard. Please find below example to create knn index.
 
 ### Creating K-NN index
 ``` JSON
 PUT /myindex
 {
-  "settings": {
-    "index": {
-      "codec": "KNNCodec"
+    "settings" : {
+        "index": {
+            "knn": true,
+            "knn.algo_param.m":90,
+            "knn.algo_param.ef_construction":200,
+            "knn.algo_param.ef_search":300
+        }
+    },
+    "mappings": {
+        "properties": {
+            "my_vector1": {
+                "type": "knn_vector",
+                "dimension": 2
+            },
+            "my_vector2": {
+                "type": "knn_vector",
+                "dimension": 2
+            },
+            "my_vector3": {
+                "type": "knn_vector",
+                "dimension": 2
+            }
+        }
     }
-  },
-  "mappings": {
-    "properties": {
-      "my_vector1": {
-        "type": "knn_vector"
-      },
-      "my_vector2": {
-        "type": "knn_vector"
-      },
-      "my_vector3": {
-        "type": "knn_vector"
-      }
-    }
-  }
 }
 ```
 In the above example, we are creating K-NN index with 3 ```knn_vector``` fields namely my_vector1, my_vector2, my_vector3. We could index different category of embedding into these fields and query the nearest neighbors for each field independently.
@@ -127,17 +132,17 @@ Use the new ```knn``` clause in the query DSL and specify the point of interest 
 nearest neighbors to fetch as ```k```.
 
 ``` JSON
-POST localhost:9200/myindex/_search
+POST myindex/_search
 {
- “size”: 2,
- "query": {
-  "knn": {
-   "my_vector1": {
-     "vector": [3, 4],
-     "k": 2
-   }
+  "size" : 2,
+  "query": {
+    "knn": {
+      "my_vector1": {
+        "vector": [3, 4],
+        "k": 2
+      }
+    }
   }
- }
 }
 ```
 #### Output for above query
