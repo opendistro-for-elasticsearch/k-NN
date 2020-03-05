@@ -174,12 +174,14 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
 
     @Override
     public void doXContent(XContentBuilder builder, Params params) throws IOException {
+        builder.startObject("query");
         builder.startObject(NAME);
         builder.startObject(fieldName);
 
         builder.field(VECTOR_FIELD.getPreferredName(), vector);
         builder.field(K_FIELD.getPreferredName(), k);
         printBoostAndQueryName(builder);
+        builder.endObject();
         builder.endObject();
         builder.endObject();
     }
