@@ -37,7 +37,7 @@ public class KNNESSettingsTestIT extends BaseKNNIntegTestIT {
         assertEquals("knn query failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
 
         //disable plugin
-        updateSettings(KNNSettings.KNN_PLUGIN_ENABLED, false);
+        updateClusterSettings(KNNSettings.KNN_PLUGIN_ENABLED, false);
 
         // indexing should be blocked
         Exception ex = expectThrows(ResponseException.class,
@@ -45,7 +45,7 @@ public class KNNESSettingsTestIT extends BaseKNNIntegTestIT {
         assertThat(ex.getMessage(), containsString("KNN plugin is disabled"));
 
         //enable plugin
-        updateSettings(KNNSettings.KNN_PLUGIN_ENABLED, true);
+        updateClusterSettings(KNNSettings.KNN_PLUGIN_ENABLED, true);
         addKnnDoc(INDEX_NAME, "3", FIELD_NAME, vector);
     }
 
@@ -60,14 +60,14 @@ public class KNNESSettingsTestIT extends BaseKNNIntegTestIT {
         assertEquals("knn query failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
 
         //update settings
-        updateSettings(KNNSettings.KNN_PLUGIN_ENABLED, false);
+        updateClusterSettings(KNNSettings.KNN_PLUGIN_ENABLED, false);
 
         // indexing should be blocked
         Exception ex = expectThrows(ResponseException.class,
                 () -> searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1));
         assertThat(ex.getMessage(), containsString("KNN plugin is disabled"));
         //enable plugin
-        updateSettings(KNNSettings.KNN_PLUGIN_ENABLED, true);
+        updateClusterSettings(KNNSettings.KNN_PLUGIN_ENABLED, true);
         searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
     }
 }

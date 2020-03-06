@@ -63,10 +63,10 @@ public class KNNESIT extends BaseKNNIntegTestIT {
     /**
      * Create knn index with valid index algo params
      */
-    public void testCreateIndexWithValidAlgoParams() throws Exception {
+    public void testCreateIndexWithValidAlgoParams() {
         try {
             Settings settings = Settings.builder()
-                                        .put(getKNNDefaultSettings())
+                                        .put(getKNNDefaultIndexSettings())
                                         .put("index.knn.algo_param.m", 32)
                                         .put("index.knn.algo_param.ef_construction", 400)
                                         .build();
@@ -83,7 +83,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
      */
     public void testQueryIndexWithValidQueryAlgoParams() throws IOException {
         Settings settings = Settings.builder()
-                                    .put(getKNNDefaultSettings())
+                                    .put(getKNNDefaultIndexSettings())
                                     .put("index.knn.algo_param.ef_search", 300)
                                     .build();
         createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 2));
@@ -98,7 +98,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
 
     public void testIndexingVectorValidationDifferentSizes() throws Exception {
         Settings settings = Settings.builder()
-                                    .put(getKNNDefaultSettings())
+                                    .put(getKNNDefaultIndexSettings())
                                     .build();
 
         createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 4));
@@ -129,7 +129,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
 
     public void testVectorMappingValidationNoDimension() throws Exception {
         Settings settings = Settings.builder()
-                                    .put(getKNNDefaultSettings())
+                                    .put(getKNNDefaultIndexSettings())
                                     .build();
 
         String mapping = Strings.toString(XContentFactory.jsonBuilder().startObject()
@@ -146,7 +146,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
 
     public void testVectorMappingValidationInvalidDimension() {
         Settings settings = Settings.builder()
-                .put(getKNNDefaultSettings())
+                .put(getKNNDefaultIndexSettings())
                 .build();
 
         Exception ex = expectThrows(ResponseException.class, () -> createKnnIndex(INDEX_NAME, settings,
@@ -157,7 +157,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
 
     public void testVectorMappingValidationUpdateDimension() throws Exception {
         Settings settings = Settings.builder()
-                                    .put(getKNNDefaultSettings())
+                                    .put(getKNNDefaultIndexSettings())
                                     .build();
 
         createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 4));
@@ -172,7 +172,7 @@ public class KNNESIT extends BaseKNNIntegTestIT {
      */
     public void testVectorMappingValidationMultiFieldsDifferentDimension() throws Exception {
         Settings settings = Settings.builder()
-                                    .put(getKNNDefaultSettings())
+                                    .put(getKNNDefaultIndexSettings())
                                     .build();
 
         String f4 = FIELD_NAME + "-4";
@@ -207,19 +207,21 @@ public class KNNESIT extends BaseKNNIntegTestIT {
 
     public void testInvalidIndexHnswAlgoParams() {
         Settings settings = Settings.builder()
-                .put(getKNNDefaultSettings())
+                .put(getKNNDefaultIndexSettings())
                 .put("index.knn.algo_param.m", "-1")
                 .build();
-        Exception ex = expectThrows(ResponseException.class, () -> createKnnIndex(INDEX_NAME, settings));
+        Exception ex = expectThrows(ResponseException.class, () -> createKnnIndex(INDEX_NAME, settings,
+                createKnnIndexMapping(FIELD_NAME, 2)));
         assertThat(ex.getMessage(), containsString("Failed to parse value [-1] for setting [index.knn.algo_param.m]"));
     }
 
-    public void testInvalidQueryHnswAlgoParams() throws Exception {
+    public void testInvalidQueryHnswAlgoParams() {
         Settings settings = Settings.builder()
-                                    .put(getKNNDefaultSettings())
+                                    .put(getKNNDefaultIndexSettings())
                                     .put("index.knn.algo_param.ef_search", "-1")
                                     .build();
-        Exception ex = expectThrows(ResponseException.class, () -> createKnnIndex(INDEX_NAME, settings));
+        Exception ex = expectThrows(ResponseException.class, () -> createKnnIndex(INDEX_NAME, settings,
+                createKnnIndexMapping(FIELD_NAME, 2)));
         assertThat(ex.getMessage(), containsString("Failed to parse value [-1] for setting [index.knn.algo_param.ef_search]"));
     }
 }

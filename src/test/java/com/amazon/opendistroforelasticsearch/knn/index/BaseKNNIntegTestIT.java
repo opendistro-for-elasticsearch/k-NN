@@ -36,58 +36,125 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * Basic integration test for KNN plugin
- *
- * Should have the following basic functionality:
- * 1. Create Index with KNN mapping  ## DONE
- * 2. Index Document  ## DONE
- * 3. Search Index  ## DONE
- * 4. Delete KNN index  ## DONE
- * 5. Delete KNN Document
- * 6. Call Stats API
+ * Base class for integration tests for KNN plugin. Contains several methods for testing KNN ES functionality.
  */
 public class BaseKNNIntegTestIT extends ESRestTestCase {
     public static final String INDEX_NAME = "test_index";
     public static final String FIELD_NAME = "test_field";
 
-    protected void createKnnIndex(String index, Settings settings) throws IOException {
-        createIndex(index, settings);
-    }
-
+    /**
+     * Create KNN Index with default settings
+     */
     protected void createKnnIndex(String index, String mapping) throws IOException {
-        createIndex(index, getKNNDefaultSettings());
-        makeIndexMappingRequest(index, mapping);
+        createIndex(index, getKNNDefaultIndexSettings());
+        putMappingRequest(index, mapping);
     }
 
+    /**
+     * Create KNN Index
+     */
     protected void createKnnIndex(String index, Settings settings, String mapping) throws IOException {
         createIndex(index, settings);
-        makeIndexMappingRequest(index, mapping);
+        putMappingRequest(index, mapping);
     }
 
-    protected void addKnnDoc(String index, String docId, String fieldName, Object[] vector) throws IOException {
-        makeIndexDocumentRequest(index, docId, fieldName, vector);
-    }
-
-    protected void updateKnnDoc(String index, String docId, String fieldName, Object[] vector) throws IOException {
-        makeDocumentUpdateRequest(index, docId, fieldName, vector);
-    }
-
-    protected void deleteKnnDoc(String index, String docId) throws IOException {
-        makeDocumentDeleteRequest(index, docId);
-    }
-
+    /**
+     * Run KNN Search on Index
+     */
     protected Response searchKNNIndex(String index, KNNQueryBuilder knnQueryBuilder, int resultSize) throws
             IOException {
         XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
         knnQueryBuilder.doXContent(builder, ToXContent.EMPTY_PARAMS);
         builder.endObject();
-        return makeIndexSearchRequest(index, builder, resultSize);
+
+        Request request = new Request(
+                "POST",
+                "/" + index + "/_search"
+        );
+
+        request.addParameter("size", Integer.toString(resultSize));
+        request.addParameter("explain", Boolean.toString(true));
+        request.addParameter("search_type", "query_then_fetch");
+        request.setJsonEntity(Strings.toString(builder));
+
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        return response;
     }
 
+    /**
+     * Parse the response of KNN search into a List of KNNResults
+     */
+    protected List<KNNResult> parseSearchResponse(String responseBody, String fieldName) throws IOException {
+        @SuppressWarnings("unchecked")
+        List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
+                responseBody).map().get("hits")).get("hits");
+
+        @SuppressWarnings("unchecked")
+        List<KNNResult> knnSearchResponses = hits.stream().map(hit -> {
+                    @SuppressWarnings("unchecked")
+                    Float[] vector = Arrays.stream(
+                            ((ArrayList<Float>) ((Map<String, Object>)
+                                    ((Map<String, Object>) hit).get("_source")).get(fieldName)).toArray())
+                            .map(Object::toString)
+                            .map(Float::valueOf)
+                            .toArray(Float[]::new);
+                    return new KNNResult((String) ((Map<String, Object>) hit).get("_id"), vector);
+                }
+        ).collect(Collectors.toList());
+
+        return knnSearchResponses;
+    }
+
+    /**
+     * Delete KNN index
+     */
     protected void deleteKNNIndex(String index) throws IOException {
-        makeIndexDeleteRequest(index);
+        Request request = new Request(
+                "DELETE",
+                "/" + index
+        );
+
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
 
+    /**
+     * For a given index, make a mapping request
+     */
+    protected void putMappingRequest(String index, String mapping) throws IOException {
+        // Put KNN mapping
+        Request request = new Request(
+                "PUT",
+                "/" + index + "/_mapping"
+        );
+
+        request.setJsonEntity(mapping);
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+    }
+
+    /**
+     * Utility to create a Knn Index Mapping
+     */
+    protected String createKnnIndexMapping(String fieldName, Integer dimensions) throws IOException {
+        return Strings.toString(XContentFactory.jsonBuilder().startObject()
+                .startObject("properties")
+                .startObject(fieldName)
+                .field("type", "knn_vector")
+                .field("dimension", dimensions.toString())
+                .endObject()
+                .endObject()
+                .endObject());
+    }
+
+    /**
+     * Force merge KNN index segments
+     */
     protected void forceMergeKnnIndex(String index) throws Exception {
         Request request = new Request(
                 "POST",
@@ -110,22 +177,65 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
         TimeUnit.SECONDS.sleep(5); // To make sure force merge is completed
     }
 
-    protected void putMappingRequest(String index, String mapping) throws IOException {
-        makeIndexMappingRequest(index, mapping);
+    /**
+     * Add a single KNN Doc to an index
+     */
+    protected void addKnnDoc(String index, String docId, String fieldName, Object[] vector) throws IOException {
+        Request request = new Request(
+                "POST",
+                "/" + index + "/_doc/" + docId + "?refresh=true"
+        );
+
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+                .field(fieldName, vector)
+                .endObject();
+
+        request.setJsonEntity(Strings.toString(builder));
+
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.CREATED,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
 
-    protected String createKnnIndexMapping(String fieldName, Integer dimensions) throws IOException {
-        return Strings.toString(XContentFactory.jsonBuilder().startObject()
-                .startObject("properties")
-                .startObject(fieldName)
-                .field("type", "knn_vector")
-                .field("dimension", dimensions.toString())
-                .endObject()
-                .endObject()
-                .endObject());
+    /**
+     * Update a KNN Doc with a new vector for the given fieldName
+     */
+    protected void updateKnnDoc(String index, String docId, String fieldName, Object[] vector) throws IOException {
+        Request request = new Request(
+                "POST",
+                "/" + index + "/_doc/" + docId + "?refresh=true"
+        );
+
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+                .field(fieldName, vector)
+                .endObject();
+
+        request.setJsonEntity(Strings.toString(builder));
+
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
 
-    protected void updateSettings(String settingKey, Object value) throws Exception {
+    /**
+     * Delete Knn Doc
+     */
+    protected void deleteKnnDoc(String index, String docId) throws IOException {
+        // Put KNN mapping
+        Request request = new Request(
+                "DELETE",
+                "/" + index + "/_doc/" + docId + "?refresh"
+        );
+
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+    }
+
+    /**
+     * Utility to update  settings
+     */
+    protected void updateClusterSettings(String settingKey, Object value) throws Exception {
         XContentBuilder builder = XContentFactory.jsonBuilder()
                        .startObject()
                        .startObject("persistent")
@@ -138,6 +248,20 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
         assertEquals(RestStatus.OK,  RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
 
+    /**
+     * Return default index settings for index creation
+     */
+    protected Settings getKNNDefaultIndexSettings() {
+        return Settings.builder()
+                .put("number_of_shards", 1)
+                .put("number_of_replicas", 0)
+                .put("index.knn", true)
+                .build();
+    }
+
+    /**
+     * Get Stats from KNN Plugin
+     */
     protected Response getKnnStats(List<String> nodeIds, List<String> stats) throws IOException {
         String nodePrefix = "";
         if (!nodeIds.isEmpty()) {
@@ -159,126 +283,9 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
         return response;
     }
 
-    private void makeDocumentDeleteRequest(String index, String docId) throws IOException {
-        // Put KNN mapping
-        Request request = new Request(
-                "DELETE",
-                "/" + index + "/_doc/" + docId + "?refresh"
-        );
-
-        Response response = client().performRequest(request);
-        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
-                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
-    }
-
-    private void makeIndexMappingRequest(String index, String mapping) throws IOException {
-        // Put KNN mapping
-        Request request = new Request(
-                "PUT",
-                "/" + index + "/_mapping"
-        );
-
-        request.setJsonEntity(mapping);
-        Response response = client().performRequest(request);
-        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
-                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
-    }
-
-    private void makeIndexDocumentRequest(String index, String docId, String fieldName, Object[] vector)
-            throws IOException {
-        Request request = new Request(
-                "POST",
-                "/" + index + "/_doc/" + docId + "?refresh=true"
-        );
-
-        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-                .field(fieldName, vector)
-                .endObject();
-
-        request.setJsonEntity(Strings.toString(builder));
-
-        Response response = client().performRequest(request);
-        assertEquals(request.getEndpoint() + ": failed", RestStatus.CREATED,
-                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
-    }
-
-    private void makeDocumentUpdateRequest(String index, String docId, String fieldName, Object[] vector)
-            throws IOException {
-        Request request = new Request(
-                "POST",
-                "/" + index + "/_doc/" + docId + "?refresh=true"
-        );
-
-        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-                .field(fieldName, vector)
-                .endObject();
-
-        request.setJsonEntity(Strings.toString(builder));
-
-        Response response = client().performRequest(request);
-        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
-                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
-    }
-
-    private Response makeIndexSearchRequest(String index, XContentBuilder builder, Integer resultSize) throws
-            IOException {
-        Request request = new Request(
-                "POST",
-                "/" + index + "/_search"
-        );
-
-        request.addParameter("size", resultSize.toString());
-        request.addParameter("explain", Boolean.toString(true));
-        request.addParameter("search_type", "query_then_fetch");
-        request.setJsonEntity(Strings.toString(builder));
-        Response response = client().performRequest(request);
-
-        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
-                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
-
-        return response;
-    }
-
-    private void makeIndexDeleteRequest(String index) throws IOException {
-        Request request = new Request(
-                "DELETE",
-                "/" + index
-        );
-
-        Response response = client().performRequest(request);
-        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
-                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
-    }
-
-    protected Settings getKNNDefaultSettings() {
-        return Settings.builder()
-                .put("number_of_shards", 1)
-                .put("number_of_replicas", 0)
-                .put("index.knn", true)
-                .build();
-    }
-
-    protected List<KNNResult> parseSearchResponse(String responseBody, String fieldName) throws IOException {
-        @SuppressWarnings("unchecked")
-        List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
-                responseBody).map().get("hits")).get("hits");
-
-        @SuppressWarnings("unchecked")
-        List<KNNResult> knnSearchResponses = hits.stream().map(hit -> {
-                    @SuppressWarnings("unchecked")
-                    Float[] vector = Arrays.stream(
-                            ((ArrayList<Float>) ((Map<String, Object>)
-                                    ((Map<String, Object>) hit).get("_source")).get(fieldName)).toArray())
-                            .map(Object::toString)
-                            .map(Float::valueOf)
-                            .toArray(Float[]::new);
-                    return new KNNResult((String) ((Map<String, Object>) hit).get("_id"), vector);
-                }
-        ).collect(Collectors.toList());
-
-        return knnSearchResponses;
-    }
-
+    /**
+     * Parse KNN Cluster stats from response
+     */
     protected Map<String, Object> parseClusterStatsResponse(String responseBody) throws IOException {
         Map<String, Object> responseMap = createParser(XContentType.JSON.xContent(), responseBody).map();
         responseMap.remove("cluster_name");
@@ -287,12 +294,14 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
         return responseMap;
     }
 
+    /**
+     * Parse KNN Node stats from response
+     */
     protected List<Map<String, Object>> parseNodeStatsResponse(String responseBody) throws IOException {
         @SuppressWarnings("unchecked")
         Map<String, Object> responseMap = (Map<String, Object>)createParser(XContentType.JSON.xContent(),
                 responseBody).map().get("nodes");
 
-        // The key associated with the node that made the request
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> nodeResponses = responseMap.keySet().stream().map(key ->
             (Map<String, Object>) responseMap.get(key)
