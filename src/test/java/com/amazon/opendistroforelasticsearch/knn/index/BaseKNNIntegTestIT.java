@@ -15,6 +15,10 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import org.apache.http.util.EntityUtils;
+import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
+import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.common.Strings;
@@ -22,10 +26,18 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.test.rest.ESRestTestCase;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Basic integration test for KNN plugin
@@ -39,6 +51,8 @@ import java.io.IOException;
  * 6. Call Stats API
  */
 public class BaseKNNIntegTestIT extends ESRestTestCase {
+    public static final String INDEX_NAME = "test_index";
+    public static final String FIELD_NAME = "test_field";
 
     protected void createKnnIndex(String index, Settings settings) throws IOException {
         createIndex(index, settings);
@@ -78,6 +92,28 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
         makeIndexDeleteRequest(index);
     }
 
+    protected void forceMergeKnnIndex(String index) throws Exception {
+        Request request = new Request(
+                "POST",
+                "/" + index + "/_refresh"
+        );
+
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        request = new Request(
+                "POST",
+                "/" + index + "/_forcemerge"
+        );
+
+        request.addParameter("max_num_segments", "1");
+        request.addParameter("flush", "true");
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+        TimeUnit.SECONDS.sleep(5); // To make sure force merge is completed
+    }
+
     protected void putMappingRequest(String index, String mapping) throws IOException {
         makeIndexMappingRequest(index, mapping);
     }
@@ -93,11 +129,24 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
                 .endObject());
     }
 
+    protected void updateSettings(String settingKey, Object value) throws Exception {
+        XContentBuilder builder = XContentFactory.jsonBuilder()
+                       .startObject()
+                       .startObject("persistent")
+                       .field(settingKey, value)
+                       .endObject()
+                       .endObject();
+        Request request = new Request("PUT", "_cluster/settings");
+        request.setJsonEntity(Strings.toString(builder));
+        Response response = client().performRequest(request);
+        assertEquals(RestStatus.OK,  RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+    }
+
     private void makeDocumentDeleteRequest(String index, String docId) throws IOException {
         // Put KNN mapping
         Request request = new Request(
                 "DELETE",
-                "/" + index + "/_doc/" + docId
+                "/" + index + "/_doc/" + docId + "?refresh"
         );
 
         Response response = client().performRequest(request);
@@ -190,5 +239,28 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
                 .put("number_of_replicas", 0)
                 .put("index.knn", true)
                 .build();
+    }
+
+    protected List<KNNResult> parseSearchResponse(Response response, String fieldName) throws IOException {
+        String responseBody = EntityUtils.toString(response.getEntity());
+
+        @SuppressWarnings("unchecked")
+        List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
+                responseBody).map().get("hits")).get("hits");
+
+        @SuppressWarnings("unchecked")
+        List<KNNResult> knnSearchResponses = hits.stream().map(hit -> {
+                    @SuppressWarnings("unchecked")
+                    Float[] vector = Arrays.stream(
+                            ((ArrayList<Float>) ((Map<String, Object>)
+                                    ((Map<String, Object>) hit).get("_source")).get(fieldName)).toArray())
+                            .map(Object::toString)
+                            .map(Float::valueOf)
+                            .toArray(Float[]::new);
+                    return new KNNResult((String) ((Map<String, Object>) hit).get("_id"), vector);
+                }
+        ).collect(Collectors.toList());
+
+        return knnSearchResponses;
     }
 }

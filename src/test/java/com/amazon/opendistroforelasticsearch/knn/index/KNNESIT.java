@@ -20,16 +20,12 @@ import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.mapper.MapperParsingException;
 
 import java.io.IOException;
 
 import static org.hamcrest.Matchers.containsString;
 
 public class KNNESIT extends BaseKNNIntegTestIT {
-    public static final String INDEX_NAME = "test_index";
-    public static final String FIELD_NAME = "test_field";
-
     /**
      * Able to add docs to KNN index
      */
