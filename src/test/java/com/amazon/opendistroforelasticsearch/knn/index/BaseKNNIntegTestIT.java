@@ -15,10 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import org.apache.http.util.EntityUtils;
-import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
-import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.common.Strings;
@@ -28,7 +25,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.test.rest.ESRestTestCase;
 
 import java.io.IOException;
@@ -142,6 +138,27 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
         assertEquals(RestStatus.OK,  RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
 
+    protected Response getKnnStats(List<String> nodeIds, List<String> stats) throws IOException {
+        String nodePrefix = "";
+        if (!nodeIds.isEmpty()) {
+            nodePrefix = "/" + String.join(",", nodeIds);
+        }
+
+        String statsSuffix = "";
+        if (!stats.isEmpty()) {
+            statsSuffix = "/" + String.join(",", stats);
+        }
+
+        Request request = new Request(
+                "GET",
+                KNNPlugin.KNN_BASE_URI + nodePrefix + "/stats" + statsSuffix
+        );
+
+        Response response = client().performRequest(request);
+        assertEquals(RestStatus.OK,  RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+        return response;
+    }
+
     private void makeDocumentDeleteRequest(String index, String docId) throws IOException {
         // Put KNN mapping
         Request request = new Request(
@@ -241,9 +258,7 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
                 .build();
     }
 
-    protected List<KNNResult> parseSearchResponse(Response response, String fieldName) throws IOException {
-        String responseBody = EntityUtils.toString(response.getEntity());
-
+    protected List<KNNResult> parseSearchResponse(String responseBody, String fieldName) throws IOException {
         @SuppressWarnings("unchecked")
         List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
                 responseBody).map().get("hits")).get("hits");
@@ -262,5 +277,27 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
         ).collect(Collectors.toList());
 
         return knnSearchResponses;
+    }
+
+    protected Map<String, Object> parseClusterStatsResponse(String responseBody) throws IOException {
+        Map<String, Object> responseMap = createParser(XContentType.JSON.xContent(), responseBody).map();
+        responseMap.remove("cluster_name");
+        responseMap.remove("_nodes");
+        responseMap.remove("nodes");
+        return responseMap;
+    }
+
+    protected List<Map<String, Object>> parseNodeStatsResponse(String responseBody) throws IOException {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> responseMap = (Map<String, Object>)createParser(XContentType.JSON.xContent(),
+                responseBody).map().get("nodes");
+
+        // The key associated with the node that made the request
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> nodeResponses = responseMap.keySet().stream().map(key ->
+            (Map<String, Object>) responseMap.get(key)
+        ).collect(Collectors.toList());
+
+        return nodeResponses;
     }
 }

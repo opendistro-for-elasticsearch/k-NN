@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.Response;
@@ -56,7 +57,7 @@ public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
         KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
 
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
-        List<KNNResult> results = parseSearchResponse(response, FIELD_NAME);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
 
         assertEquals(k, results.size());
         for(KNNResult result : results) {
@@ -76,7 +77,7 @@ public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
         KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
 
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
-        List<KNNResult> results = parseSearchResponse(response, FIELD_NAME);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
         List<String> expectedDocids = Arrays.asList("2", "4", "3");
 
         List<String> actualDocids = new ArrayList<>();
@@ -97,7 +98,7 @@ public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
 
         KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
-        List<KNNResult> results = parseSearchResponse(response, FIELD_NAME);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
 
         assertEquals(results.size(), k);
         for(KNNResult result : results) {
@@ -110,7 +111,7 @@ public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
         Float[] newVector  = {6.0f, 6.0f};
         addKnnDoc(INDEX_NAME, "6", FIELD_NAME, newVector);
         response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
-        results = parseSearchResponse(response, FIELD_NAME);
+        results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
 
         assertEquals(results.size(), k);
         for(KNNResult result : results) {
@@ -124,7 +125,7 @@ public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
         Float[] newVector1  = {0.5f, 0.5f};
         addKnnDoc(INDEX_NAME, "7", FIELD_NAME, newVector1);
         response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
-        results = parseSearchResponse(response, FIELD_NAME);
+        results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
 
         assertEquals(results.size(), k);
         for(KNNResult result : results) {
@@ -141,7 +142,7 @@ public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
 
         KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
-        List<KNNResult> results = parseSearchResponse(response, FIELD_NAME);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
 
         assertEquals(results.size(), k);
         for(KNNResult result : results) {
@@ -154,7 +155,7 @@ public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
         Float[] updatedVector  = {0.1f, 0.1f};
         updateKnnDoc(INDEX_NAME, "3", FIELD_NAME, updatedVector);
         response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
-        results = parseSearchResponse(response, FIELD_NAME);
+        results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
         assertEquals(results.size(), k);
         for(KNNResult result : results) {
             assertEquals("3", result.getDocId()); //Vector of DocId 3 is closest to the query
@@ -169,7 +170,7 @@ public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
         int k = 1; //  nearest 1 neighbor
         KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
-        List<KNNResult> results = parseSearchResponse(response, FIELD_NAME);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
 
         assertEquals(results.size(), k);
         for(KNNResult result : results) {
@@ -184,7 +185,7 @@ public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
 
         knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k+1);
         response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
-        results = parseSearchResponse(response, FIELD_NAME);
+        results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
 
         assertEquals(results.size(), k);
         for(KNNResult result : results) {
@@ -203,7 +204,7 @@ public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
     /**
      *  For zero K, query builder should throw Exception
      */
-    public void testZeroK() throws Exception {
+    public void testZeroK() {
         float[] vector = {1.0f, 2.0f};
         expectThrows(IllegalArgumentException.class, () -> new KNNQueryBuilder(FIELD_NAME, vector, 0));
     }
@@ -220,7 +221,7 @@ public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
 
         KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
-        List<KNNResult> results = parseSearchResponse(response, FIELD_NAME);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
         assertEquals(results.size(), 4);
     }
 }
