@@ -71,6 +71,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStatsConfig.KNN_STATS;
 import static java.util.Collections.singletonList;
 
 /**
@@ -127,29 +128,7 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
         KNNIndexCache.setResourceWatcherService(resourceWatcherService);
         KNNSettings.state().initialize(client, clusterService);
         KNNCircuitBreaker.getInstance().initialize(threadPool, clusterService, client);
-
-        Map<String, KNNStat<?>> stats = ImmutableMap.<String, KNNStat<?>>builder()
-                .put(StatNames.HIT_COUNT.getName(), new KNNStat<>(false,
-                        new KNNInnerCacheStatsSupplier(CacheStats::hitCount)))
-                .put(StatNames.MISS_COUNT.getName(), new KNNStat<>(false,
-                        new KNNInnerCacheStatsSupplier(CacheStats::missCount)))
-                .put(StatNames.LOAD_SUCCESS_COUNT.getName(), new KNNStat<>(false,
-                        new KNNInnerCacheStatsSupplier(CacheStats::loadSuccessCount)))
-                .put(StatNames.LOAD_EXCEPTION_COUNT.getName(), new KNNStat<>(false,
-                        new KNNInnerCacheStatsSupplier(CacheStats::loadExceptionCount)))
-                .put(StatNames.TOTAL_LOAD_TIME.getName(), new KNNStat<>(false,
-                        new KNNInnerCacheStatsSupplier(CacheStats::totalLoadTime)))
-                .put(StatNames.EVICTION_COUNT.getName(), new KNNStat<>(false,
-                        new KNNInnerCacheStatsSupplier(CacheStats::evictionCount)))
-                .put(StatNames.GRAPH_MEMORY_USAGE.getName(), new KNNStat<>(false,
-                        new KNNCacheSupplier<>(KNNIndexCache::getWeightInKilobytes)))
-                .put(StatNames.CACHE_CAPACITY_REACHED.getName(), new KNNStat<>(false,
-                        new KNNCacheSupplier<>(KNNIndexCache::isCacheCapacityReached)))
-                .put(StatNames.CIRCUIT_BREAKER_TRIGGERED.getName(), new KNNStat<>(true,
-                        new KNNCircuitBreakerSupplier())).build();
-
-        knnStats = new KNNStats(stats);
-
+        knnStats = new KNNStats(KNN_STATS);
         return ImmutableList.of(knnStats);
     }
 
