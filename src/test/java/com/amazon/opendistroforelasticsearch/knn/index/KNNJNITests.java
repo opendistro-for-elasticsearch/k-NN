@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.FilterDirectory;
-import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.test.ESTestCase;
 
 import java.nio.file.Paths;
 import java.security.AccessController;
@@ -31,8 +31,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class KNNJNIIT extends ESIntegTestCase {
-    private static final Logger logger = LogManager.getLogger(KNNJNIIT.class);
+public class KNNJNITests extends ESTestCase {
+    private static final Logger logger = LogManager.getLogger(KNNJNITests.class);
 
     public void testCreateHnswIndex() throws Exception {
         int[] docs = {0, 1, 2};
