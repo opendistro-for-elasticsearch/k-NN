@@ -57,7 +57,7 @@ public class KNNCircuitBreakerIT extends BaseKNNIntegTestIT {
         int k = 10;
         searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
 
-        // assert that Cb get triggered
+        // Assert that Cb get triggered
         assertTrue(isCbTripped());
     }
 
@@ -75,6 +75,7 @@ public class KNNCircuitBreakerIT extends BaseKNNIntegTestIT {
 
     public void testCbUntrips() throws Exception {
         updateClusterSettings("knn.circuit_breaker.triggered", "true");
+        //TODO: Attempt to find a better way to trigger runnable than waiting 2 minutes for it to finish
         Thread.sleep(CB_TIME_INTERVAL*1000);
         assertFalse(isCbTripped());
     }
