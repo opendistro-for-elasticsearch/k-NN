@@ -61,8 +61,11 @@ allprojects {
 }
 
 apply plugin: 'elasticsearch.esplugin'
+apply plugin: 'idea'
 apply plugin: 'jacoco'
-apply from: 'build-tools/knnplugin-coverage.gradle'
+if (!System.properties.containsKey('tests.rest.cluster') && !System.properties.containsKey('tests.cluster')) {
+    apply from: 'build-tools/knnplugin-coverage.gradle'
+}
 
 jacoco {
     toolVersion = "0.8.3"
@@ -108,6 +111,7 @@ es_tmp_dir.mkdirs()
 
 test {
     systemProperty 'tests.security.manager', 'false'
+    systemProperty "java.library.path", "$rootDir/buildSrc"
 }
 
 integTestRunner {
