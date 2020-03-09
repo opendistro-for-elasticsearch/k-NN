@@ -29,7 +29,7 @@ import static com.amazon.opendistroforelasticsearch.knn.index.KNNCircuitBreaker.
  */
 public class KNNCircuitBreakerIT extends BaseKNNIntegTestIT {
     /**
-     * Utility function that sets the cb limit low enough that ingesting a couple hundred documents trips it
+     * Utility function that sets the cb limit low enough that ingesting 20 documents trips it
      */
     private void tripCb() throws Exception {
         // Make sure that Cb is intially not tripped
