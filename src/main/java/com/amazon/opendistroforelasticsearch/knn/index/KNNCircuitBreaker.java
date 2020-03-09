@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStatsConfig;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsAction;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsNodeResponse;
@@ -35,6 +36,7 @@ import java.util.List;
  */
 public class KNNCircuitBreaker {
     private static Logger logger = LogManager.getLogger(KNNCircuitBreaker.class);
+    public static int CB_TIME_INTERVAL = 2*60;
 
     private static KNNCircuitBreaker INSTANCE;
     private ThreadPool threadPool;
@@ -79,7 +81,7 @@ public class KNNCircuitBreaker {
 
             // Master node untriggers CB if all nodes have not reached their max capacity
             if (KNNSettings.isCircuitBreakerTriggered() && clusterService.state().nodes().isLocalNodeElectedMaster()) {
-                KNNStatsRequest knnStatsRequest = new KNNStatsRequest();
+                KNNStatsRequest knnStatsRequest = new KNNStatsRequest(KNNStatsConfig.KNN_STATS.keySet());
                 knnStatsRequest.addStat(StatNames.CACHE_CAPACITY_REACHED.getName());
                 knnStatsRequest.timeout(new TimeValue(1000*10)); // 10 second timeout
 
@@ -107,6 +109,6 @@ public class KNNCircuitBreaker {
                 }
             }
         };
-        this.threadPool.scheduleWithFixedDelay(runnable, TimeValue.timeValueSeconds(60*2), ThreadPool.Names.GENERIC);
+        this.threadPool.scheduleWithFixedDelay(runnable, TimeValue.timeValueSeconds(CB_TIME_INTERVAL), ThreadPool.Names.GENERIC);
     }
 }
