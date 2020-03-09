@@ -63,9 +63,9 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
      */
     protected Response searchKNNIndex(String index, KNNQueryBuilder knnQueryBuilder, int resultSize) throws
             IOException {
-        XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject().startObject("query");
         knnQueryBuilder.doXContent(builder, ToXContent.EMPTY_PARAMS);
-        builder.endObject();
+        builder.endObject().endObject();
 
         Request request = new Request(
                 "POST",
