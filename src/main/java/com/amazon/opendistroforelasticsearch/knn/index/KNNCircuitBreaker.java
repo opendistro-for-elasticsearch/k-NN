@@ -36,7 +36,7 @@ import java.util.List;
  */
 public class KNNCircuitBreaker {
     private static Logger logger = LogManager.getLogger(KNNCircuitBreaker.class);
-    public static int CB_TIME_INTERVAL = 2*60;
+    public static int CB_TIME_INTERVAL = 2*60; // seconds
 
     private static KNNCircuitBreaker INSTANCE;
     private ThreadPool threadPool;
