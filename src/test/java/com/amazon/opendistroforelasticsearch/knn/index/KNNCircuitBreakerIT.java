@@ -16,13 +16,10 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import org.apache.http.util.EntityUtils;
-import org.elasticsearch.action.bulk.BackoffPolicy;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNCircuitBreaker.CB_TIME_INTERVAL;
@@ -78,20 +75,14 @@ public class KNNCircuitBreakerIT extends BaseKNNIntegTestIT {
 
     public void testCbUntrips() throws Exception {
         updateClusterSettings("knn.circuit_breaker.triggered", "true");
-        //TODO: Attempt to find a better way to trigger runnable than waiting 2 minutes for it to finish
-        Thread.sleep(CB_TIME_INTERVAL*1000);
-        assertFalse(isCbTripped());
+        assertTrue(isCbTripped());
 
         int backOffInterval = 5; // seconds
-        BackoffPolicy backoffPolicy = BackoffPolicy.constantBackoff(new TimeValue(backOffInterval*1000),
-                (CB_TIME_INTERVAL + backOffInterval)/backOffInterval);
-        Iterator<TimeValue> iterator = backoffPolicy.iterator();
-
-        while (iterator.hasNext()) {
+        for (int i = 0; i < CB_TIME_INTERVAL; i+=backOffInterval) {
             if (!isCbTripped()) {
                 break;
             }
-            iterator.next();
+            Thread.sleep(backOffInterval*1000);
         }
         assertFalse(isCbTripped());
     }
