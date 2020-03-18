@@ -13,8 +13,9 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.codec;
+package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
+import com.amazon.opendistroforelasticsearch.knn.index.codec.BinaryDocValuesSub;
 import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.DocIDMerger;
 import org.apache.lucene.util.BytesRef;

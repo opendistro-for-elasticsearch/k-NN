@@ -13,7 +13,7 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.codec;
+package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN84Codec;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,22 +25,23 @@ import org.apache.lucene.index.SegmentWriteState;
 
 import java.io.IOException;
 
-import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.LUCENE_DOC_VALUES_FORMAT;
+import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN84Codec.KNN84Codec.LUCENE_DOC_VALUES_FORMAT;
+
 
 /**
  * Encodes/Decodes per document values
  */
-class KNN80DocValuesFormat extends DocValuesFormat {
-    private final Logger logger = LogManager.getLogger(KNN80DocValuesFormat.class);
+class KNN84DocValuesFormat extends DocValuesFormat {
+    private final Logger logger = LogManager.getLogger(KNN84DocValuesFormat.class);
     private final DocValuesFormat delegate = DocValuesFormat.forName(LUCENE_DOC_VALUES_FORMAT);
 
-    KNN80DocValuesFormat() {
+    KNN84DocValuesFormat() {
         super(LUCENE_DOC_VALUES_FORMAT);
     }
 
     @Override
     public DocValuesConsumer fieldsConsumer(SegmentWriteState state) throws IOException {
-        return new KNN80DocValuesConsumer(delegate.fieldsConsumer(state), state);
+        return new KNN84DocValuesConsumer(delegate.fieldsConsumer(state), state);
     }
 
     @Override

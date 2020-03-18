@@ -13,8 +13,9 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.codec;
+package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN84Codec;
 
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.codecs.Codec;
@@ -42,40 +43,40 @@ import java.util.ArrayList;
  * based on the mappings.
  *
  */
-public final class KNN80Codec extends Codec {
+public final class KNN84Codec extends Codec {
 
-    private static final Logger logger = LogManager.getLogger(KNN80Codec.class);
+    private static final Logger logger = LogManager.getLogger(KNN84Codec.class);
     private final DocValuesFormat docValuesFormat;
     private final DocValuesFormat perFieldDocValuesFormat;
     private final CompoundFormat compoundFormat;
-    private Codec lucene80Codec;
+    private Codec lucene84Codec;
 
-    public static final String CODEC_NAME = "KNN80Codec";
+    public static final String CODEC_NAME = "KNN84Codec";
     public static final String LUCENE_CODEC = "Lucene84"; // Lucene Codec to be used
     // Lucene version for the Codecs Doc Value Format. Note that this is not always the same as LUCENE_CODEC. Sometimes
     // a Codec version will use an earlier Codec version's Doc Value Format. For instance Lucene 84 uses Lucene 80
     // for its Doc Value Format. Refer to defaultDVFormat in LuceneXXCodec.java to find out which version it uses
     public static final String LUCENE_DOC_VALUES_FORMAT = "Lucene80";
 
-    public KNN80Codec() {
+    public KNN84Codec() {
         super(CODEC_NAME);
-        this.docValuesFormat = new KNN80DocValuesFormat();
+        this.docValuesFormat = new KNN84DocValuesFormat();
         this.perFieldDocValuesFormat = new PerFieldDocValuesFormat() {
             @Override
             public DocValuesFormat getDocValuesFormatForField(String field) {
                 return docValuesFormat;
             }
         };
-        this.compoundFormat = new KNN80CompoundFormat();
+        this.compoundFormat = new KNN84CompoundFormat();
     }
 
     /*
-     * This function returns the Lucene80 Codec.
+     * This function returns the Lucene84 Codec.
      */
     public Codec getDelegatee() {
-        if (lucene80Codec == null)
-            lucene80Codec = Codec.forName(LUCENE_CODEC);
-        return lucene80Codec;
+        if (lucene84Codec == null)
+            lucene84Codec = Codec.forName(LUCENE_CODEC);
+        return lucene84Codec;
     }
 
     @Override

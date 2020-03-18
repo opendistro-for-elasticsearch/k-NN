@@ -13,9 +13,13 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index;
+package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
-import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
+import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache;
+import com.amazon.opendistroforelasticsearch.knn.index.KNNQuery;
+import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
+import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
+import com.amazon.opendistroforelasticsearch.knn.index.VectorField;
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.document.Document;
@@ -44,7 +48,7 @@ import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class KNN80HnswIndexTests extends ESTestCase {
+public class  KNN80HnswIndexTests extends ESTestCase {
 
     private void setUpMockClusterService() {
         ClusterService clusterService = mock(ClusterService.class, RETURNS_DEEP_STUBS);
