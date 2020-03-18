@@ -51,7 +51,7 @@ public final class KNN80Codec extends Codec {
     private Codec lucene80Codec;
 
     public static final String CODEC_NAME = "KNN80Codec";
-    public static final String LUCENE_CODEC = "Lucene81";
+    public static final String LUCENE_CODEC = "Lucene84";
 
     public KNN80Codec() {
         super(CODEC_NAME);
