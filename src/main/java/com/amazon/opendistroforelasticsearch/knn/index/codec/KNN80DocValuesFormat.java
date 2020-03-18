@@ -25,15 +25,17 @@ import org.apache.lucene.index.SegmentWriteState;
 
 import java.io.IOException;
 
+import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.LUCENE_DOC_VALUES_FORMAT;
+
 /**
  * Encodes/Decodes per document values
  */
 class KNN80DocValuesFormat extends DocValuesFormat {
     private final Logger logger = LogManager.getLogger(KNN80DocValuesFormat.class);
-    private final DocValuesFormat delegate = DocValuesFormat.forName(KNN80Codec.LUCENE_CODEC);
+    private final DocValuesFormat delegate = DocValuesFormat.forName(LUCENE_DOC_VALUES_FORMAT);
 
     KNN80DocValuesFormat() {
-        super(KNN80Codec.LUCENE_CODEC);
+        super(LUCENE_DOC_VALUES_FORMAT);
     }
 
     @Override

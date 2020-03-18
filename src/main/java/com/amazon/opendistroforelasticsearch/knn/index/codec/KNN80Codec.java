@@ -51,7 +51,11 @@ public final class KNN80Codec extends Codec {
     private Codec lucene80Codec;
 
     public static final String CODEC_NAME = "KNN80Codec";
-    public static final String LUCENE_CODEC = "Lucene84";
+    public static final String LUCENE_CODEC = "Lucene84"; // Lucene Codec to be used
+    // Lucene version for the Codecs Doc Value Format. Note that this is not always the same as LUCENE_CODEC. Sometimes
+    // a Codec version will use an earlier Codec version's Doc Value Format. For instance Lucene 84 uses Lucene 80
+    // for its Doc Value Format. Refer to defaultDVFormat in LuceneXXCodec.java to find out which version it uses
+    public static final String LUCENE_DOC_VALUES_FORMAT = "Lucene80";
 
     public KNN80Codec() {
         super(CODEC_NAME);
