@@ -38,7 +38,7 @@ class KNNCodecService extends CodecService {
      */
     @Override
     public Codec codec(String name) {
-        Codec codec = Codec.forName(KNN84Codec.CODEC_NAME);
+        Codec codec = Codec.forName(KNN84Codec.KNN_84_CODEC_NAME);
         if (codec == null) {
             throw new IllegalArgumentException("failed to find codec [" + name + "]");
         }

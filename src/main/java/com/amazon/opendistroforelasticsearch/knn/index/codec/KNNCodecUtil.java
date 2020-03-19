@@ -16,6 +16,14 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.codec;
 
+import org.apache.lucene.index.BinaryDocValues;
+import org.apache.lucene.search.DocIdSetIterator;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.util.ArrayList;
+
 public class KNNCodecUtil {
 
     public static final String HNSW_EXTENSION = ".hnsw";
@@ -29,5 +37,23 @@ public class KNNCodecUtil {
 
         public int[] docs;
         public float[][] vectors;
+    }
+
+    public static KNNCodecUtil.Pair getFloats(BinaryDocValues values) throws IOException {
+        ArrayList<float[]> vectorList = new ArrayList<>();
+        ArrayList<Integer> docIdList = new ArrayList<>();
+        for (int doc = values.nextDoc(); doc != DocIdSetIterator.NO_MORE_DOCS; doc = values.nextDoc()) {
+            byte[] value = values.binaryValue().bytes;
+
+            try (ByteArrayInputStream byteStream = new ByteArrayInputStream(value);
+                 ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
+                float[] vector = (float[]) objectStream.readObject();
+                vectorList.add(vector);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            docIdList.add(doc);
+        }
+        return new KNNCodecUtil.Pair(docIdList.stream().mapToInt(Integer::intValue).toArray(), vectorList.toArray(new float[][]{}));
     }
 }

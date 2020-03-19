@@ -15,7 +15,8 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN84Codec;
 
-import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.KNN80CompoundFormat;
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.KNN80DocValuesFormat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.codecs.Codec;
@@ -30,13 +31,6 @@ import org.apache.lucene.codecs.SegmentInfoFormat;
 import org.apache.lucene.codecs.StoredFieldsFormat;
 import org.apache.lucene.codecs.TermVectorsFormat;
 import org.apache.lucene.codecs.perfield.PerFieldDocValuesFormat;
-import org.apache.lucene.index.BinaryDocValues;
-import org.apache.lucene.search.DocIdSetIterator;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.util.ArrayList;
 
 /**
  * Extends the Codec to support a new file format for KNN index
@@ -51,23 +45,19 @@ public final class KNN84Codec extends Codec {
     private final CompoundFormat compoundFormat;
     private Codec lucene84Codec;
 
-    public static final String CODEC_NAME = "KNN84Codec";
+    public static final String KNN_84_CODEC_NAME = "KNN84Codec";
     public static final String LUCENE_CODEC = "Lucene84"; // Lucene Codec to be used
-    // Lucene version for the Codecs Doc Value Format. Note that this is not always the same as LUCENE_CODEC. Sometimes
-    // a Codec version will use an earlier Codec version's Doc Value Format. For instance Lucene 84 uses Lucene 80
-    // for its Doc Value Format. Refer to defaultDVFormat in LuceneXXCodec.java to find out which version it uses
-    public static final String LUCENE_DOC_VALUES_FORMAT = "Lucene80";
 
     public KNN84Codec() {
-        super(CODEC_NAME);
-        this.docValuesFormat = new KNN84DocValuesFormat();
+        super(KNN_84_CODEC_NAME);
+        this.docValuesFormat =  new KNN80DocValuesFormat();
         this.perFieldDocValuesFormat = new PerFieldDocValuesFormat() {
             @Override
             public DocValuesFormat getDocValuesFormatForField(String field) {
                 return docValuesFormat;
             }
         };
-        this.compoundFormat = new KNN84CompoundFormat();
+        this.compoundFormat = new KNN80CompoundFormat();
     }
 
     /*
@@ -133,23 +123,5 @@ public final class KNN84Codec extends Codec {
     @Override
     public PointsFormat pointsFormat() {
         return getDelegatee().pointsFormat();
-    }
-
-    public static KNNCodecUtil.Pair getFloats(BinaryDocValues values) throws IOException {
-        ArrayList<float[]> vectorList = new ArrayList<>();
-        ArrayList<Integer> docIdList = new ArrayList<>();
-        for (int doc = values.nextDoc(); doc != DocIdSetIterator.NO_MORE_DOCS; doc = values.nextDoc()) {
-            byte[] value = values.binaryValue().bytes;
-
-            try (ByteArrayInputStream byteStream = new ByteArrayInputStream(value);
-                 ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
-                float[] vector = (float[]) objectStream.readObject();
-                vectorList.add(vector);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            docIdList.add(doc);
-        }
-        return new KNNCodecUtil.Pair(docIdList.stream().mapToInt(Integer::intValue).toArray(), vectorList.toArray(new float[][]{}));
     }
 }

@@ -1,2 +1,2 @@
-com.amazon.opendistroforelasticsearch.knn.index.codec.KNN84Codec.KNN84Codec
 com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.KNN80Codec
+com.amazon.opendistroforelasticsearch.knn.index.codec.KNN84Codec.KNN84Codec

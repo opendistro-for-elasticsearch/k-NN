@@ -36,7 +36,7 @@ public class KNN80CompoundFormat extends CompoundFormat {
 
     private final Logger logger = LogManager.getLogger(KNN80CompoundFormat.class);
 
-    KNN80CompoundFormat() {
+    public KNN80CompoundFormat() {
     }
 
     @Override

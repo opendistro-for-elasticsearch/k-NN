@@ -48,7 +48,7 @@ public class KNNCircuitBreakerIT extends BaseKNNIntegTestIT {
 
         // Index 20 dummy documents
         Float[] vector = {1.3f, 2.2f};
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 3; i++) {
             addKnnDoc(INDEX_NAME, Integer.toString(i), FIELD_NAME, vector);
         }
 
@@ -66,7 +66,7 @@ public class KNNCircuitBreakerIT extends BaseKNNIntegTestIT {
                 Collections.singletonList("circuit_breaker_triggered"));
         String responseBody = EntityUtils.toString(response.getEntity());
         Map<String, Object> clusterStats = parseClusterStatsResponse(responseBody);
-        return (Boolean) clusterStats.get("circuit_breaker_triggered");
+        return Boolean.parseBoolean(clusterStats.get("circuit_breaker_triggered").toString());
     }
 
     public void testCbTripped() throws Exception {

@@ -30,11 +30,11 @@ import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.K
 /**
  * Encodes/Decodes per document values
  */
-class KNN80DocValuesFormat extends DocValuesFormat {
+public class KNN80DocValuesFormat extends DocValuesFormat {
     private final Logger logger = LogManager.getLogger(KNN80DocValuesFormat.class);
     private final DocValuesFormat delegate = DocValuesFormat.forName(LUCENE_DOC_VALUES_FORMAT);
 
-    KNN80DocValuesFormat() {
+    public KNN80DocValuesFormat() {
         super(LUCENE_DOC_VALUES_FORMAT);
     }
 
