@@ -25,26 +25,34 @@ import org.apache.lucene.index.SegmentWriteState;
 
 import java.io.IOException;
 
-import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.KNN80Codec.LUCENE_DOC_VALUES_FORMAT;
+import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.KNN80Codec.KNN_80;
 
 /**
  * Encodes/Decodes per document values
  */
 public class KNN80DocValuesFormat extends DocValuesFormat {
     private final Logger logger = LogManager.getLogger(KNN80DocValuesFormat.class);
-    private final DocValuesFormat delegate = DocValuesFormat.forName(LUCENE_DOC_VALUES_FORMAT);
+    private DocValuesFormat lucene80DocValuesFormat;
+    public static final String LUCENE_80 = "Lucene80";
 
-    public KNN80DocValuesFormat() {
-        super(LUCENE_DOC_VALUES_FORMAT);
+    public KNN80DocValuesFormat() { super(KNN_80); }
+
+    /*
+     * This function returns the Lucene84 Codec.
+     */
+    public DocValuesFormat getDelegatee() {
+        if (lucene80DocValuesFormat == null)
+            lucene80DocValuesFormat = DocValuesFormat.forName(LUCENE_80);
+        return lucene80DocValuesFormat;
     }
 
     @Override
     public DocValuesConsumer fieldsConsumer(SegmentWriteState state) throws IOException {
-        return new KNN80DocValuesConsumer(delegate.fieldsConsumer(state), state);
+        return new KNN80DocValuesConsumer(getDelegatee().fieldsConsumer(state), state);
     }
 
     @Override
     public DocValuesProducer fieldsProducer(SegmentReadState state) throws IOException {
-        return delegate.fieldsProducer(state);
+        return getDelegatee().fieldsProducer(state);
     }
 }
