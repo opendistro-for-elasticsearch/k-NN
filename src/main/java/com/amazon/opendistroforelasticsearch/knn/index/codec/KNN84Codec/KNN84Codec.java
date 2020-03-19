@@ -45,11 +45,13 @@ public final class KNN84Codec extends Codec {
     private final CompoundFormat compoundFormat;
     private Codec lucene84Codec;
 
-    public static final String KNN_84_CODEC_NAME = "KNN84Codec";
-    public static final String LUCENE_CODEC = "Lucene84"; // Lucene Codec to be used
+    public static final String KNN_84 = "KNN84";
+    public static final String LUCENE_84 = "Lucene84"; // Lucene Codec to be used
 
     public KNN84Codec() {
-        super(KNN_84_CODEC_NAME);
+        super(KNN_84);
+        // Note that DocValuesFormat can use old Codec's DocValuesFormat. For instance Lucene84 uses Lucene80
+        // DocValuesFormat. Refer to defaultDVFormat in LuceneXXCodec.java to find out which version it uses
         this.docValuesFormat =  new KNN80DocValuesFormat();
         this.perFieldDocValuesFormat = new PerFieldDocValuesFormat() {
             @Override
@@ -65,7 +67,7 @@ public final class KNN84Codec extends Codec {
      */
     public Codec getDelegatee() {
         if (lucene84Codec == null)
-            lucene84Codec = Codec.forName(LUCENE_CODEC);
+            lucene84Codec = Codec.forName(LUCENE_84);
         return lucene84Codec;
     }
 
