@@ -70,7 +70,8 @@ public class KNNCircuitBreaker {
             if (KNNWeight.knnIndexCache.isCacheCapacityReached() && clusterService.localNode().isDataNode()) {
                 long currentSizeKiloBytes =  KNNWeight.knnIndexCache.getWeightInKilobytes();
                 long circuitBreakerLimitSizeKiloBytes = KNNSettings.getCircuitBreakerLimit().getKb();
-                long circuitBreakerUnsetSizeKiloBytes = (long) ((KNNSettings.getCircuitBreakerUnsetPercentage()/100) * circuitBreakerLimitSizeKiloBytes);
+                long circuitBreakerUnsetSizeKiloBytes = (long) ((KNNSettings.getCircuitBreakerUnsetPercentage()/100)
+                        * circuitBreakerLimitSizeKiloBytes);
                 /**
                  * Unset capacityReached flag if currentSizeBytes is less than circuitBreakerUnsetSizeBytes
                  */

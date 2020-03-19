@@ -198,7 +198,8 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
         }
         
         // Cluster level setting so no need to specify for every index creation
-        algoParams.add(KNNConstants.HNSW_ALGO_INDEX_THREAD_QTY + "=" + KNNSettings.state().getSettingValue(KNNSettings.KNN_ALGO_PARAM_INDEX_THREAD_QTY));
+        algoParams.add(KNNConstants.HNSW_ALGO_INDEX_THREAD_QTY + "=" + KNNSettings.state().getSettingValue(
+                KNNSettings.KNN_ALGO_PARAM_INDEX_THREAD_QTY));
         return algoParams.toArray(new String[0]);
     }
 }

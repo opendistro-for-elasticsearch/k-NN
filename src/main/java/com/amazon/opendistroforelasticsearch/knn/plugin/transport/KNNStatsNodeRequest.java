@@ -24,7 +24,7 @@ import java.io.IOException;
 /**
  *  KNNStatsNodeRequest represents the request to an individual node
  */
-class KNNStatsNodeRequest extends BaseNodeRequest {
+public class KNNStatsNodeRequest extends BaseNodeRequest {
     private KNNStatsRequest request;
 
     /**

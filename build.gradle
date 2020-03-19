@@ -40,6 +40,7 @@ plugins {
     id 'java-library'
     id 'nebula.ospackage' version "8.2.0" apply false
     id 'idea'
+    id 'jacoco'
 }
 
 apply plugin: 'elasticsearch.esplugin'
@@ -62,9 +63,13 @@ allprojects {
     }
 }
 
-//if (!System.properties.containsKey('tests.rest.cluster') && !System.properties.containsKey('tests.cluster')) {
-//    // apply from: 'build-tools/knnplugin-coverage.gradle'
-//}
+if (!System.properties.containsKey('tests.rest.cluster') && !System.properties.containsKey('tests.cluster')) {
+    // apply from: 'build-tools/knnplugin-coverage.gradle'
+}
+
+jacoco {
+    toolVersion = "0.8.3"
+}
 
 esplugin {
     name 'opendistro-knn'
@@ -111,11 +116,12 @@ integTest {
 
         // Tell the test JVM if the cluster JVM is running under a debugger so that tests can use longer timeouts for
         // requests. The 'doFirst' delays reading the debug setting on the cluster till execution time.
+        //TODO: Commented out until Jacoco fix is made
         //doFirst { systemProperty 'cluster.debug', testClusters.integTest.debug }
 
         // The --debug-jvm command-line option makes the cluster debuggable; this makes the tests debuggable
         if (System.getProperty("test.debug") != null) {
-            //jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005'
+            jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005'
         }
 
         systemProperty "java.library.path", "$rootDir/buildSrc"
@@ -133,12 +139,9 @@ testClusters {
 
 run {
     distribution = "oss-zip"
-//    systemProperty "java.library.path", "$rootDir/buildSrc"
 }
 
 //TODO fix these
-checkstyleMain.ignoreFailures = true
-checkstyleTest.ignoreFailures = true
 forbiddenApis.ignoreFailures = true
 forbiddenPatterns {
     setEnabled(false)
