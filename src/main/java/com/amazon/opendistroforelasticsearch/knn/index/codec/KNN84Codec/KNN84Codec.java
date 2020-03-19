@@ -32,8 +32,6 @@ import org.apache.lucene.codecs.StoredFieldsFormat;
 import org.apache.lucene.codecs.TermVectorsFormat;
 import org.apache.lucene.codecs.perfield.PerFieldDocValuesFormat;
 
-import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.KNN80Codec.KNN_80;
-
 /**
  * Extends the Codec to support a new file format for KNN index
  * based on the mappings.
@@ -42,29 +40,24 @@ import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.K
 public final class KNN84Codec extends Codec {
 
     private static final Logger logger = LogManager.getLogger(KNN84Codec.class);
-
-    private final DocValuesFormat docValuesFormat = new PerFieldDocValuesFormat() {
-        @Override
-        public DocValuesFormat getDocValuesFormatForField(String field) {
-            return KNN84Codec.this.getDocValuesFormatForField(field);
-        }
-    };
-
-    private final DocValuesFormat perFieldDocValuesFormat = new PerFieldDocValuesFormat() {
-        @Override
-        public DocValuesFormat getDocValuesFormatForField(String field) {
-            return KNN84Codec.this.getDocValuesFormatForField(field);
-        }
-    };
-
-    private final CompoundFormat compoundFormat = new KNN80CompoundFormat();;
+    private final DocValuesFormat docValuesFormat;
+    private final DocValuesFormat perFieldDocValuesFormat;
+    private final CompoundFormat compoundFormat;
     private Codec lucene84Codec;
 
-    public static final String KNN_84 = "KNN84Codec";
-    public static final String LUCENE_84 = "Lucene84"; // Lucene Codec to be used
+    public static final String KNN_84_CODEC_NAME = "KNN84Codec";
+    public static final String LUCENE_CODEC = "Lucene84"; // Lucene Codec to be used
 
     public KNN84Codec() {
-        super(KNN_84);
+        super(KNN_84_CODEC_NAME);
+        this.docValuesFormat =  new KNN80DocValuesFormat();
+        this.perFieldDocValuesFormat = new PerFieldDocValuesFormat() {
+            @Override
+            public DocValuesFormat getDocValuesFormatForField(String field) {
+                return docValuesFormat;
+            }
+        };
+        this.compoundFormat = new KNN80CompoundFormat();
     }
 
     /*
@@ -72,13 +65,13 @@ public final class KNN84Codec extends Codec {
      */
     public Codec getDelegatee() {
         if (lucene84Codec == null)
-            lucene84Codec = Codec.forName(LUCENE_84);
+            lucene84Codec = Codec.forName(LUCENE_CODEC);
         return lucene84Codec;
     }
 
     @Override
     public DocValuesFormat docValuesFormat() {
-        return this.defaultDVFormat;
+        return this.perFieldDocValuesFormat;
     }
 
     /*
@@ -131,11 +124,4 @@ public final class KNN84Codec extends Codec {
     public PointsFormat pointsFormat() {
         return getDelegatee().pointsFormat();
     }
-
-    public DocValuesFormat getDocValuesFormatForField(String field) {
-        return defaultDVFormat;
-    }
-
-    // Lucene84Codec uses Lucene80DocValuesFormat. So, KNN84Codec uses KNN80DocValuesFormat
-    private final DocValuesFormat defaultDVFormat = DocValuesFormat.forName(KNN_80);
 }
