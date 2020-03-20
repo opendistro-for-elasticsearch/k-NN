@@ -13,9 +13,6 @@
  *   permissions and limitations under the License.
  */
 
-import javax.management.remote.JMXConnectorFactory
-import javax.management.remote.JMXServiceURL
-
 /**
  * ES Plugin build tools don't work with the Gradle Jacoco Plugin to report coverage out of the box.
  * https://github.com/elastic/elasticsearch/issues/28867.
@@ -33,11 +30,12 @@ apply plugin: 'jacoco'
 
 // Get gradle to generate the required jvm agent arg for us using a dummy tasks of type Test. Unfortunately Elastic's
 // testing tasks don't derive from Test so the jacoco plugin can't do this automatically.
+def jacocoDir = "${buildDir}/jacoco"
 task dummyTest(type: Test) {
     enabled = false
     workingDir = file("/") // Force absolute path to jacoco agent jar
     jacoco {
-        destinationFile = file("${buildDir}/jacoco/test.exec")
+        destinationFile = file("${jacocoDir}/test.exec")
         destinationFile.parentFile.mkdirs()
         jmx = true
     }
@@ -47,14 +45,18 @@ task dummyIntegTest(type: Test) {
     enabled = false
     workingDir = file("/") // Force absolute path to jacoco agent jar
     jacoco {
-        destinationFile = file("${buildDir}/jacoco/integTest.exec")
+        destinationFile = file("${jacocoDir}/integTest.exec")
         destinationFile.parentFile.mkdirs()
         jmx = true
     }
 }
 
-integTestCluster {
-    jvmArgs += " ${dummyIntegTest.jacoco.getAsJvmArg()}"
+integTest.runner {
+    systemProperty 'jacoco.dir', "${jacocoDir}"
+}
+
+testClusters.integTest {
+    jvmArgs " ${dummyIntegTest.jacoco.getAsJvmArg()}"
     systemProperty 'com.sun.management.jmxremote', "true"
     systemProperty 'com.sun.management.jmxremote.authenticate', "false"
     systemProperty 'com.sun.management.jmxremote.port', "7777"
@@ -75,23 +77,6 @@ jacocoTestReport {
     }
 }
 
-// See https://www.eclemma.org/jacoco/trunk/doc/api/org/jacoco/agent/rt/IAgent.html
-task dumpCoverage {
-    doFirst {
-        def serverUrl = "service:jmx:rmi:///jndi/rmi://127.0.0.1:7777/jmxrmi"
-        def connector = JMXConnectorFactory.connect(new JMXServiceURL(serverUrl))
-        try {
-            def jacocoMBean = new GroovyMBean(connector.MBeanServerConnection, "org.jacoco:type=Runtime")
-            byte[] data = jacocoMBean.getExecutionData(false)
-            file(dummyIntegTest.jacoco.destinationFile).setBytes(data)
-        } finally {
-            connector.close()
-        }
-    }
-}
-
 project.gradle.projectsEvaluated {
-    dumpCoverage.dependsOn integTestRunner
-    tasks['integTestCluster#stop'].dependsOn dumpCoverage
-    jacocoTestReport.dependsOn dumpCoverage
+    jacocoTestReport.dependsOn integTest.runner
 }
