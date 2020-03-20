@@ -223,6 +223,7 @@ public class KNNSettings {
      * Get setting value by key. Return default value if not configured explicitly.
      *
      * @param key   setting key.
+     * @param <T> Setting type
      * @return T     setting value or default
      */
     @SuppressWarnings("unchecked")
