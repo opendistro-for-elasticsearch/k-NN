@@ -172,6 +172,7 @@ public class BaseKNNIntegTestIT extends ESRestTestCase {
 
         request.addParameter("max_num_segments", "1");
         request.addParameter("flush", "true");
+        response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
                 RestStatus.fromCode(response.getStatusLine().getStatusCode()));
         TimeUnit.SECONDS.sleep(5); // To make sure force merge is completed
