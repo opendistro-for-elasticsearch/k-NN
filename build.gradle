@@ -71,6 +71,8 @@ jacoco {
     toolVersion = "0.8.3"
 }
 
+check.dependsOn jacocoTestReport
+
 esplugin {
     name 'opendistro-knn'
     // zip file name and plugin name in ${elasticsearch.plugin.name} read by ES when plugin loading

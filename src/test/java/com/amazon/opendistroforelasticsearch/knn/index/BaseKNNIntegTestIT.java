@@ -20,14 +20,25 @@ import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
+
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.rest.ESRestTestCase;
+import org.junit.AfterClass;
 
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
+import javax.management.remote.JMXServiceURL;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -41,6 +52,41 @@ import java.util.stream.Collectors;
 public class BaseKNNIntegTestIT extends ESRestTestCase {
     public static final String INDEX_NAME = "test_index";
     public static final String FIELD_NAME = "test_field";
+
+    /**
+     * We need to be able to dump the jacoco coverage before cluster is shut down.
+     * The new internal testing framework removed some of the gradle tasks we were listening to
+     * to choose a good time to do it. This will dump the executionData to file after each test.
+     * TODO: This is also currently just overwriting integTest.exec with the updated execData without
+     *   resetting after writing each time. This can be improved to either write an exec file per test
+     *   or by letting jacoco append to the file
+     */
+    public interface IProxy {
+        byte[] getExecutionData(boolean reset);
+        void dump(boolean reset);
+        void reset();
+    }
+
+
+    @AfterClass
+    public static void dumpCoverage() throws IOException, MalformedObjectNameException {
+        // jacoco.dir is set in esplugin-coverage.gradle, if it doesn't exist we don't
+        // want to collect coverage so we can return early
+        String jacocoBuildPath = System.getProperty("jacoco.dir");
+        if (jacocoBuildPath.isEmpty()) {
+            return;
+        }
+
+        String  serverUrl = "service:jmx:rmi:///jndi/rmi://127.0.0.1:7777/jmxrmi";
+        JMXConnector connector = JMXConnectorFactory.connect(new JMXServiceURL(serverUrl));
+        IProxy proxy = MBeanServerInvocationHandler.newProxyInstance(
+                connector.getMBeanServerConnection(), new ObjectName("org.jacoco:type=Runtime"), IProxy.class,
+                false);
+
+        Path path = Paths.get(jacocoBuildPath + "/integTest.exec");
+        Files.write(path, proxy.getExecutionData(false));
+        connector.close();
+    }
 
     /**
      * Create KNN Index with default settings
