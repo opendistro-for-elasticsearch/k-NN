@@ -27,7 +27,7 @@ import static com.amazon.opendistroforelasticsearch.knn.index.KNNCircuitBreaker.
 /**
  * Integration tests to test Circuit Breaker functionality
  */
-public class KNNCircuitBreakerIT extends BaseKNNIntegTestIT {
+public class KNNCircuitBreakerIT extends KNNRestTestCase {
     /**
      * To trip the circuit breaker, we will create two indices and index documents. Each index will be small enough so
      * that individually they fit into the cache, but together they do not. To prevent Lucene conditions where

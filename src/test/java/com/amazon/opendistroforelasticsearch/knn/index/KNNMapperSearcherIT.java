@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class KNNMapperSearcherIT extends BaseKNNIntegTestIT {
+public class KNNMapperSearcherIT extends KNNRestTestCase {
     private static final Logger logger = LogManager.getLogger(KNNMapperSearcherIT.class);
 
     /**

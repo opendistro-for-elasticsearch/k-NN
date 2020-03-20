@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 /**
  * Base class for integration tests for KNN plugin. Contains several methods for testing KNN ES functionality.
  */
-public class BaseKNNIntegTestIT extends ESRestTestCase {
+public class KNNRestTestCase extends ESRestTestCase {
     public static final String INDEX_NAME = "test_index";
     public static final String FIELD_NAME = "test_field";
 
