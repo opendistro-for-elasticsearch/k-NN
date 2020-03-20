@@ -101,7 +101,7 @@ public class  KNNCodecTestCase extends ESTestCase {
         CodecUtil.checkFooter(indexInput); // If footer is not valid, it would throw exception and test fails
         indexInput.close();
 
-        IndexSearcher searcher = newSearcher(reader);
+        IndexSearcher searcher = new IndexSearcher(reader);
         assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 2.5f}, 1, "myindex")));
 
         reader.close();
@@ -139,7 +139,6 @@ public class  KNNCodecTestCase extends ESTestCase {
         Document doc1 = new Document();
         doc1.add(vectorField1);
         writer.addDocument(doc1);
-
         KNNIndexCache.setResourceWatcherService(createDisabledResourceWatcherService());
         IndexReader reader = writer.getReader();
         List<String> hnswfiles = Arrays.stream(dir.listAll()).filter(x -> x.contains("hnsw")).collect(Collectors.toList());
@@ -150,7 +149,7 @@ public class  KNNCodecTestCase extends ESTestCase {
         assertEquals(hnswfiles.stream().filter(x -> x.contains("my_vector")).collect(Collectors.toList()).size(), 1);
 
         // query to verify distance for each of the field
-        IndexSearcher searcher = newSearcher(reader);
+        IndexSearcher searcher = new IndexSearcher(reader);
         float score = searcher.search(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, "dummy"), 10).scoreDocs[0].score;
         float score1 = searcher.search(new KNNQuery("my_vector", new float[] {1.0f, 2.0f}, 1, "dummy"), 10).scoreDocs[0].score;
         assertEquals(score, 0.1667f, 0.01f);
