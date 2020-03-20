@@ -31,7 +31,7 @@ jobs:
       
       - name: Run build
         run: |
-          ./gradlew build buildDeb buildRpm --console=plain -Dbuild.snapshot=false
+          ./gradlew release --console=plain -Dbuild.snapshot=false
           artifact=`ls build/distributions/*.zip`
           rpm_artifact=`ls build/distributions/*.rpm`
           deb_artifact=`ls build/distributions/*.deb`
