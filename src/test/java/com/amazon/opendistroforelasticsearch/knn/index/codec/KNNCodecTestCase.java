@@ -13,14 +13,15 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
+package com.amazon.opendistroforelasticsearch.knn.index.codec;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQuery;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import com.amazon.opendistroforelasticsearch.knn.index.VectorField;
-import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.KNN80Codec;
+import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.FilterLeafReader;
@@ -48,21 +49,34 @@ import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class  KNN80HnswIndexTests extends ESTestCase {
+/**
+ * Test used for testing Codecs
+ */
+public class  KNNCodecTestCase extends ESTestCase {
 
-    private void setUpMockClusterService() {
+    protected void setUpMockClusterService() {
         ClusterService clusterService = mock(ClusterService.class, RETURNS_DEEP_STUBS);
         Settings settings = Settings.Builder.EMPTY_SETTINGS;
         when(clusterService.state().getMetaData().index(Mockito.anyString()).getSettings()).thenReturn(settings);
         KNNSettings.state().setClusterService(clusterService);
     }
 
-    public void testFooter() throws Exception {
+    protected ResourceWatcherService createDisabledResourceWatcherService() {
+        final Settings settings = Settings.builder()
+                .put("resource.reload.enabled", false)
+                .build();
+        return new ResourceWatcherService(
+                settings,
+                null
+        );
+    }
+
+    public void testFooter(Codec codec) throws Exception {
         setUpMockClusterService();
         Directory dir = newFSDirectory(createTempDir());
         IndexWriterConfig iwc = newIndexWriterConfig();
         iwc.setMergeScheduler(new SerialMergeScheduler());
-        iwc.setCodec(new KNN80Codec());
+        iwc.setCodec(codec);
 
         float[] array = {1.0f, 2.0f, 3.0f};
         VectorField vectorField = new VectorField("test_vector", array, KNNVectorFieldMapper.Defaults.FIELD_TYPE);
@@ -95,12 +109,12 @@ public class  KNN80HnswIndexTests extends ESTestCase {
         dir.close();
     }
 
-    public void testMultiFieldsKnnIndex() throws Exception {
+    public void testMultiFieldsKnnIndex(Codec codec) throws Exception {
         setUpMockClusterService();
         Directory dir = newFSDirectory(createTempDir());
         IndexWriterConfig iwc = newIndexWriterConfig();
         iwc.setMergeScheduler(new SerialMergeScheduler());
-        iwc.setCodec(new KNN80Codec());
+        iwc.setCodec(codec);
 
         /**
          * Add doc with field "test_vector"
@@ -150,14 +164,5 @@ public class  KNN80HnswIndexTests extends ESTestCase {
         writer.close();
         dir.close();
     }
-
-    private ResourceWatcherService createDisabledResourceWatcherService() {
-        final Settings settings = Settings.builder()
-                .put("resource.reload.enabled", false)
-                .build();
-        return new ResourceWatcherService(
-                settings,
-                null
-        );
-    }
 }
+
