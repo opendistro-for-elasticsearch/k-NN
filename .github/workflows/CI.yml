@@ -39,6 +39,9 @@ jobs:
           if docker pull opendistroforelasticsearch/opendistroforelasticsearch:$version
           then
             echo "FROM opendistroforelasticsearch/opendistroforelasticsearch:$version" >> Dockerfile
+            
+            ## The ESRestTest Client uses http by default. 
+            ## Need to disable the security plugin to call the rest api over http.
             echo "RUN if [ -d /usr/share/elasticsearch/plugins/opendistro_security ]; then /usr/share/elasticsearch/bin/elasticsearch-plugin remove opendistro_security; fi" >> Dockerfile
             echo "RUN if [ -d /usr/share/elasticsearch/plugins/opendistro-knn ]; then /usr/share/elasticsearch/bin/elasticsearch-plugin remove opendistro-knn; fi" >> Dockerfile
             echo "ADD k-NN/build/distributions/opendistro-knn-$plugin_version.zip /tmp/" >> Dockerfile
