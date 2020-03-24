@@ -13,8 +13,9 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.codec;
+package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.codecs.CodecUtil;
@@ -84,7 +85,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(state.directory))).getDirectory().toString(),
                     hnswFileName).toString();
 
-            KNNCodecUtil.Pair pair = KNN80Codec.getFloats(values);
+            KNNCodecUtil.Pair pair = KNNCodecUtil.getFloats(values);
             if (pair == null || pair.vectors.length == 0 || pair.docs.length == 0) {
                 logger.info("Skipping hnsw index creation as there are no vectors or docs in the documents");
                 return;
@@ -197,7 +198,8 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
         }
         
         // Cluster level setting so no need to specify for every index creation
-        algoParams.add(KNNConstants.HNSW_ALGO_INDEX_THREAD_QTY + "=" + KNNSettings.state().getSettingValue(KNNSettings.KNN_ALGO_PARAM_INDEX_THREAD_QTY));
+        algoParams.add(KNNConstants.HNSW_ALGO_INDEX_THREAD_QTY + "=" + KNNSettings.state().getSettingValue(
+                KNNSettings.KNN_ALGO_PARAM_INDEX_THREAD_QTY));
         return algoParams.toArray(new String[0]);
     }
 }

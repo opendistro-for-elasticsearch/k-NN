@@ -25,7 +25,7 @@ import java.io.IOException;
 
 import static org.hamcrest.Matchers.containsString;
 
-public class KNNESIT extends BaseKNNIntegTestIT {
+public class KNNESIT extends KNNRestTestCase {
     /**
      * Able to add docs to KNN index
      */

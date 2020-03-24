@@ -13,7 +13,7 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.codec;
+package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,15 +25,17 @@ import org.apache.lucene.index.SegmentWriteState;
 
 import java.io.IOException;
 
+import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.KNN80Codec.LUCENE_80;
+
 /**
  * Encodes/Decodes per document values
  */
-class KNN80DocValuesFormat extends DocValuesFormat {
+public class KNN80DocValuesFormat extends DocValuesFormat {
     private final Logger logger = LogManager.getLogger(KNN80DocValuesFormat.class);
-    private final DocValuesFormat delegate = DocValuesFormat.forName(KNN80Codec.LUCENE_CODEC);
+    private final DocValuesFormat delegate = DocValuesFormat.forName(LUCENE_80);
 
-    KNN80DocValuesFormat() {
-        super(KNN80Codec.LUCENE_CODEC);
+    public KNN80DocValuesFormat() {
+        super(LUCENE_80);
     }
 
     @Override

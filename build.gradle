@@ -15,7 +15,7 @@
 
 buildscript {
     ext {
-        es_version = System.getProperty("es.version", "7.4.2")
+        es_version = System.getProperty("es.version", "7.6.1")
         es_group = "org.elasticsearch"
         distribution = 'oss-zip'
     }
@@ -38,17 +38,20 @@ buildscript {
 
 plugins {
     id 'java-library'
+    id 'nebula.ospackage' version "8.2.0" apply false
+    id 'idea'
+    id 'jacoco'
 }
 
-plugins {
-    id 'nebula.ospackage' version "5.3.0" apply false
-}
+apply plugin: 'elasticsearch.esplugin'
 
 ext {
-    opendistroVersion = '1.4.0'
+    opendistroVersion = '1.6.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
+    projectSubstitutions = [:]
+    licenseFile = rootProject.file('LICENSE.TXT')
+    noticeFile = rootProject.file('NOTICE.TXT')
 }
-
 
 allprojects {
     group = 'com.amazon.opendistroforelasticsearch'
@@ -60,9 +63,6 @@ allprojects {
     }
 }
 
-apply plugin: 'elasticsearch.esplugin'
-apply plugin: 'idea'
-apply plugin: 'jacoco'
 if (!System.properties.containsKey('tests.rest.cluster') && !System.properties.containsKey('tests.cluster')) {
     apply from: 'build-tools/knnplugin-coverage.gradle'
 }
@@ -71,11 +71,7 @@ jacoco {
     toolVersion = "0.8.3"
 }
 
-ext {
-    projectSubstitutions = [:]
-    licenseFile = rootProject.file('LICENSE.TXT')
-    noticeFile = rootProject.file('NOTICE.TXT')
-}
+check.dependsOn jacocoTestReport
 
 esplugin {
     name 'opendistro-knn'
@@ -114,42 +110,32 @@ test {
     systemProperty "java.library.path", "$rootDir/buildSrc"
 }
 
-integTestRunner {
-    systemProperty 'tests.security.manager', 'false'
-    systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
-    distribution = "oss-zip"
+integTest {
+    runner {
+        systemProperty 'tests.security.manager', 'false'
+        systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
 
-    // Tell the test JVM if the cluster JVM is running under a debugger so that tests can use longer timeouts for
-    // requests. The 'doFirst' delays reading the debug setting on the cluster till execution time.
-    doFirst { systemProperty 'cluster.debug', integTestCluster.debug }
+        // Tell the test JVM if the cluster JVM is running under a debugger so that tests can use longer timeouts for
+        // requests. The 'doFirst' delays reading the debug setting on the cluster till execution time.
+        doFirst { systemProperty 'cluster.debug', getDebug() }
 
-    // The --debug-jvm command-line option makes the cluster debuggable; this makes the tests debuggable
-    if (System.getProperty("test.debug") != null) {
-        jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005'
+        // The --debug-jvm command-line option makes the cluster debuggable; this makes the tests debuggable
+        if (System.getProperty("test.debug") != null) {
+            jvmArgs '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:5005'
+        }
+
+        systemProperty "java.library.path", "$rootDir/buildSrc"
+        // allows integration test classes to access test resource from project root path
+        systemProperty('project.root', project.rootDir.absolutePath)
     }
-
-    systemProperty "java.library.path", "$rootDir/buildSrc"
-    // allows integration test classes to access test resource from project root path
-    systemProperty('project.root', project.rootDir.absolutePath)
 }
 
-integTestCluster {
-    distribution = "oss-zip"
-    systemProperty "java.library.path", "$rootDir/buildSrc"
+testClusters.integTest {
+        testDistribution = "OSS"
+        systemProperty("java.library.path", "$rootDir/buildSrc")
 }
-
-check.dependsOn jacocoTestReport
-
-run {
-    distribution = "oss-zip"
-    systemProperty "java.library.path", "$rootDir/buildSrc"
-}
-
-check.dependsOn jacocoTestReport
 
 //TODO fix these
-checkstyleMain.ignoreFailures = true
-checkstyleTest.ignoreFailures = true
 forbiddenApis.ignoreFailures = true
 forbiddenPatterns {
     setEnabled(false)

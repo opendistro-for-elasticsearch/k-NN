@@ -27,9 +27,12 @@ import static com.amazon.opendistroforelasticsearch.knn.index.KNNCircuitBreaker.
 /**
  * Integration tests to test Circuit Breaker functionality
  */
-public class KNNCircuitBreakerIT extends BaseKNNIntegTestIT {
+public class KNNCircuitBreakerIT extends KNNRestTestCase {
     /**
-     * Utility function that sets the cb limit low enough that ingesting 20 documents trips it
+     * To trip the circuit breaker, we will create two indices and index documents. Each index will be small enough so
+     * that individually they fit into the cache, but together they do not. To prevent Lucene conditions where
+     * multiple segments may or may not be created, we will force merge each index into a single segment before
+     * searching.
      */
     private void tripCb() throws Exception {
         // Make sure that Cb is intially not tripped
@@ -44,20 +47,32 @@ public class KNNCircuitBreakerIT extends BaseKNNIntegTestIT {
                 .put("number_of_replicas", 0)
                 .put("index.knn", true)
                 .build();
-        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 2));
 
-        // Index 20 dummy documents
+        String indexName1 = INDEX_NAME + "1";
+        String indexName2 = INDEX_NAME + "2";
+
+        createKnnIndex(indexName1, settings, createKnnIndexMapping(FIELD_NAME, 2));
+        createKnnIndex(indexName2, settings, createKnnIndexMapping(FIELD_NAME, 2));
+
         Float[] vector = {1.3f, 2.2f};
-        for (int i = 0; i < 10; i++) {
-            addKnnDoc(INDEX_NAME, Integer.toString(i), FIELD_NAME, vector);
+        int docsInIndex = 5; // through testing, 7 is minimum number of docs to trip circuit breaker at 1kb
+
+        for (int i = 0; i < docsInIndex; i++) {
+            addKnnDoc(indexName1, Integer.toString(i), FIELD_NAME, vector);
+            addKnnDoc(indexName2, Integer.toString(i), FIELD_NAME, vector);
         }
 
-        // Execute search
+        forceMergeKnnIndex(indexName1);
+        forceMergeKnnIndex(indexName2);
+
+        // Execute search on both indices - will cause eviction
         float[] qvector = {1.9f, 2.4f};
         int k = 10;
-        searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
+        searchKNNIndex(indexName1, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
+        searchKNNIndex(indexName2, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
 
-        // Assert that Cb get triggered
+        // Give cluster 5 seconds to update settings and then assert that Cb get triggered
+        Thread.sleep(5*1000); // seconds
         assertTrue(isCbTripped());
     }
 
@@ -66,7 +81,7 @@ public class KNNCircuitBreakerIT extends BaseKNNIntegTestIT {
                 Collections.singletonList("circuit_breaker_triggered"));
         String responseBody = EntityUtils.toString(response.getEntity());
         Map<String, Object> clusterStats = parseClusterStatsResponse(responseBody);
-        return (Boolean) clusterStats.get("circuit_breaker_triggered");
+        return Boolean.parseBoolean(clusterStats.get("circuit_breaker_triggered").toString());
     }
 
     public void testCbTripped() throws Exception {

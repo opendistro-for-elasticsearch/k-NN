@@ -13,7 +13,7 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.codec;
+package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,13 +29,6 @@ import org.apache.lucene.codecs.SegmentInfoFormat;
 import org.apache.lucene.codecs.StoredFieldsFormat;
 import org.apache.lucene.codecs.TermVectorsFormat;
 import org.apache.lucene.codecs.perfield.PerFieldDocValuesFormat;
-import org.apache.lucene.index.BinaryDocValues;
-import org.apache.lucene.search.DocIdSetIterator;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.util.ArrayList;
 
 /**
  * Extends the Codec to support a new file format for KNN index
@@ -50,11 +43,11 @@ public final class KNN80Codec extends Codec {
     private final CompoundFormat compoundFormat;
     private Codec lucene80Codec;
 
-    public static final String CODEC_NAME = "KNN80Codec";
-    public static final String LUCENE_CODEC = "Lucene80";
+    public static final String KNN_80 = "KNN80Codec";
+    public static final String LUCENE_80 = "Lucene80"; // Lucene Codec to be used
 
     public KNN80Codec() {
-        super(CODEC_NAME);
+        super(KNN_80);
         this.docValuesFormat = new KNN80DocValuesFormat();
         this.perFieldDocValuesFormat = new PerFieldDocValuesFormat() {
             @Override
@@ -70,7 +63,7 @@ public final class KNN80Codec extends Codec {
      */
     public Codec getDelegatee() {
         if (lucene80Codec == null)
-            lucene80Codec = Codec.forName(LUCENE_CODEC);
+            lucene80Codec = Codec.forName(LUCENE_80);
         return lucene80Codec;
     }
 
@@ -128,23 +121,5 @@ public final class KNN80Codec extends Codec {
     @Override
     public PointsFormat pointsFormat() {
         return getDelegatee().pointsFormat();
-    }
-
-    public static KNNCodecUtil.Pair getFloats(BinaryDocValues values) throws IOException {
-        ArrayList<float[]> vectorList = new ArrayList<>();
-        ArrayList<Integer> docIdList = new ArrayList<>();
-        for (int doc = values.nextDoc(); doc != DocIdSetIterator.NO_MORE_DOCS; doc = values.nextDoc()) {
-            byte[] value = values.binaryValue().bytes;
-
-            try (ByteArrayInputStream byteStream = new ByteArrayInputStream(value);
-                 ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
-                float[] vector = (float[]) objectStream.readObject();
-                vectorList.add(vector);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            docIdList.add(doc);
-        }
-        return new KNNCodecUtil.Pair(docIdList.stream().mapToInt(Integer::intValue).toArray(), vectorList.toArray(new float[][]{}));
     }
 }

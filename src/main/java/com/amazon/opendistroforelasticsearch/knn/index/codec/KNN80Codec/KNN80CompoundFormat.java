@@ -13,8 +13,9 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.codec;
+package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.codecs.Codec;
@@ -35,7 +36,7 @@ public class KNN80CompoundFormat extends CompoundFormat {
 
     private final Logger logger = LogManager.getLogger(KNN80CompoundFormat.class);
 
-    KNN80CompoundFormat() {
+    public KNN80CompoundFormat() {
     }
 
     @Override

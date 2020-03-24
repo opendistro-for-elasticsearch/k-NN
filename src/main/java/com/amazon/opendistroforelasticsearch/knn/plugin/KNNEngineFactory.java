@@ -31,12 +31,14 @@ class KNNEngineFactory implements EngineFactory {
 
     @Override
     public Engine newReadWriteEngine(EngineConfig config) {
-        EngineConfig engineConfig = new EngineConfig(config.getShardId(), config.getAllocationId(), config.getThreadPool(),
-                config.getIndexSettings(), config.getWarmer(), config.getStore(), config.getMergePolicy(), config.getAnalyzer(),
-                config.getSimilarity(), codecService, config.getEventListener(), config.getQueryCache(), config.getQueryCachingPolicy(),
-                config.getTranslogConfig(), config.getFlushMergesAfter(), config.getExternalRefreshListener(), config.getInternalRefreshListener(),
-                config.getIndexSort(), config.getCircuitBreakerService(), config.getGlobalCheckpointSupplier(),
-                config.retentionLeasesSupplier(), config.getPrimaryTermSupplier(), config.getTombstoneDocSupplier());
+        EngineConfig engineConfig = new EngineConfig(config.getShardId(), config.getAllocationId(),
+                config.getThreadPool(), config.getIndexSettings(), config.getWarmer(), config.getStore(),
+                config.getMergePolicy(), config.getAnalyzer(), config.getSimilarity(), codecService,
+                config.getEventListener(), config.getQueryCache(), config.getQueryCachingPolicy(),
+                config.getTranslogConfig(), config.getFlushMergesAfter(), config.getExternalRefreshListener(),
+                config.getInternalRefreshListener(), config.getIndexSort(), config.getCircuitBreakerService(),
+                config.getGlobalCheckpointSupplier(), config.retentionLeasesSupplier(), config.getPrimaryTermSupplier(),
+                config.getTombstoneDocSupplier());
         return new InternalEngine(engineConfig);
     }
 }

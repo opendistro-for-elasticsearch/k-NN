@@ -8,7 +8,7 @@ jobs:
   build:
     strategy:
       matrix:
-        java: [12]
+        java: [13]
     # Job name
     name: Build KNN with JDK ${{ matrix.java }}
     # This job runs on Linux

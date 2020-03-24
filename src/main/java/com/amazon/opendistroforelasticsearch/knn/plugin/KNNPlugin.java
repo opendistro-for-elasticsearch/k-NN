@@ -22,17 +22,10 @@ import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 
 import com.amazon.opendistroforelasticsearch.knn.plugin.rest.RestKNNStatsHandler;
-import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStat;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStats;
-import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
-import com.amazon.opendistroforelasticsearch.knn.plugin.stats.suppliers.KNNCacheSupplier;
-import com.amazon.opendistroforelasticsearch.knn.plugin.stats.suppliers.KNNCircuitBreakerSupplier;
-import com.amazon.opendistroforelasticsearch.knn.plugin.stats.suppliers.KNNInnerCacheStatsSupplier;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsAction;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsTransportAction;
-import com.google.common.cache.CacheStats;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;

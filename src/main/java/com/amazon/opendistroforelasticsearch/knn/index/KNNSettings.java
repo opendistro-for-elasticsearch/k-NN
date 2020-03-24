@@ -135,7 +135,8 @@ public class KNNSettings {
             NodeScope,
             Dynamic);
 
-    public static final Setting<Double> KNN_CIRCUIT_BREAKER_UNSET_PERCENTAGE_SETTING =  Setting.doubleSetting(KNN_CIRCUIT_BREAKER_UNSET_PERCENTAGE,
+    public static final Setting<Double> KNN_CIRCUIT_BREAKER_UNSET_PERCENTAGE_SETTING =  Setting.doubleSetting(
+            KNN_CIRCUIT_BREAKER_UNSET_PERCENTAGE,
             75,
             0,
             100,
@@ -154,14 +155,17 @@ public class KNNSettings {
             /**
              * Weight circuit breaker settings
              */
-            put(KNN_MEMORY_CIRCUIT_BREAKER_ENABLED, Setting.boolSetting(KNN_MEMORY_CIRCUIT_BREAKER_ENABLED, true, NodeScope, Dynamic));
-            put(KNN_MEMORY_CIRCUIT_BREAKER_LIMIT, knnMemoryCircuitBreakerSetting(KNN_MEMORY_CIRCUIT_BREAKER_LIMIT, "60%", NodeScope, Dynamic));
+            put(KNN_MEMORY_CIRCUIT_BREAKER_ENABLED, Setting.boolSetting(KNN_MEMORY_CIRCUIT_BREAKER_ENABLED,true,
+                    NodeScope, Dynamic));
+            put(KNN_MEMORY_CIRCUIT_BREAKER_LIMIT, knnMemoryCircuitBreakerSetting(KNN_MEMORY_CIRCUIT_BREAKER_LIMIT, "60%",
+                    NodeScope, Dynamic));
 
             /**
              * Cache expiry time settings
              */
             put(KNN_CACHE_ITEM_EXPIRY_ENABLED, Setting.boolSetting(KNN_CACHE_ITEM_EXPIRY_ENABLED, false, NodeScope, Dynamic));
-            put(KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, Setting.positiveTimeSetting(KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, TimeValue.timeValueHours(3), NodeScope, Dynamic));
+            put(KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, Setting.positiveTimeSetting(KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES,
+                    TimeValue.timeValueHours(3), NodeScope, Dynamic));
         }
     };
 
@@ -219,6 +223,7 @@ public class KNNSettings {
      * Get setting value by key. Return default value if not configured explicitly.
      *
      * @param key   setting key.
+     * @param <T> Setting type
      * @return T     setting value or default
      */
     @SuppressWarnings("unchecked")
@@ -327,15 +332,18 @@ public class KNNSettings {
                                                   .put(KNNSettings.KNN_CIRCUIT_BREAKER_TRIGGERED, flag)
                                                   .build();
         clusterUpdateSettingsRequest.persistentSettings(circuitBreakerSettings);
-        client.admin().cluster().updateSettings(clusterUpdateSettingsRequest, new ActionListener<ClusterUpdateSettingsResponse>() {
+        client.admin().cluster().updateSettings(clusterUpdateSettingsRequest,
+                new ActionListener<ClusterUpdateSettingsResponse>() {
             @Override
             public void onResponse(ClusterUpdateSettingsResponse clusterUpdateSettingsResponse) {
-                logger.debug("Cluster setting {}, acknowledged: {} ", clusterUpdateSettingsRequest.persistentSettings(),
+                logger.debug("Cluster setting {}, acknowledged: {} ",
+                        clusterUpdateSettingsRequest.persistentSettings(),
                         clusterUpdateSettingsResponse.isAcknowledged());
             }
             @Override
             public void onFailure(Exception e) {
-                logger.info("Exception while updating circuit breaker setting {} to {}", clusterUpdateSettingsRequest.persistentSettings(), e.getMessage());
+                logger.info("Exception while updating circuit breaker setting {} to {}",
+                        clusterUpdateSettingsRequest.persistentSettings(), e.getMessage());
             }
         });
     }

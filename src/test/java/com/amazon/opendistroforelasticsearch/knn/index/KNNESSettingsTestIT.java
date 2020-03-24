@@ -21,7 +21,7 @@ import org.elasticsearch.rest.RestStatus;
 
 import static org.hamcrest.Matchers.containsString;
 
-public class KNNESSettingsTestIT extends BaseKNNIntegTestIT {
+public class KNNESSettingsTestIT extends KNNRestTestCase {
     /**
      * KNN Index writes should be blocked when the plugin disabled
      * @throws Exception Exception from test

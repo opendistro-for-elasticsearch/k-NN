@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.action;
 
-import com.amazon.opendistroforelasticsearch.knn.index.BaseKNNIntegTestIT;
+import com.amazon.opendistroforelasticsearch.knn.index.KNNRestTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStats;
 
@@ -42,7 +42,7 @@ import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStatsCon
 /**
  * Integration tests to check the correctness of RestKNNStatsHandler
  */
-public class RestKNNStatsHandlerIT extends BaseKNNIntegTestIT {
+public class RestKNNStatsHandlerIT extends KNNRestTestCase {
 
     private static final Logger logger = LogManager.getLogger(RestKNNStatsHandlerIT.class);
     private boolean isDebuggingTest = new DisableOnDebug(null).isDebugging();
