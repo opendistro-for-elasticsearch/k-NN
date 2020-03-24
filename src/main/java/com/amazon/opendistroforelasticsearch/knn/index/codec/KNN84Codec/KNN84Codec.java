@@ -45,7 +45,7 @@ public final class KNN84Codec extends Codec {
     private final CompoundFormat compoundFormat;
     private Codec lucene84Codec;
 
-    public static final String KNN_84 = "KNN84";
+    public static final String KNN_84 = "KNN84Codec";
     public static final String LUCENE_84 = "Lucene84"; // Lucene Codec to be used
 
     public KNN84Codec() {
