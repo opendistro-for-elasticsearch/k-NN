@@ -73,7 +73,7 @@ public class KNNRestTestCase extends ESRestTestCase {
         // jacoco.dir is set in esplugin-coverage.gradle, if it doesn't exist we don't
         // want to collect coverage so we can return early
         String jacocoBuildPath = System.getProperty("jacoco.dir");
-        if (jacocoBuildPath.isEmpty()) {
+        if (Strings.isNullOrEmpty(jacocoBuildPath)) {
             return;
         }
 
