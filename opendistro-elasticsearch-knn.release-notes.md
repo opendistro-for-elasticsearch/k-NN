@@ -1,5 +1,22 @@
 # Release Notes
-## 2020-01-24 Version 1.4.0.0 (Current)
+## 2020-03-24 Version 1.6.0.0 (Current)
+### Features
+* Elasticsearch 7.6.1 compatibility: [#71](https://github.com/opendistro-for-elasticsearch/k-NN/issues/71)
+
+### Enhancements
+* Convert Tests from ESIntegTestCase to ESRestTestCase: [#60](https://github.com/opendistro-for-elasticsearch/k-NN/issues/60)
+* Add check in gradle build for license headers: [#7](https://github.com/opendistro-for-elasticsearch/k-NN/issues/7)
+* Add Github actions for CI/CD: [#74](https://github.com/opendistro-for-elasticsearch/k-NN/issues/74)
+* Lazy load efSearch parameter: [#51](https://github.com/opendistro-for-elasticsearch/k-NN/issues/51)
+
+### Bug Fixes
+* Stats Issue for Transport Layer for ES 7.4: [#45](https://github.com/opendistro-for-elasticsearch/k-NN/issues/45)
+* AccessControlException loadLibrary: [#49](https://github.com/opendistro-for-elasticsearch/k-NN/issues/49)
+* Gradle build Fails on Mac due to Library Error: [#58](https://github.com/opendistro-for-elasticsearch/k-NN/issues/58)
+* Bug in CB with Stats call: [#62](https://github.com/opendistro-for-elasticsearch/k-NN/issues/62)
+* KNN80HnswIndexTests.testFooter fails rarely: [#65](https://github.com/opendistro-for-elasticsearch/k-NN/issues/65)
+
+## 2020-01-24 Version 1.4.0.0
 ### Features
 #### Elasticsearch Compatibility
 * Feature [#11 ](https://github.com/opendistro-for-elasticsearch/k-NN/issues/11): Elasticsearch 7.4.2 compatibility
