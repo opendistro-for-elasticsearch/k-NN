@@ -22,10 +22,10 @@ The package uses the [Gradle](https://docs.gradle.org/5.5.1/userguide/userguide.
 
 ### Debugging
 
-Sometimes it's useful to attach a debugger to either the Elasticsearch cluster or the integ tests to see what's going on. When running unit tests, hit **Debug** from the IDE's gutter to debug the tests.  To debug code running in an actual server, run:
+Sometimes it is useful to attach a debugger to either the Elasticsearch cluster or the integ tests to see what's going on. When running unit tests, hit **Debug** from the IDE's gutter to debug the tests.  For the Elasticsearch cluster or the integ tests, first, make sure that the debugger is listening on port `5005`. Then, to debug the server  code, run:
 
 ```
-./gradlew :integTest --debug-jvm # to start a cluster and run integ tests
+./gradlew :integTest -Ddebug.es=1 # to start a cluster and run integ tests
 ```
 
 OR
@@ -34,7 +34,7 @@ OR
 ./gradlew run --debug-jvm # to just start a cluster that can be debugged
 ```
 
-The Elasticsearch server JVM will launch suspended and wait for a debugger to attach to `localhost:8000` before starting the Elasticsearch server.
+The Elasticsearch server JVM will connect to a debugger attached to `localhost:5005` before starting.
 
 To debug code running in an integ test (which exercises the server from a separate JVM), run:
 
@@ -42,7 +42,7 @@ To debug code running in an integ test (which exercises the server from a separa
 ./gradlew -Dtest.debug=1 integTest
 ```
 
-The test runner JVM will start suspended and wait for a debugger to attach to `localhost:5005` before running the tests
+The test runner JVM will start connect to a debugger attached to `localhost:5005` before running the tests
 
 ## Basic Usage
 
