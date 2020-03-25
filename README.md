@@ -22,10 +22,10 @@ The package uses the [Gradle](https://docs.gradle.org/5.5.1/userguide/userguide.
 
 ### Debugging
 
-Sometimes it is useful to attach a debugger to either the Elasticsearch cluster or the integ tests to see what's going on. When running unit tests, hit **Debug** from the IDE's gutter to debug the tests.  For the Elasticsearch cluster or the integ tests, first, make sure that the debugger is listening on port `5005`. Then, to debug the server  code, run:
+Sometimes it is useful to attach a debugger to either the Elasticsearch cluster or the integration test runner to see what's going on. For running unit tests, hit **Debug** from the IDE's gutter to debug the tests. For the Elasticsearch cluster, first, make sure that the debugger is listening on port `5005`. Then, to debug the cluster code, run:
 
 ```
-./gradlew :integTest -Ddebug.es=1 # to start a cluster and run integ tests
+./gradlew :integTest -Dcluster.debug=1 # to start a cluster with debugger and run integ tests
 ```
 
 OR
@@ -36,13 +36,18 @@ OR
 
 The Elasticsearch server JVM will connect to a debugger attached to `localhost:5005` before starting.
 
-To debug code running in an integ test (which exercises the server from a separate JVM), run:
+To debug code running in an integration test (which exercises the server from a separate JVM), first, setup a remote debugger listening on port `8000`, and then run:
 
 ```
-./gradlew -Dtest.debug=1 integTest
+./gradlew :integTest -Dtest.debug=1 
 ```
 
-The test runner JVM will start connect to a debugger attached to `localhost:5005` before running the tests
+The test runner JVM will connect to a debugger attached to `localhost:8000` before running the tests.
+
+Additionally, it is possible to attach one debugger to the cluster JVM and another debugger to the test runner. First, make sure one debugger is listening on port `5005` and the other is listening on port `8000`. Then, run:
+```
+./gradlew :integTest -Dtest.debug=1 -Dcluster.debug=1
+```
 
 ## Basic Usage
 
