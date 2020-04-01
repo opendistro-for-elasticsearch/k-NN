@@ -2,11 +2,11 @@
 The purpose of this document is to introduce a new Open Distro for Elasticsearch KNN plugin and to request comments from the community (RFC). This RFC covers only the high-level functionality of the KNN plugin and does not cover architecture and implementation details.
 
 ## Problem Statement
-Customers with similarity-based search use cases like facial recognition, fraud detection and recommendation systems have a need for finding the K-Nearest Neighbor (KNN) of vectors in high dimensional space. The existing solutions for KNN search in distributed systems either do not operate well at scale or are difficult to use and integrate with current systems.
+Customers with similarity-based search use cases like facial recognition, fraud detection and recommendation systems have a need for finding the K-Nearest Neighbor (KNN) of vectors in high dimensional space. The existing solutions for KNN search do not operate well at scale, are difficult to use, and are generally too slow for large-scale real-time search applications.
 
 ## Proposed Solution
 
-The ODFE KNN plugin enables you to run an Approximate K Nearest Neighbor search on billions of documents across thousands of dimensions with the added usability and reliability of Elasticsearch. You can use aggregations and filter clauses to further refine your similarity search operations. Powerful use-cases include product recommendations, fraud detection, image and video search, related document search, and more.
+The Open Distro for Elasticsearch KNN plugin enables you to run an Approximate K Nearest Neighbor search on billions of documents across thousands of dimensions with the added usability and reliability of Elasticsearch. You can use aggregations and filter clauses to further refine your similarity search operations. Powerful use-cases include product recommendations, fraud detection, image and video search, related document search, and more.
 
 The KNN Plugin uses the Non-Metric Space Library (NMSLIB), a highly efficient implementation of K-ANNS (K Approximate Nearest Neighbor Search), which has consistently out-performed most of the other solutions as per the ANN-Benchmarks published here. In order to integrate this powerful library into Elasticsearch, the KNN Plugin extends an Apache Lucene codec to introduce a separate file format for storing k-NN indices to deliver high efficiency k-NN search operations.
 
