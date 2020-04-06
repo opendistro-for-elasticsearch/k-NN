@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 2.8)
 
 project(KNNIndexV1_7_3_6)
 
@@ -8,18 +8,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Target Library to be built
 set(KNN_INDEX KNNIndexV1_7_3_6)
 
-find_path(NMS_REPO_DIR NAMES nmslib PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external REQUIRED)
+# Check if similarity search exists
+find_path(NMS_REPO_DIR NAMES similarity_search PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib REQUIRED)
 
+# If not, pull the updated submodule
 if (NOT EXISTS ${NMS_REPO_DIR})
-    message(STATUS "Could not find nmslib. Pulling updating submodule.")
+    message(STATUS "Could not find nmslib. Pulling updated submodule.")
     execute_process(COMMAND git submodule update --init -- external/nmslib WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif ()
 
-## Check if nmslib is built and if not build it
-#find_library(NMS_LIB NAMES libNonMetricSpaceLib.a  PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search/release REQUIRED)
-
+# Add the subdirectory so it is possible to use its targets
 add_subdirectory(external/nmslib/similarity_search)
 
+# Set OS specific variables
 if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
     set(JVM_OS_TYPE darwin)
     set(LIB_EXT .jnilib)
@@ -30,7 +31,7 @@ else()
     message( FATAL_ERROR "Unable to run on system: ${CMAKE_SYSTEM_NAME}")
 endif()
 
-# Build knn lib
+# Compile the library
 add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/v1736/com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex.cpp)
 target_link_libraries(${KNN_INDEX} NonMetricSpaceLib)
 target_include_directories(${KNN_INDEX} PRIVATE $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search/include)
