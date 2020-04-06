@@ -20,6 +20,18 @@ The package uses the [Gradle](https://docs.gradle.org/5.5.1/userguide/userguide.
 2. To build from command line set `JAVA_HOME` to point to a JDK >=12
 3. Run `./gradlew build`
 
+## Building JNI Library
+
+To build the JNI Library used to incorporate NMSLIB functionality, follow these steps:
+
+```
+cd jni
+cmake .
+make
+``` 
+
+The library will be placed in the `buildSrc` directory.
+
 ### Debugging
 
 Sometimes it is useful to attach a debugger to either the Elasticsearch cluster or the integration test runner to see what's going on. For running unit tests, hit **Debug** from the IDE's gutter to debug the tests. For the Elasticsearch cluster, first, make sure that the debugger is listening on port `5005`. Then, to debug the cluster code, run:
