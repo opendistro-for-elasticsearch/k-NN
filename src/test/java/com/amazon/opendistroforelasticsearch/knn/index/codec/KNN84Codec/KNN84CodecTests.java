@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN84Codec;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecTestCase;
 
-public class  KNN84CodecTest extends KNNCodecTestCase {
+public class  KNN84CodecTests extends KNNCodecTestCase {
 
     public void testFooter() throws Exception {
         testFooter(new KNN84Codec());
