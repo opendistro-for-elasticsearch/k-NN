@@ -33,7 +33,7 @@ if (NOT EXISTS ${NMS_REPO_DIR})
 endif ()
 
 # Add the subdirectory so it is possible to use its targets
-add_subdirectory(external/nmslib/similarity_search)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search)
 
 # Set OS specific variables
 if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
