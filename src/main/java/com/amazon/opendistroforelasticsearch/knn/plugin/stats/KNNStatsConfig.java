@@ -18,6 +18,7 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.stats;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.suppliers.KNNCacheSupplier;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.suppliers.KNNCircuitBreakerSupplier;
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.suppliers.KNNCounterSupplier;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.suppliers.KNNInnerCacheStatsSupplier;
 import com.google.common.cache.CacheStats;
 import com.google.common.collect.ImmutableMap;
@@ -42,6 +43,14 @@ public class KNNStatsConfig {
                     new KNNCacheSupplier<>(KNNIndexCache::getWeightInKilobytes)))
             .put(StatNames.CACHE_CAPACITY_REACHED.getName(), new KNNStat<>(false,
                     new KNNCacheSupplier<>(KNNIndexCache::isCacheCapacityReached)))
+            .put(StatNames.GRAPH_QUERY_ERRORS.getName(), new KNNStat<>(false,
+                    new KNNCounterSupplier(KNNCounter.GRAPH_QUERY_ERRORS)))
+            .put(StatNames.GRAPH_QUERY_REQUESTS.getName(), new KNNStat<>(false,
+                    new KNNCounterSupplier(KNNCounter.GRAPH_QUERY_REQUESTS)))
+            .put(StatNames.GRAPH_INDEX_ERRORS.getName(), new KNNStat<>(false,
+                    new KNNCounterSupplier(KNNCounter.GRAPH_INDEX_ERRORS)))
+            .put(StatNames.GRAPH_INDEX_REQUESTS.getName(), new KNNStat<>(false,
+                    new KNNCounterSupplier(KNNCounter.GRAPH_INDEX_REQUESTS)))
             .put(StatNames.CIRCUIT_BREAKER_TRIGGERED.getName(), new KNNStat<>(true,
                     new KNNCircuitBreakerSupplier())).build();
 }

@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.index.DocValuesType;
 import org.apache.lucene.index.IndexOptions;
@@ -230,46 +231,52 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
 
     @Override
     public void parse(ParseContext context) throws IOException {
-        if (!KNNSettings.isKNNPluginEnabled()) {
-            throw new IllegalStateException("KNN plugin is disabled. To enable " +
-                                                    "update knn.plugin.enabled setting to true");
-        }
-
-        context.path().add(simpleName());
-
-        ArrayList<Float> vector = new ArrayList<>();
-        XContentParser.Token token = context.parser().currentToken();
-
-        if (token == XContentParser.Token.START_ARRAY) {
-            token = context.parser().nextToken();
-            while (token != XContentParser.Token.END_ARRAY) {
-                vector.add(context.parser().floatValue());
-                token = context.parser().nextToken();
+        KNNCounter.GRAPH_INDEX_REQUESTS.increment();
+        try {
+            if (!KNNSettings.isKNNPluginEnabled()) {
+                throw new IllegalStateException("KNN plugin is disabled. To enable " +
+                        "update knn.plugin.enabled setting to true");
             }
-        } else if (token == XContentParser.Token.VALUE_NUMBER) {
-            vector.add(context.parser().floatValue());
-            context.parser().nextToken();
-        }
 
-        if (fieldType().dimension != vector.size()) {
-            String errorMessage = String.format("Vector dimension mismatch. Expected: %d, Given: %d",
-                    fieldType().dimension, vector.size());
-            throw new IllegalArgumentException(errorMessage);
-        }
+            context.path().add(simpleName());
 
-        float[] array = new float[vector.size()];
-        int i = 0;
-        for (Float f : vector) {
-            array[i++] = f;
-        }
+            ArrayList<Float> vector = new ArrayList<>();
+            XContentParser.Token token = context.parser().currentToken();
 
-        VectorField point = new VectorField(name(), array, fieldType());
+            if (token == XContentParser.Token.START_ARRAY) {
+                token = context.parser().nextToken();
+                while (token != XContentParser.Token.END_ARRAY) {
+                    vector.add(context.parser().floatValue());
+                    token = context.parser().nextToken();
+                }
+            } else if (token == XContentParser.Token.VALUE_NUMBER) {
+                vector.add(context.parser().floatValue());
+                context.parser().nextToken();
+            }
 
-        context.doc().add(point);
-        if (fieldType().stored()) {
-            context.doc().add(new StoredField(name(), point.toString()));
+            if (fieldType().dimension != vector.size()) {
+                String errorMessage = String.format("Vector dimension mismatch. Expected: %d, Given: %d",
+                        fieldType().dimension, vector.size());
+                throw new IllegalArgumentException(errorMessage);
+            }
+
+            float[] array = new float[vector.size()];
+            int i = 0;
+            for (Float f : vector) {
+                array[i++] = f;
+            }
+
+            VectorField point = new VectorField(name(), array, fieldType());
+
+            context.doc().add(point);
+            if (fieldType().stored()) {
+                context.doc().add(new StoredField(name(), point.toString()));
+            }
+            context.path().remove();
+        } catch (Exception ex) {
+            KNNCounter.GRAPH_INDEX_ERRORS.increment();
+            throw ex;
         }
-        context.path().remove();
     }
 
     @Override

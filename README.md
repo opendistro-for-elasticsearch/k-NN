@@ -215,6 +215,18 @@ The number of cache misses that have occurred on the node. A cache miss occurs w
 #### graph_memory_usage
 The current weight of the cache (the total size in native memory of all of the graphs) in Kilobytes.
 
+#### graph_index_requests
+The number of requests to add the knn_vector field of a document into a graph.
+
+#### graph_index_errors
+The number of requests to add the knn_vector field of a document into a graph that have produced an error.
+
+#### graph_query_requests
+The number of graph queries that have been made. 
+
+#### graph_query_errors
+The number of graph queries that have produced an error.
+
 #### cache_capacity_reached
 Whether the cache capacity for this node has been reached. This capacity can be controlled as part of the *knn.memory.circuit_breaker.limit.*
 
@@ -244,6 +256,10 @@ GET /_opendistro/_knn/stats?pretty
             "eviction_count" : 0,
             "miss_count" : 1,
             "graph_memory_usage" : 1,
+            "graph_index_requests" : 7,
+            "graph_index_errors" : 1,
+            "graph_query_requests" : 30,
+            "graph_query_errors" : 15,
             "cache_capacity_reached" : false,
             "load_exception_count" : 0,
             "hit_count" : 0,
