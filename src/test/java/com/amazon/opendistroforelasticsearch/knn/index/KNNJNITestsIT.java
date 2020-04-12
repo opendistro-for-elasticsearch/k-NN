@@ -52,7 +52,7 @@ public class KNNJNITestsIT extends ESTestCase {
                 AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex.saveIndex(docs, vectors, indexPath, algoParams);
+                        KNNIndex.saveIndex(docs, vectors, indexPath, "l2", algoParams);
                         return null;
                     }
                 }
@@ -80,7 +80,7 @@ public class KNNJNITestsIT extends ESTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex.saveIndex(docs, vectors, indexPath, algoParams);
+                        KNNIndex.saveIndex(docs, vectors, indexPath, "l2", algoParams);
                         return null;
                     }
                 }
@@ -91,7 +91,7 @@ public class KNNJNITestsIT extends ESTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, algoQueryParams);
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, "l2", algoQueryParams);
         final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
@@ -126,7 +126,7 @@ public class KNNJNITestsIT extends ESTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex index = KNNIndex.loadIndex(indexPath.toString(), new String[] {});
+                        KNNIndex index = KNNIndex.loadIndex(indexPath.toString(), "l2", new String[] {});
                         return null;
                     }
                 }
@@ -153,7 +153,7 @@ public class KNNJNITestsIT extends ESTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex.saveIndex(docs, vectors, indexPath, algoIndexParams);
+                        KNNIndex.saveIndex(docs, vectors, indexPath, "l2", algoIndexParams);
                         return null;
                     }
                 }
@@ -165,7 +165,7 @@ public class KNNJNITestsIT extends ESTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=200"};
 
-        final KNNIndex index = KNNIndex.loadIndex(indexPath, algoQueryParams);
+        final KNNIndex index = KNNIndex.loadIndex(indexPath, "l2", algoQueryParams);
         final KNNQueryResult[] results = index.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
