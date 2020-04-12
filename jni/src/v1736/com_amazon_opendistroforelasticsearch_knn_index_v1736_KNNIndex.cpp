@@ -41,9 +41,9 @@ using similarity::KNNQueue;
 extern "C"
 
 struct IndexWrapper {
-  IndexWrapper() {
-    space.reset(SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams()));
-    index.reset(MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", "l2", *space, data));
+  IndexWrapper(string spaceType) {
+    space.reset(SpaceFactoryRegistry<float>::Instance().CreateSpace(spaceType, AnyParams()));
+    index.reset(MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", spaceType, *space, data));
   }
   std::unique_ptr<Space<float>> space;
   std::unique_ptr<Index<float>> index;
@@ -85,7 +85,7 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
     }
 }
 
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_saveIndex(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams)
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_saveIndex(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jstring spaceType, jobjectArray algoParams)
 {
     Space<float>* space = NULL;
     ObjectVector dataset;
@@ -93,7 +93,9 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
     int* object_ids = NULL;
 
     try {
-        space = SpaceFactoryRegistry<float>::Instance().CreateSpace("l2", AnyParams());
+        const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, 0);
+        string spaceTypeString(spaceTypeCStr);
+        space = SpaceFactoryRegistry<float>::Instance().CreateSpace(spaceTypeString, AnyParams());
         object_ids = env->GetIntArrayElements(ids, 0);
         for (int i = 0; i < env->GetArrayLength(vectors); i++) {
             jfloatArray vectorArray = (jfloatArray)env->GetObjectArrayElement(vectors, i);
@@ -103,7 +105,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
         }
         // free up memory
         env->ReleaseIntArrayElements(ids, object_ids, 0);
-        index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", "l2", *space, dataset);
+        index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", spaceTypeString, *space, dataset);
 
         int paramsCount = env->GetArrayLength(algoParams);
         vector<string> paramsList;
@@ -171,17 +173,19 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
     return NULL;
 }
 
-JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_init(JNIEnv* env, jclass cls,  jstring indexPath, jobjectArray algoParams)
+JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_init(JNIEnv* env, jclass cls,  jstring indexPath, jstring spaceType, jobjectArray algoParams)
 {
     IndexWrapper *indexWrapper = NULL;
     try {
         const char *indexPathCStr = env->GetStringUTFChars(indexPath, 0);
         string indexPathString(indexPathCStr);
+        const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, 0);
+        string spaceTypeString(spaceTypeCStr);
         env->ReleaseStringUTFChars(indexPath, indexPathCStr);
         has_exception_in_stack(env);
 
         // Load index from file (may throw)
-        IndexWrapper *indexWrapper = new IndexWrapper();
+        IndexWrapper *indexWrapper = new IndexWrapper(spaceTypeString);
         indexWrapper->index->LoadIndex(indexPathString);
 
         // Parse and set query params

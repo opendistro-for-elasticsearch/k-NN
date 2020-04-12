@@ -31,8 +31,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class KNNJNITests extends ESTestCase {
-    private static final Logger logger = LogManager.getLogger(KNNJNITests.class);
+public class KNNJNITestsIT extends ESTestCase {
+    private static final Logger logger = LogManager.getLogger(KNNJNITestsIT.class);
 
     public void testCreateHnswIndex() throws Exception {
         int[] docs = {0, 1, 2};
