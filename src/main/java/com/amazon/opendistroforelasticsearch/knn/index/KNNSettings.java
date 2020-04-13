@@ -157,7 +157,7 @@ public class KNNSettings {
              */
             put(KNN_MEMORY_CIRCUIT_BREAKER_ENABLED, Setting.boolSetting(KNN_MEMORY_CIRCUIT_BREAKER_ENABLED,true,
                     NodeScope, Dynamic));
-            put(KNN_MEMORY_CIRCUIT_BREAKER_LIMIT, knnMemoryCircuitBreakerSetting(KNN_MEMORY_CIRCUIT_BREAKER_LIMIT, "60%",
+            put(KNN_MEMORY_CIRCUIT_BREAKER_LIMIT, knnMemoryCircuitBreakerSetting(KNN_MEMORY_CIRCUIT_BREAKER_LIMIT, "50%",
                     NodeScope, Dynamic));
 
             /**
