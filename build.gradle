@@ -154,7 +154,7 @@ testClusters.integTest {
         if (System.getProperty("cluster.debug") != null) {
             def debugPort = 5005
             nodes.forEach { node ->
-                node.jvmArgs("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=*:${debugPort}")
+                node.jvmArgs("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=${debugPort}")
                 debugPort += 1
             }
         }

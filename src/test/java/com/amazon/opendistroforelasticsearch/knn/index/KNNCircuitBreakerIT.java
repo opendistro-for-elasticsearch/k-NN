@@ -44,7 +44,7 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
         // Create Single Shard Index so that all data is hosted on a single node
         Settings settings = Settings.builder()
                 .put("number_of_shards", 1)
-                .put("number_of_replicas", 0)
+                .put("number_of_replicas", 2)
                 .put("index.knn", true)
                 .build();
 
@@ -68,8 +68,12 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
         // Execute search on both indices - will cause eviction
         float[] qvector = {1.9f, 2.4f};
         int k = 10;
-        searchKNNIndex(indexName1, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
-        searchKNNIndex(indexName2, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
+
+        // Ensure that each shard is searched over so that each Lucene segment gets loaded into memory
+        for (int i = 0; i < 15; i++) {
+            searchKNNIndex(indexName1, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
+            searchKNNIndex(indexName2, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
+        }
 
         // Give cluster 5 seconds to update settings and then assert that Cb get triggered
         Thread.sleep(5*1000); // seconds
