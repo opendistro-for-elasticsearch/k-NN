@@ -45,6 +45,13 @@ plugins {
 
 apply plugin: 'elasticsearch.esplugin'
 
+def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || System.properties.containsKey('tests.cluster')
+def usingMultiNode = project.properties.containsKey('numNodes')
+// Only apply jacoco test coverage if we are running a local single node cluster
+if (!usingRemoteCluster && !usingMultiNode) {
+    apply from: 'build-tools/knnplugin-coverage.gradle'
+}
+
 ext {
     opendistroVersion = '1.6.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
@@ -63,9 +70,6 @@ allprojects {
     }
 }
 
-if (!System.properties.containsKey('tests.rest.cluster') && !System.properties.containsKey('tests.cluster')) {
-    apply from: 'build-tools/knnplugin-coverage.gradle'
-}
 
 jacoco {
     toolVersion = "0.8.3"
@@ -110,28 +114,61 @@ test {
     systemProperty "java.library.path", "$rootDir/buildSrc"
 }
 
+def _numNodes = findProperty('numNodes') as Integer ?: 1
 integTest {
     runner {
         systemProperty 'tests.security.manager', 'false'
         systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
+        systemProperty "java.library.path", "$rootDir/buildSrc"
+        // allows integration test classes to access test resource from project root path
+        systemProperty('project.root', project.rootDir.absolutePath)
+
+        doFirst {
+            // Tell the test JVM if the cluster JVM is running under a debugger so that tests can
+            // use longer timeouts for requests.
+            def isDebuggingCluster = getDebug() || System.getProperty("test.debug") != null
+            systemProperty 'cluster.debug', isDebuggingCluster
+            // Set number of nodes system property to be used in tests
+            systemProperty 'cluster.number_of_nodes', "${_numNodes}"
+            // There seems to be an issue when running multi node run or integ tasks with unicast_hosts
+            // not being written, the waitForAllConditions ensures it's written
+            getClusters().forEach { cluster ->
+                cluster.waitForAllConditions()
+            }
+        }
 
         // The -Ddebug.es option makes the cluster debuggable; this makes the tests debuggable
         if (System.getProperty("test.debug") != null) {
             jvmArgs '-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=8000'
         }
-
-        systemProperty "java.library.path", "$rootDir/buildSrc"
-        // allows integration test classes to access test resource from project root path
-        systemProperty('project.root', project.rootDir.absolutePath)
     }
 }
 
 testClusters.integTest {
         testDistribution = "OSS"
+        // Cluster shrink exception thrown if we try to set numberOfNodes to 1, so only apply if > 1
+        if (_numNodes > 1) numberOfNodes = _numNodes
+        // When running integration tests it doesn't forward the --debug-jvm to the cluster anymore
+        // i.e. we have to use a custom property to flag when we want to debug elasticsearch JVM
+        // since we also support multi node integration tests we increase debugPort per node
         if (System.getProperty("cluster.debug") != null) {
-            jvmArgs('-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=5005')
+            def debugPort = 5005
+            nodes.forEach { node ->
+                node.jvmArgs("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=*:${debugPort}")
+                debugPort += 1
+            }
         }
         systemProperty("java.library.path", "$rootDir/buildSrc")
+}
+
+run {
+    doFirst {
+        // There seems to be an issue when running multi node run or integ tasks with unicast_hosts
+        // not being written, the waitForAllConditions ensures it's written
+        getClusters().forEach { cluster ->
+            cluster.waitForAllConditions()
+        }
+    }
 }
 
 //TODO fix these

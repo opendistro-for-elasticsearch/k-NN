@@ -10,14 +10,14 @@ To learn more, please see our [documentation](https://opendistro.github.io/for-e
 
 1. Check out the package from version control.
 2. Launch Intellij IDEA, choose **Import Project**, and select the `settings.gradle` file in the root of this package.
-3. To build from the command line, set `JAVA_HOME` to point to a JDK >= 12 before running `./gradlew`.
+3. To build from the command line, set `JAVA_HOME` to point to a JDK >= 13 before running `./gradlew`.
 
 ## Build
 
 The package uses the [Gradle](https://docs.gradle.org/5.5.1/userguide/userguide.html) build system.
 
 1. Checkout this package from version control.
-2. To build from command line set `JAVA_HOME` to point to a JDK >=12
+2. To build from command line set `JAVA_HOME` to point to a JDK >=13
 3. Run `./gradlew build`
 
 ## Building JNI Library
@@ -31,6 +31,20 @@ make
 ``` 
 
 The library will be placed in the `buildSrc` directory.
+
+## Running Multi-node Cluster Locally
+
+It can be useful to test and debug on a multi-node cluster. In order to launch a 3 node cluster with the KNN plugin installed, run the following command:
+
+```
+./gradlew run -PnumNodes=3
+```
+
+In order to run the integration tests with a 3 node cluster, run this command:
+
+```
+./gradlew :integTest -PnumNodes=3
+```
 
 ### Debugging
 
@@ -46,7 +60,7 @@ OR
 ./gradlew run --debug-jvm # to just start a cluster that can be debugged
 ```
 
-The Elasticsearch server JVM will connect to a debugger attached to `localhost:5005` before starting.
+The Elasticsearch server JVM will connect to a debugger attached to `localhost:5005` before starting. If there are multiple nodes, the servers will connect to debuggers listening on ports `5005, 5006, ...`
 
 To debug code running in an integration test (which exercises the server from a separate JVM), first, setup a remote debugger listening on port `8000`, and then run:
 
