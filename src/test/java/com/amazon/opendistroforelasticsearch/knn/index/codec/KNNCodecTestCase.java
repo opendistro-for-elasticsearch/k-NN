@@ -139,8 +139,9 @@ public class  KNNCodecTestCase extends ESTestCase {
         Document doc1 = new Document();
         doc1.add(vectorField1);
         writer.addDocument(doc1);
-        KNNIndexCache.setResourceWatcherService(createDisabledResourceWatcherService());
         IndexReader reader = writer.getReader();
+        writer.close();
+        KNNIndexCache.setResourceWatcherService(createDisabledResourceWatcherService());
         List<String> hnswfiles = Arrays.stream(dir.listAll()).filter(x -> x.contains("hnsw")).collect(Collectors.toList());
 
         // there should be 2 hnsw index files created. one for test_vector and one for my_vector
@@ -160,7 +161,6 @@ public class  KNNCodecTestCase extends ESTestCase {
         assertEquals(1, searcher.count(new KNNQuery("my_vector", new float[] {1.0f, 1.0f}, 1, "dummy")));
 
         reader.close();
-        writer.close();
         dir.close();
     }
 }

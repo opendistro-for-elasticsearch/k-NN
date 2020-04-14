@@ -10,3 +10,7 @@ out/
 buildSrc/es-knn-offline-repo-*
 oss/*
 *.iml
+jni/CMakeCache.txt
+jni/CMakeFiles
+jni/Makefile
+jni/cmake_install.cmake

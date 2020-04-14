@@ -1,0 +1,3 @@
+[submodule "jni/external/nmslib"]
+	path = jni/external/nmslib
+	url = https://github.com/nmslib/nmslib.git
