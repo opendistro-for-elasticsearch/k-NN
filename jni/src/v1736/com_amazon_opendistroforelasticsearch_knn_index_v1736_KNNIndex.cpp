@@ -95,6 +95,8 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
     try {
         const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, 0);
         string spaceTypeString(spaceTypeCStr);
+        env->ReleaseStringUTFChars(spaceType, spaceTypeCStr);
+        has_exception_in_stack(env);
         space = SpaceFactoryRegistry<float>::Instance().CreateSpace(spaceTypeString, AnyParams());
         object_ids = env->GetIntArrayElements(ids, 0);
         for (int i = 0; i < env->GetArrayLength(vectors); i++) {
@@ -179,12 +181,14 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v17
     try {
         const char *indexPathCStr = env->GetStringUTFChars(indexPath, 0);
         string indexPathString(indexPathCStr);
-        const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, 0);
-        string spaceTypeString(spaceTypeCStr);
         env->ReleaseStringUTFChars(indexPath, indexPathCStr);
         has_exception_in_stack(env);
 
         // Load index from file (may throw)
+        const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, 0);
+        string spaceTypeString(spaceTypeCStr);
+        env->ReleaseStringUTFChars(spaceType, spaceTypeCStr);
+        has_exception_in_stack(env);
         IndexWrapper *indexWrapper = new IndexWrapper(spaceTypeString);
         indexWrapper->index->LoadIndex(indexPathString);
 
