@@ -131,6 +131,9 @@ You must provide index-level settings when you create the index. If you don't pr
 ##### index.knn
 This setting indicates whether the index uses the KNN Codec or not. Possible values are *true*, *false*. Default value is *false*.
 
+##### index.knn.space_type
+This setting indicates the similarity metrics between vectors. Supported values are *l2*, *cosinesimil*. *l2* refers to euclidean distance metric; *cosinesimil* refers to cosine similarity. Default value is *l2*.
+
 ##### index.knn.algo_param.m
 This setting is an HNSW parameter that represents "the number of bi-directional links created for every new element during construction. Reasonable range for M is 2-100. Higher M work better on datasets with high intrinsic dimensionality and/or high recall, while low M work better for datasets with low intrinsic dimensionality and/or low recalls. The parameter also determines the algorithm's memory consumption, which is roughly M * 8-10 bytes per stored element." [nmslib/hnswlib](https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md) The default value is *16*.
 
