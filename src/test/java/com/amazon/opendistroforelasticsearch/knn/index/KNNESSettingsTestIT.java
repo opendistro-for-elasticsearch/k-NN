@@ -17,7 +17,11 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestStatus;
+
+import java.io.IOException;
+import java.security.InvalidParameterException;
 
 import static org.hamcrest.Matchers.containsString;
 
@@ -69,6 +73,19 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
         //enable plugin
         updateClusterSettings(KNNSettings.KNN_PLUGIN_ENABLED, true);
         searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
+    }
+
+    public void testCreateIndexWithInvalidSpaceType() throws IOException {
+        String invalidSpaceType = "bar";
+        Settings invalidSettings = Settings.builder()
+            .put("number_of_shards", 1)
+            .put("number_of_replicas", 0)
+            .put("index.knn", true)
+            .put("index.knn.space_type", invalidSpaceType)
+            .build();
+        Exception ex = expectThrows(ResponseException.class,
+            () -> createKnnIndex(INDEX_NAME, invalidSettings, createKnnIndexMapping(FIELD_NAME, 2)));
+        assertThat(ex.getMessage(), containsString(String.format("Unsupported space type: %s", invalidSpaceType)));
     }
 }
 
