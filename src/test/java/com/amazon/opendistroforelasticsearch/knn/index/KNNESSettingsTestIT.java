@@ -21,7 +21,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
-import java.security.InvalidParameterException;
 
 import static org.hamcrest.Matchers.containsString;
 
