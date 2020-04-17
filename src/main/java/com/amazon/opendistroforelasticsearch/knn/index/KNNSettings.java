@@ -34,7 +34,6 @@ import org.elasticsearch.monitor.os.OsProbe;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -397,38 +396,4 @@ public class KNNSettings {
             }
         }
     }
-
-    /**
-     * Enum contains space types for k-NN similarity search
-     */
-    public enum SpaceTypes {
-        l2("l2"),
-        cosinesimil("cosinesimil");
-
-        private String value;
-
-        SpaceTypes(String value) { this.value = value; }
-
-        /**
-         * Get space type
-         *
-         * @return name
-         */
-        public String getValue() { return value; }
-
-        /**
-         * Get all space types
-         *
-         * @return set of all stat names
-         */
-        public static Set<String> getValues() {
-            Set<String> values = new HashSet<>();
-
-            for (SpaceTypes spaceType : SpaceTypes.values()) {
-                values.add(spaceType.getValue());
-            }
-            return values;
-        }
-    }
-
 }

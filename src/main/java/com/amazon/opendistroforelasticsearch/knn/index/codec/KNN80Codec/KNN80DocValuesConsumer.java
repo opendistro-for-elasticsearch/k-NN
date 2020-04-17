@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
+import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -94,7 +95,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             // Pass the path for the nms library to save the file
             String tempIndexPath = indexPath + TEMP_SUFFIX;
             Map<String, String> fieldAttributes = field.attributes();
-            String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, KNNSettings.SpaceTypes.l2.getValue());
+            String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceTypes.l2.getValue());
             String[] algoParams = getKNNIndexParams(fieldAttributes);
             AccessController.doPrivileged(
                     new PrivilegedAction<Void>() {
