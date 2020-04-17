@@ -392,7 +392,7 @@ public class KNNSettings {
         private Set<String> types = SpaceTypes.getValues();
 
         @Override public void validate(String value) {
-            if (!types.contains(value.toLowerCase())){
+            if (value == null || !types.contains(value.toLowerCase())){
                 throw new InvalidParameterException(String.format("Unsupported space type: %s", value));
             }
         }
