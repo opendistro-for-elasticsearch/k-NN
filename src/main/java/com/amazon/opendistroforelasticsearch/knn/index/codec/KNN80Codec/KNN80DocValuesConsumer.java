@@ -100,7 +100,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             AccessController.doPrivileged(
                     new PrivilegedAction<Void>() {
                         public Void run() {
-                            KNNIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, spaceType, algoParams);
+                            KNNIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
                             return null;
                         }
                     }

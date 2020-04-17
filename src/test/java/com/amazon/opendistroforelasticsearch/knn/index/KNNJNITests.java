@@ -52,7 +52,7 @@ public class KNNJNITests extends ESTestCase {
                 AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex.saveIndex(docs, vectors, indexPath, "l2", algoParams);
+                        KNNIndex.saveIndex(docs, vectors, indexPath, algoParams, "l2");
                         return null;
                     }
                 }
@@ -80,7 +80,7 @@ public class KNNJNITests extends ESTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex.saveIndex(docs, vectors, indexPath, "l2", algoParams);
+                        KNNIndex.saveIndex(docs, vectors, indexPath, algoParams, "l2");
                         return null;
                     }
                 }
@@ -91,7 +91,7 @@ public class KNNJNITests extends ESTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, "l2", algoQueryParams);
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, algoQueryParams, "l2");
         final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
@@ -129,7 +129,7 @@ public class KNNJNITests extends ESTestCase {
         AccessController.doPrivileged(
             new PrivilegedAction<Void>() {
                 public Void run() {
-                    KNNIndex.saveIndex(docs, vectors, indexPath, "cosinesimil", algoParams);
+                    KNNIndex.saveIndex(docs, vectors, indexPath, algoParams, "cosinesimil");
                     return null;
                 }
             }
@@ -140,7 +140,7 @@ public class KNNJNITests extends ESTestCase {
         float[] queryVector = {2.0f, -2.0f};
         String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, "cosinesimil", algoQueryParams);
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, algoQueryParams, "cosinesimil");
         final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
@@ -175,7 +175,7 @@ public class KNNJNITests extends ESTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex index = KNNIndex.loadIndex(indexPath.toString(), "l2", new String[] {});
+                        KNNIndex index = KNNIndex.loadIndex(indexPath.toString(), new String[] {}, "l2");
                         return null;
                     }
                 }
@@ -202,7 +202,7 @@ public class KNNJNITests extends ESTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex.saveIndex(docs, vectors, indexPath, "l2", algoIndexParams);
+                        KNNIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, "l2");
                         return null;
                     }
                 }
@@ -214,7 +214,7 @@ public class KNNJNITests extends ESTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=200"};
 
-        final KNNIndex index = KNNIndex.loadIndex(indexPath, "l2", algoQueryParams);
+        final KNNIndex index = KNNIndex.loadIndex(indexPath, algoQueryParams, "l2");
         final KNNQueryResult[] results = index.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(

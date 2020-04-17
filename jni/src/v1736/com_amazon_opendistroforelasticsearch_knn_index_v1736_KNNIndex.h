@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex
  * Method:    saveIndex
- * Signature: ([I[[FLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;)V
+ * Signature: ([I[[FLjava/lang/String;[Ljava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_saveIndex
-  (JNIEnv *, jclass, jintArray, jobjectArray, jstring, jstring, jobjectArray);
+  (JNIEnv *, jclass, jintArray, jobjectArray, jstring, jobjectArray, jstring);
 
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex
@@ -26,10 +26,10 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex
  * Method:    init
- * Signature: (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;)J
+ * Signature: (Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_init
-  (JNIEnv *, jclass, jstring, jstring, jobjectArray);
+  (JNIEnv *, jclass, jstring, jobjectArray, jstring);
 
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex
