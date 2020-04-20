@@ -55,11 +55,11 @@ PUT /my_index
             },
             "my_vector2": {
                 "type": "knn_vector",
-                "dimension": 2
+                "dimension": 3
             },
             "my_vector3": {
                 "type": "knn_vector",
-                "dimension": 2
+                "dimension": 4
             }
         }
     }
@@ -99,7 +99,7 @@ POST my_index/_doc/5
 
 POST my_index/_doc/6
 {
-  "my_vector3" : [8.5, 9.5, 10.5, 14.5, 20.19, 22.42]
+  "my_vector3" : [8.5, 9.5, 10.5, 14.5]
 }
 ```
 
