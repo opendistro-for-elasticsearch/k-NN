@@ -24,7 +24,9 @@ public enum KNNCounter {
     GRAPH_QUERY_ERRORS("graph_query_errors"),
     GRAPH_QUERY_REQUESTS("graph_query_requests"),
     GRAPH_INDEX_ERRORS("graph_index_errors"),
-    GRAPH_INDEX_REQUESTS("graph_index_requests");
+    GRAPH_INDEX_REQUESTS("graph_index_requests"),
+    KNN_QUERY_ERRORS("knn_query_errors"),
+    KNN_QUERY_REQUESTS("knn_query_requests");
 
     private String name;
     private AtomicLong count;

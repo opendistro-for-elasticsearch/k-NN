@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.Query;
@@ -59,19 +60,25 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
      * @param k         K nearest neighbours for the given vector
      */
     public KNNQueryBuilder(String fieldName, float[] vector, int k) {
+        KNNCounter.KNN_QUERY_REQUESTS.increment();
         if (Strings.isNullOrEmpty(fieldName)) {
+            KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("[" + NAME + "] requires fieldName");
         }
         if (vector == null) {
+            KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("[" + NAME + "] requires query vector");
         }
         if (vector.length == 0) {
+            KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("[" + NAME + "] query vector is empty");
         }
         if (k <= 0) {
+            KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("[" + NAME + "] requires k > 0");
         }
         if (k > K_MAX) {
+            KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("[" + NAME + "] requires k <= " + K_MAX);
         }
 
@@ -94,9 +101,15 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
      */
     public KNNQueryBuilder(StreamInput in) throws IOException {
         super(in);
-        fieldName = in.readString();
-        vector = in.readFloatArray();
-        k = in.readInt();
+        KNNCounter.KNN_QUERY_REQUESTS.increment();
+        try {
+            fieldName = in.readString();
+            vector = in.readFloatArray();
+            k = in.readInt();
+        } catch (IOException ex) {
+            KNNCounter.KNN_QUERY_ERRORS.increment();
+            throw new RuntimeException("[KNN] Unable to create KNNQueryBuilder: " + ex);
+        }
     }
 
     public static KNNQueryBuilder fromXContent(XContentParser parser) throws IOException {
@@ -126,15 +139,18 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
                         } else if (AbstractQueryBuilder.NAME_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                             queryName = parser.text();
                         } else {
+                            KNNCounter.KNN_QUERY_ERRORS.increment();
                             throw new ParsingException(parser.getTokenLocation(),
                                     "[" + NAME + "] query does not support [" + currentFieldName + "]");
                         }
                     } else {
+                        KNNCounter.KNN_QUERY_ERRORS.increment();
                         throw new ParsingException(parser.getTokenLocation(),
                                 "[" + NAME + "] unknown token [" + token + "] after [" + currentFieldName + "]");
                     }
                 }
             } else {
+                KNNCounter.KNN_QUERY_ERRORS.increment();
                 throwParsingExceptionOnMultipleFields(NAME, parser.getTokenLocation(), fieldName, parser.currentName());
                 fieldName = parser.currentName();
                 vector = parser.list();
