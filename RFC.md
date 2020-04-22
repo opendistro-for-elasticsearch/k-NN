@@ -37,7 +37,7 @@ KNN indices need the ```KNNCodec``` to read and write hnsw indices, which are cr
 
 ### Creating K-NN index
 ``` JSON
-PUT /myindex
+PUT /my_index
 {
     "settings" : {
         "index": {
@@ -55,11 +55,11 @@ PUT /myindex
             },
             "my_vector2": {
                 "type": "knn_vector",
-                "dimension": 2
+                "dimension": 3
             },
             "my_vector3": {
                 "type": "knn_vector",
-                "dimension": 2
+                "dimension": 4
             }
         }
     }
@@ -99,7 +99,7 @@ POST my_index/_doc/5
 
 POST my_index/_doc/6
 {
-  "my_vector3" : [8.5, 9.5, 10.5, 14.5, 20.19, 22.42]
+  "my_vector3" : [8.5, 9.5, 10.5, 14.5]
 }
 ```
 
@@ -132,7 +132,7 @@ Use the new ```knn``` clause in the query DSL and specify the point of interest 
 nearest neighbors to fetch as ```k```.
 
 ``` JSON
-POST myindex/_search
+POST my_index/_search
 {
   "size" : 2,
   "query": {
