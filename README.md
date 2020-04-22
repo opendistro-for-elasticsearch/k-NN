@@ -287,6 +287,7 @@ GET /_opendistro/_knn/stats?pretty
             "graph_memory_usage" : 1,
             "graph_index_requests" : 7,
             "graph_index_errors" : 1,
+            "knn_query_requests" : 4,
             "graph_query_requests" : 30,
             "graph_query_errors" : 15,
             "cache_capacity_reached" : false,
