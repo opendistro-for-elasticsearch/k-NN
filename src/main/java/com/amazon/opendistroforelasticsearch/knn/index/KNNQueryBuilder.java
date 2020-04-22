@@ -60,7 +60,6 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
      * @param k         K nearest neighbours for the given vector
      */
     public KNNQueryBuilder(String fieldName, float[] vector, int k) {
-        KNNCounter.KNN_QUERY_REQUESTS.increment();
         if (Strings.isNullOrEmpty(fieldName)) {
             KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("[" + NAME + "] requires fieldName");
@@ -101,7 +100,6 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
      */
     public KNNQueryBuilder(StreamInput in) throws IOException {
         super(in);
-        KNNCounter.KNN_QUERY_REQUESTS.increment();
         try {
             fieldName = in.readString();
             vector = in.readFloatArray();
@@ -120,6 +118,7 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
         String queryName = null;
         String currentFieldName = null;
         XContentParser.Token token;
+        KNNCounter.KNN_QUERY_REQUESTS.increment();
         while ((token = parser.nextToken()) != XContentParser.Token.END_OBJECT) {
             if (token == XContentParser.Token.FIELD_NAME) {
                 currentFieldName = parser.currentName();
@@ -150,7 +149,6 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
                     }
                 }
             } else {
-                KNNCounter.KNN_QUERY_ERRORS.increment();
                 throwParsingExceptionOnMultipleFields(NAME, parser.getTokenLocation(), fieldName, parser.currentName());
                 fieldName = parser.currentName();
                 vector = parser.list();
