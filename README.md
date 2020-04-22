@@ -253,6 +253,9 @@ The number of graph queries that have been made.
 #### graph_query_errors
 The number of graph queries that have produced an error.
 
+#### knn_query_requests
+The number of KNN query requests received. 
+
 #### cache_capacity_reached
 Whether the cache capacity for this node has been reached. This capacity can be controlled as part of the *knn.memory.circuit_breaker.limit.*
 

@@ -35,7 +35,6 @@ public enum StatNames {
     GRAPH_QUERY_REQUESTS(KNNCounter.GRAPH_QUERY_REQUESTS.getName()),
     GRAPH_INDEX_ERRORS(KNNCounter.GRAPH_INDEX_ERRORS.getName()),
     GRAPH_INDEX_REQUESTS(KNNCounter.GRAPH_INDEX_REQUESTS.getName()),
-    KNN_QUERY_ERRORS(KNNCounter.KNN_QUERY_ERRORS.getName()),
     KNN_QUERY_REQUESTS(KNNCounter.KNN_QUERY_REQUESTS.getName());
 
     private String name;

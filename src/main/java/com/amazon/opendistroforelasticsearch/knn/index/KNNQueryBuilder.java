@@ -61,23 +61,18 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
      */
     public KNNQueryBuilder(String fieldName, float[] vector, int k) {
         if (Strings.isNullOrEmpty(fieldName)) {
-            KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("[" + NAME + "] requires fieldName");
         }
         if (vector == null) {
-            KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("[" + NAME + "] requires query vector");
         }
         if (vector.length == 0) {
-            KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("[" + NAME + "] query vector is empty");
         }
         if (k <= 0) {
-            KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("[" + NAME + "] requires k > 0");
         }
         if (k > K_MAX) {
-            KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("[" + NAME + "] requires k <= " + K_MAX);
         }
 
@@ -105,7 +100,6 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
             vector = in.readFloatArray();
             k = in.readInt();
         } catch (IOException ex) {
-            KNNCounter.KNN_QUERY_ERRORS.increment();
             throw new RuntimeException("[KNN] Unable to create KNNQueryBuilder: " + ex);
         }
     }
@@ -138,12 +132,10 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
                         } else if (AbstractQueryBuilder.NAME_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                             queryName = parser.text();
                         } else {
-                            KNNCounter.KNN_QUERY_ERRORS.increment();
                             throw new ParsingException(parser.getTokenLocation(),
                                     "[" + NAME + "] query does not support [" + currentFieldName + "]");
                         }
                     } else {
-                        KNNCounter.KNN_QUERY_ERRORS.increment();
                         throw new ParsingException(parser.getTokenLocation(),
                                 "[" + NAME + "] unknown token [" + token + "] after [" + currentFieldName + "]");
                     }
