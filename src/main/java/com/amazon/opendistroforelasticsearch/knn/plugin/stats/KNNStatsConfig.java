@@ -56,5 +56,5 @@ public class KNNStatsConfig {
             .put(StatNames.KNN_QUERY_REQUESTS.getName(), new KNNStat<>(false,
                     new KNNCounterSupplier(KNNCounter.KNN_QUERY_REQUESTS)))
             .put(StatNames.INDICES_IN_CACHE.getName(), new KNNStat<>(false,
-            new KNNCacheSupplier<>(KNNIndexCache::getIndicesCacheStats))).build();
+                    new KNNCacheSupplier<>(KNNIndexCache::getIndicesCacheStats))).build();
 }
