@@ -118,6 +118,67 @@ curl -X PUT "localhost:9200/myindex/_doc/5" -H 'Content-Type: application/json' 
 "my_vector" : [4.5, 5.5],
 "price":19
 }
+
+#### graph_memory_usage
+The current weight of the cache (the total size in native memory of all of the graphs) in Kilobytes.
+
+#### graph_index_requests
+The number of requests to add the knn_vector field of a document into a graph.
+
+#### graph_index_errors
+The number of requests to add the knn_vector field of a document into a graph that have produced an error.
+
+#### graph_query_requests
+The number of graph queries that have been made. 
+
+#### graph_query_errors
+The number of graph queries that have produced an error.
+
+#### knn_query_requests
+The number of KNN query requests received. 
+
+#### cache_capacity_reached
+Whether the cache capacity for this node has been reached. This capacity can be controlled as part of the *knn.memory.circuit_breaker.limit.*
+
+#### load_exception_count
+The number of exceptions that have occurred when trying to load an item into the cache. This count could increase when graph loading has exceptions.
+
+#### load_success_count
+The number of times an item is successfully loaded into the cache.
+
+#### total_load_time
+The total time in nanoseconds it has taken to load items into cache (cumulative).
+
+#### Examples
+```
+
+GET /_opendistro/_knn/stats?pretty
+{
+    "_nodes" : {
+        "total" : 1,
+        "successful" : 1,
+        "failed" : 0
+    },
+    "cluster_name" : "_run",
+    "circuit_breaker_triggered" : false,
+    "nodes" : {
+        "HYMrXXsBSamUkcAjhjeN0w" : {
+            "eviction_count" : 0,
+            "miss_count" : 1,
+            "graph_memory_usage" : 1,
+            "graph_index_requests" : 7,
+            "graph_index_errors" : 1,
+            "knn_query_requests" : 4,
+            "graph_query_requests" : 30,
+            "graph_query_errors" : 15,
+            "cache_capacity_reached" : false,
+            "load_exception_count" : 0,
+            "hit_count" : 0,
+            "load_success_count" : 1,
+            "total_load_time" : 2878745
+        }
+    }
+}
 '
 ```
 
