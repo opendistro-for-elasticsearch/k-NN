@@ -28,7 +28,7 @@ To build the JNI Library used to incorporate NMSLIB functionality, follow these 
 cd jni
 cmake .
 make
-``` 
+```
 
 The library will be placed in the `buildSrc` directory.
 
@@ -65,7 +65,7 @@ The Elasticsearch server JVM will connect to a debugger attached to `localhost:5
 To debug code running in an integration test (which exercises the server from a separate JVM), first, setup a remote debugger listening on port `8000`, and then run:
 
 ```
-./gradlew :integTest -Dtest.debug=1 
+./gradlew :integTest -Dtest.debug=1
 ```
 
 The test runner JVM will connect to a debugger attached to `localhost:8000` before running the tests.
@@ -94,15 +94,15 @@ PUT /myindex
             "my_vector1": {
                 "type": "knn_vector",
                 "dimension": 2
-            }, 
+            },
             "my_vector2": {
                 "type": "knn_vector",
                 "dimension": 4
-            }, 
+            },
             "my_vector3": {
                 "type": "knn_vector",
                 "dimension": 8
-            } 
+            }
         }
     }
 }
@@ -160,7 +160,7 @@ PUT /my_index/_settings
 {
     "index" : {
         "knn": true,
-        "knn.algo_param.m": 18, 
+        "knn.algo_param.m": 18,
         "knn.algo_param.ef_search" : 20,
         "knn.algo_param.ef_construction" : 40
     }
@@ -176,7 +176,7 @@ This setting indicates whether or not the KNN Plugin is enabled. If it is disabl
 This setting specifies how many threads the NMS library should use to create the graph in memory. By default, the NMS library sets this value to the number of cores the machine has. However, because ES can spawn the same number of threads for searching, this could lead to (number of cores)^2 threads running and lead to 100% CPU utilization. The default value is *1.*
 
 #### Cache
-The KNN Plugin uses a Guava cache to keep track of the graphs currently loaded into native memory. When a query is run against a graph for the first time, the graph is loaded into native memory (outside the Java heap). Because Elasticsearch runs inside of the JVM, it cannot manage native memory directly. So, it keeps track of native memory by adding an entry into a Guava cache that contains the pointer to the graph in native memory and how much memory it uses.  The cache’s weight just means how much native memory all of the elements in the cache are taking up. If the maximum weight (this value is set by *knn.memory.circuit_breaker.limit*) of the cache is exceeded when it tries to load a graph into memory, the cache evicts an entry to make room for the new entry. Additionally, the cache can evict entries based on how long it has been since they were last accessed. 
+The KNN Plugin uses a Guava cache to keep track of the graphs currently loaded into native memory. When a query is run against a graph for the first time, the graph is loaded into native memory (outside the Java heap). Because Elasticsearch runs inside of the JVM, it cannot manage native memory directly. So, it keeps track of native memory by adding an entry into a Guava cache that contains the pointer to the graph in native memory and how much memory it uses.  The cache’s weight just means how much native memory all of the elements in the cache are taking up. If the maximum weight (this value is set by *knn.memory.circuit_breaker.limit*) of the cache is exceeded when it tries to load a graph into memory, the cache evicts an entry to make room for the new entry. Additionally, the cache can evict entries based on how long it has been since they were last accessed.
 
 ##### knn.cache.item.expiry.enabled
 This setting indicates that the cache should evict entries that have expired (not been accessed for *knn.cache.item.expiry.minutes*). The default value is *false.*
@@ -188,7 +188,7 @@ This setting indicates how long an item can be in the cache without being access
 For KNN, the circuit breaker is used to indicate when performance may degrade because the graphs loaded into native memory are reaching the cluster’s total limits. Currently, the system does not perform any action once this limit is reached.
 
 ##### knn.memory.circuit_breaker.enabled
-This setting enables or disables the circuit breaker feature.  Disabling this setting will keep you at risk of Out of memory as we do not have control on the memory usage for the graphs. The default value is *true*. 
+This setting enables or disables the circuit breaker feature.  Disabling this setting will keep you at risk of Out of memory as we do not have control on the memory usage for the graphs. The default value is *true*.
 
 ##### knn.memory.circuit_breaker.limit
 This setting indicates the maximum capacity of the cache. When the cache attempts to load in a graph that exceeds this limit, it is forced to evict an entry and *knn.circuit_breaker.triggered *is set to *true.* The default value for this setting is *60% *of the machines total memory outside the Elasticsearch jvm . However, a value in *KB* can be given as well.
@@ -233,7 +233,7 @@ Indicates whether the circuit breaker is triggered.
 The number of evictions that have occurred in the guava cache. *note:* explicit evictions that occur because of index deletion are not counted.
 
 #### hit_count
-The number of cache hits that have occurred on the node. A cache hit occurs when a user queries a graph and it is already loaded into memory. 
+The number of cache hits that have occurred on the node. A cache hit occurs when a user queries a graph and it is already loaded into memory.
 
 #### miss_count
 The number of cache misses that have occurred on the node. A cache miss occurs when a user queries a graph and it has not yet been loaded into memory.
@@ -248,13 +248,13 @@ The number of requests to add the knn_vector field of a document into a graph.
 The number of requests to add the knn_vector field of a document into a graph that have produced an error.
 
 #### graph_query_requests
-The number of graph queries that have been made. 
+The number of graph queries that have been made.
 
 #### graph_query_errors
 The number of graph queries that have produced an error.
 
 #### knn_query_requests
-The number of KNN query requests received. 
+The number of KNN query requests received.
 
 #### cache_capacity_reached
 Whether the cache capacity for this node has been reached. This capacity can be controlled as part of the *knn.memory.circuit_breaker.limit.*
@@ -267,6 +267,9 @@ The number of times an item is successfully loaded into the cache.
 
 #### total_load_time
 The total time in nanoseconds it has taken to load items into cache (cumulative).
+
+#### indices_in_cache
+For each index that has graphs in the cache, this stat provides the number of graphs that index has and the total graph_memory_usage that index is using in Kilobytes.
 
 #### Examples
 ```
@@ -290,6 +293,12 @@ GET /_opendistro/_knn/stats?pretty
             "knn_query_requests" : 4,
             "graph_query_requests" : 30,
             "graph_query_errors" : 15,
+            "indices_in_cache" : {
+                "myindex" : {
+                    "graph_memory_usage" : 2,
+                    "graph_count" : 2
+                }
+            },
             "cache_capacity_reached" : false,
             "load_exception_count" : 0,
             "hit_count" : 0,

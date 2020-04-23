@@ -54,5 +54,7 @@ public class KNNStatsConfig {
             .put(StatNames.CIRCUIT_BREAKER_TRIGGERED.getName(), new KNNStat<>(true,
                     new KNNCircuitBreakerSupplier()))
             .put(StatNames.KNN_QUERY_REQUESTS.getName(), new KNNStat<>(false,
-                    new KNNCounterSupplier(KNNCounter.KNN_QUERY_REQUESTS))).build();
+                    new KNNCounterSupplier(KNNCounter.KNN_QUERY_REQUESTS)))
+            .put(StatNames.INDICES_IN_CACHE.getName(), new KNNStat<>(false,
+            new KNNCacheSupplier<>(KNNIndexCache::getIndicesCacheStats))).build();
 }

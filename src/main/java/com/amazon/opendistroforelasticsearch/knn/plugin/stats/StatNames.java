@@ -30,6 +30,7 @@ public enum StatNames {
     EVICTION_COUNT("eviction_count"),
     GRAPH_MEMORY_USAGE("graph_memory_usage"),
     CACHE_CAPACITY_REACHED("cache_capacity_reached"),
+    INDICES_IN_CACHE("indices_in_cache"),
     CIRCUIT_BREAKER_TRIGGERED("circuit_breaker_triggered"),
     GRAPH_QUERY_ERRORS(KNNCounter.GRAPH_QUERY_ERRORS.getName()),
     GRAPH_QUERY_REQUESTS(KNNCounter.GRAPH_QUERY_REQUESTS.getName()),
