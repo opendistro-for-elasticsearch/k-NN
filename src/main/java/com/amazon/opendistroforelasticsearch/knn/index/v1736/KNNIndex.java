@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index.v1736;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,7 +71,7 @@ public class KNNIndex implements AutoCloseable {
     public KNNQueryResult[] queryIndex(final float[] query, final int k) throws IOException {
         Lock readLock = readWriteLock.readLock();
         readLock.lock();
-
+        KNNCounter.GRAPH_QUERY_REQUESTS.increment();
         try {
             if (this.isClosed) {
                 throw new IOException("Index is already closed");
@@ -84,6 +85,9 @@ public class KNNIndex implements AutoCloseable {
                     }
             );
 
+        } catch (Exception ex) {
+            KNNCounter.GRAPH_QUERY_ERRORS.increment();
+            throw new RuntimeException("Unable to query the index: " + ex);
         } finally {
             readLock.unlock();
         }

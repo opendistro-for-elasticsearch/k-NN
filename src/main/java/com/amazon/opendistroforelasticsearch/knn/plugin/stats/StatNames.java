@@ -30,7 +30,12 @@ public enum StatNames {
     EVICTION_COUNT("eviction_count"),
     GRAPH_MEMORY_USAGE("graph_memory_usage"),
     CACHE_CAPACITY_REACHED("cache_capacity_reached"),
-    CIRCUIT_BREAKER_TRIGGERED("circuit_breaker_triggered");
+    CIRCUIT_BREAKER_TRIGGERED("circuit_breaker_triggered"),
+    GRAPH_QUERY_ERRORS(KNNCounter.GRAPH_QUERY_ERRORS.getName()),
+    GRAPH_QUERY_REQUESTS(KNNCounter.GRAPH_QUERY_REQUESTS.getName()),
+    GRAPH_INDEX_ERRORS(KNNCounter.GRAPH_INDEX_ERRORS.getName()),
+    GRAPH_INDEX_REQUESTS(KNNCounter.GRAPH_INDEX_REQUESTS.getName()),
+    KNN_QUERY_REQUESTS(KNNCounter.KNN_QUERY_REQUESTS.getName());
 
     private String name;
 

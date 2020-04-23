@@ -16,6 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.codecs.CodecUtil;
@@ -69,12 +70,14 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
     }
 
     public void addKNNBinaryField(FieldInfo field, DocValuesProducer valuesProducer) throws IOException {
+        KNNCounter.GRAPH_INDEX_REQUESTS.increment();
         if (field.attributes().containsKey(KNNVectorFieldMapper.KNN_FIELD)) {
 
             /**
              * We always write with latest NMS library version
              */
             if (!isNmsLibLatest()) {
+                KNNCounter.GRAPH_INDEX_ERRORS.increment();
                 throw new IllegalStateException("Nms library version mismatch. Correct version: "
                                                         + NmsLibVersion.LATEST.indexLibraryVersion());
             }
@@ -118,6 +121,9 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
                  IndexOutput os = state.directory.createOutput(hnswFileName, state.context)) {
                 os.copyBytes(is, is.length());
                 CodecUtil.writeFooter(os);
+            } catch (Exception ex) {
+                KNNCounter.GRAPH_INDEX_ERRORS.increment();
+                throw new RuntimeException("[KNN] Adding footer to serialized graph failed: " + ex);
             } finally {
                 IOUtils.deleteFilesIgnoringExceptions(state.directory, hsnwTempFileName);
             }

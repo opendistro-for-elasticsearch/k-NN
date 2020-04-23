@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.Query;
@@ -94,9 +95,13 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
      */
     public KNNQueryBuilder(StreamInput in) throws IOException {
         super(in);
-        fieldName = in.readString();
-        vector = in.readFloatArray();
-        k = in.readInt();
+        try {
+            fieldName = in.readString();
+            vector = in.readFloatArray();
+            k = in.readInt();
+        } catch (IOException ex) {
+            throw new RuntimeException("[KNN] Unable to create KNNQueryBuilder: " + ex);
+        }
     }
 
     public static KNNQueryBuilder fromXContent(XContentParser parser) throws IOException {
@@ -107,6 +112,7 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
         String queryName = null;
         String currentFieldName = null;
         XContentParser.Token token;
+        KNNCounter.KNN_QUERY_REQUESTS.increment();
         while ((token = parser.nextToken()) != XContentParser.Token.END_OBJECT) {
             if (token == XContentParser.Token.FIELD_NAME) {
                 currentFieldName = parser.currentName();
