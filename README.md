@@ -121,6 +121,57 @@ POST /myindex/_search
 }
 ```
 
+## Cosine Similarity Usage (experimental)
+
+* Creating KNN index with cosine similarity space type
+
+```
+PUT /myindex
+{
+    "settings" : {
+        "index": {
+            "knn": true,
+            "knn.space_type": "cosinesimil"
+        }
+    },
+    "mappings": {
+        "properties": {
+            "my_vector1": {
+                "type": "knn_vector",
+                "dimension": 2
+            }
+        }
+    }
+}
+```
+
+* Indexing sample docs to KNN index
+
+```
+PUT /myindex/_doc/2?refresh=true
+{
+    "my_vector1" : [1.5, 2.5],
+    "price":10
+}
+```
+
+* Querying K-Nearest neighbors
+
+```
+POST /myindex/_search
+{
+    "size" : 10,
+    "query": {
+        "knn": {
+            "my_vector1": {
+                "vector": [15, 25],
+                "k": 2
+            }
+        }
+    }
+}
+```
+
 ## Java Native library usage
 For plugin installations from archive(.zip), it is necessary to ensure ```.so``` file for linux OS and ```.jnilib``` file for Mac OS are present in the java library path. This can be possible by copying .so/.jnilib to either $ES_HOME or by adding manually ```-Djava.library.path=<path_to_lib_files>``` in ```jvm.options``` file
 
@@ -149,6 +200,7 @@ PUT /my_index/_settings
 {
     "index" : {
         "knn": true,
+        "knn.space_type": "l2",
         "knn.algo_param.m": 18, 
         "knn.algo_param.ef_search" : 20,
         "knn.algo_param.ef_construction" : 40
