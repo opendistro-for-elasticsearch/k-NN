@@ -43,6 +43,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.getCircuitBreakerLimit;
+
 /**
  * KNNIndex level caching with weight based, time based evictions. This caching helps us
  * to manage the hnsw graphs in the memory and garbage collect them after specified timeout
@@ -89,7 +91,7 @@ public class KNNIndexCache implements Closeable {
                 .concurrencyLevel(1)
                 .removalListener(k -> onRemoval(k));
         if(KNNSettings.state().getSettingValue(KNNSettings.KNN_MEMORY_CIRCUIT_BREAKER_ENABLED)) {
-            cacheBuilder.maximumWeight(KNNSettings.getCircuitBreakerLimit().getKb()).weigher((k, v) -> (int)v.getKnnIndex().getIndexSize());
+            cacheBuilder.maximumWeight(getCircuitBreakerLimit().getKb()).weigher((k, v) -> (int)v.getKnnIndex().getIndexSize());
         }
 
         if(KNNSettings.state().getSettingValue(KNNSettings.KNN_CACHE_ITEM_EXPIRY_ENABLED)) {
@@ -163,9 +165,9 @@ public class KNNIndexCache implements Closeable {
     }
 
     /**
-     * Get the Elasticsearch indices currently loaded into the Cache
+     * Get the stats of all of the Elasticsearch indices currently loaded into the cache
      *
-     * @return Set containing all of the Elasticsearch indices in the cache
+     * @return Map containing all of the Elasticsearch indices in the cache and their stats
      */
     public Map<String, Map<String, Object>> getIndicesCacheStats() {
         Map<String, Map<String, Object>> statValues = new HashMap<>();
@@ -173,12 +175,12 @@ public class KNNIndexCache implements Closeable {
         for (Map.Entry<String, KNNIndexCacheEntry> index : cache.asMap().entrySet()) {
             indexName = index.getValue().getEsIndexName();
             statValues.putIfAbsent(indexName, new HashMap<>());
-
-            statValues.get(indexName).putIfAbsent(GRAPH_COUNT, 0);
-            statValues.get(indexName).put(GRAPH_COUNT, ((Integer) statValues.get(indexName).get(GRAPH_COUNT)) + 1);
-
+            statValues.get(indexName).put(GRAPH_COUNT, ((Integer) statValues.get(indexName)
+                    .getOrDefault(GRAPH_COUNT, 0)) + 1);
             statValues.get(indexName).putIfAbsent(StatNames.GRAPH_MEMORY_USAGE.getName(),
                     getWeightInKilobytes(indexName));
+            statValues.get(indexName).putIfAbsent(StatNames.GRAPH_MEMORY_USAGE_PERCENTAGE.getName(),
+                    getWeightAsPercentage(indexName));
         }
         
         return statValues;
@@ -206,10 +208,28 @@ public class KNNIndexCache implements Closeable {
      * @param indexName Name if index to get the weight for
      * @return Weight of the index in the cache in kilobytes
      */
-    public Long getWeightInKilobytes(String indexName) {
+    public Long getWeightInKilobytes(final String indexName) {
         return cache.asMap().values().stream()
                 .filter(knnIndexCacheEntry -> indexName.equals(knnIndexCacheEntry.getEsIndexName()))
                 .map(KNNIndexCacheEntry::getKnnIndex).mapToLong(KNNIndex::getIndexSize).sum();
+    }
+
+    /**
+     * Returns how full the cache is as a percentage of the total cache capacity
+     *
+     * @return Percentage of the cache full
+     */
+    public Float getWeightAsPercentage() {
+        return 100 * getWeightInKilobytes() / (float) getCircuitBreakerLimit().getKb();
+    }
+
+    /**
+     * Returns the how much space an index is taking up in the cache is as a percentage of the total cache capacity
+     *
+     * @return Percentage of the cache full
+     */
+    public Float getWeightAsPercentage(final String indexName) {
+        return 100 * getWeightInKilobytes(indexName) / (float) getCircuitBreakerLimit().getKb();
     }
 
     /**
@@ -236,6 +256,7 @@ public class KNNIndexCache implements Closeable {
      * @param indexFilePath path to segment file. Also, key in cache
      */
     public void evictGraphFromCache(String indexFilePath) {
+        logger.info("[KNN] " + indexFilePath  + " invalidated explicitly");
         cache.invalidate(indexFilePath);
     }
 
@@ -243,6 +264,7 @@ public class KNNIndexCache implements Closeable {
      * Evict all graphs in the cache manually
      */
     public void evictAllGraphsFromCache() {
+        logger.info("[KNN] All entries in cache invalidated explicitly");
         cache.invalidateAll();
     }
 

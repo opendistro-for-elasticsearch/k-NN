@@ -29,6 +29,7 @@ public enum StatNames {
     TOTAL_LOAD_TIME("total_load_time"),
     EVICTION_COUNT("eviction_count"),
     GRAPH_MEMORY_USAGE("graph_memory_usage"),
+    GRAPH_MEMORY_USAGE_PERCENTAGE("graph_memory_usage_percentage"),
     CACHE_CAPACITY_REACHED("cache_capacity_reached"),
     INDICES_IN_CACHE("indices_in_cache"),
     CIRCUIT_BREAKER_TRIGGERED("circuit_breaker_triggered"),

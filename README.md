@@ -241,6 +241,9 @@ The number of cache misses that have occurred on the node. A cache miss occurs w
 #### graph_memory_usage
 The current weight of the cache (the total size in native memory of all of the graphs) in Kilobytes.
 
+#### graph_memory_usage_percentage
+The current weight of the cache as a percentage of the maximum cache capacity.
+
 #### graph_index_requests
 The number of requests to add the knn_vector field of a document into a graph.
 
@@ -288,6 +291,7 @@ GET /_opendistro/_knn/stats?pretty
             "eviction_count" : 0,
             "miss_count" : 1,
             "graph_memory_usage" : 1,
+            "graph_memory_usage_percentage" : 3.68,
             "graph_index_requests" : 7,
             "graph_index_errors" : 1,
             "knn_query_requests" : 4,
@@ -296,6 +300,7 @@ GET /_opendistro/_knn/stats?pretty
             "indices_in_cache" : {
                 "myindex" : {
                     "graph_memory_usage" : 2,
+                    "graph_memory_usage_percentage" : 3.68,
                     "graph_count" : 2
                 }
             },
