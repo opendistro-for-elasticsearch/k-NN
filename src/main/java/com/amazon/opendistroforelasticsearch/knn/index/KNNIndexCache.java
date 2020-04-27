@@ -290,7 +290,7 @@ public class KNNIndexCache implements Closeable {
         // the entry
         fileWatcher.init();
 
-        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPathUrl, getQueryParams(indexName));
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
 
         // TODO verify that this is safe - ideally we'd explicitly ensure that the FileWatcher is only checked
         // after the guava cache has finished loading the key to avoid a race condition where the watcher

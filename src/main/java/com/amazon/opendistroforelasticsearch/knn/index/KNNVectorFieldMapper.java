@@ -94,6 +94,11 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
             return builder;
         }
 
+        public Builder spaceTypeParam(String key, String paramValue) {
+            Defaults.FIELD_TYPE.putAttribute(key, paramValue.toLowerCase());
+            return builder;
+        }
+
         public Builder algoParams(String key, int paramValue) {
             Defaults.FIELD_TYPE.putAttribute(key, String.valueOf(paramValue));
             return builder;
@@ -135,6 +140,8 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
         public Mapper.Builder<?, ?> parse(String name, Map<String, Object> node, ParserContext parserContext)
                 throws MapperParsingException {
             Builder builder = new KNNVectorFieldMapper.Builder(name);
+            builder.spaceTypeParam(KNNConstants.SPACE_TYPE, parserContext.mapperService().getIndexSettings().getValue(
+                KNNSettings.INDEX_KNN_SPACE_TYPE));
             builder.algoParams(KNNConstants.HNSW_ALGO_M, parserContext.mapperService().getIndexSettings().getValue(
                     KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING));
             builder.algoParams(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, parserContext.mapperService().getIndexSettings()

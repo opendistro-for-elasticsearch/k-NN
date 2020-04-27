@@ -115,11 +115,12 @@ public class KNNIndex implements AutoCloseable {
      *
      * @param indexPath path where the hnsw index is stored
      * @param algoParams hnsw algorithm parameters
+     * @param spaceType space type of the index
      * @return knn index that can be queried for k nearest neighbours
      */
-    public static KNNIndex loadIndex(String indexPath, final String[] algoParams) {
+    public static KNNIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
         long fileSize = computeFileSize(indexPath);
-        long indexPointer = init(indexPath, algoParams);
+        long indexPointer = init(indexPath, algoParams, spaceType);
         return new KNNIndex(indexPointer, fileSize);
     }
 
@@ -141,13 +142,13 @@ public class KNNIndex implements AutoCloseable {
     }
 
     // Builds index and writes to disk (no index pointer escapes).
-    public static native void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams);
+    public static native void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams, String spaceType);
 
     // Queries index (thread safe with other readers, blocked by write lock)
     private static native KNNQueryResult[] queryIndex(long indexPointer, float[] query, int k);
 
     // Loads index and returns pointer to index
-    private static native long init(String indexPath, String[] algoParams);
+    private static native long init(String indexPath, String[] algoParams, String spaceType);
 
     // Deletes memory pointed to by index pointer (needs write lock)
     private static native void gc(long indexPointer);
