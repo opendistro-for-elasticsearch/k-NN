@@ -135,6 +135,57 @@ POST /myindex/_search
 }
 ```
 
+## Cosine Similarity Usage (experimental)
+
+* Creating KNN index with cosine similarity space type
+
+```
+PUT /myindex
+{
+    "settings" : {
+        "index": {
+            "knn": true,
+            "knn.space_type": "cosinesimil"
+        }
+    },
+    "mappings": {
+        "properties": {
+            "my_vector1": {
+                "type": "knn_vector",
+                "dimension": 2
+            }
+        }
+    }
+}
+```
+
+* Indexing sample docs to KNN index
+
+```
+PUT /myindex/_doc/2?refresh=true
+{
+    "my_vector1" : [1.5, 2.5],
+    "price":10
+}
+```
+
+* Querying K-Nearest neighbors
+
+```
+POST /myindex/_search
+{
+    "size" : 10,
+    "query": {
+        "knn": {
+            "my_vector1": {
+                "vector": [15, 25],
+                "k": 2
+            }
+        }
+    }
+}
+```
+
 ## Java Native library usage
 For plugin installations from archive(.zip), it is necessary to ensure ```.so``` file for linux OS and ```.jnilib``` file for Mac OS are present in the java library path. This can be possible by copying .so/.jnilib to either $ES_HOME or by adding manually ```-Djava.library.path=<path_to_lib_files>``` in ```jvm.options``` file
 
@@ -144,6 +195,9 @@ You must provide index-level settings when you create the index. If you don't pr
 
 ##### index.knn
 This setting indicates whether the index uses the KNN Codec or not. Possible values are *true*, *false*. Default value is *false*.
+
+##### index.knn.space_type
+This setting indicates the similarity metrics between vectors. Supported values are *l2*, *cosinesimil*. *l2* refers to euclidean distance metric; *cosinesimil* refers to cosine similarity. Default value is *l2*.
 
 ##### index.knn.algo_param.m
 This setting is an HNSW parameter that represents "the number of bi-directional links created for every new element during construction. Reasonable range for M is 2-100. Higher M work better on datasets with high intrinsic dimensionality and/or high recall, while low M work better for datasets with low intrinsic dimensionality and/or low recalls. The parameter also determines the algorithm's memory consumption, which is roughly M * 8-10 bytes per stored element." [nmslib/hnswlib](https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md) The default value is *16*.
@@ -160,6 +214,7 @@ PUT /my_index/_settings
 {
     "index" : {
         "knn": true,
+        "knn.space_type": "l2",
         "knn.algo_param.m": 18, 
         "knn.algo_param.ef_search" : 20,
         "knn.algo_param.ef_construction" : 40

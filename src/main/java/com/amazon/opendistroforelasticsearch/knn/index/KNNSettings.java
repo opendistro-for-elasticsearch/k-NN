@@ -31,11 +31,13 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.monitor.jvm.JvmInfo;
 import org.elasticsearch.monitor.os.OsProbe;
 
+import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,6 +65,7 @@ public class KNNSettings {
     /**
      * Settings name
      */
+    public static final String KNN_SPACE_TYPE = "index.knn.space_type";
     public static final String KNN_ALGO_PARAM_M = "index.knn.algo_param.m";
     public static final String KNN_ALGO_PARAM_EF_CONSTRUCTION = "index.knn.algo_param.ef_construction";
     public static final String KNN_ALGO_PARAM_EF_SEARCH = "index.knn.algo_param.ef_search";
@@ -79,6 +82,11 @@ public class KNNSettings {
     /**
      * Settings Definition
      */
+
+    public static final Setting<String> INDEX_KNN_SPACE_TYPE = Setting.simpleString(KNN_SPACE_TYPE,
+        "l2",
+        new SpaceTypeValidator(),
+        IndexScope);
 
     /**
      * M - the number of bi-directional links created for every new element during construction.
@@ -252,7 +260,8 @@ public class KNNSettings {
     }
 
     public List<Setting<?>> getSettings() {
-        List<Setting<?>> settings =  Arrays.asList(INDEX_KNN_ALGO_PARAM_M_SETTING,
+        List<Setting<?>> settings =  Arrays.asList(INDEX_KNN_SPACE_TYPE,
+                INDEX_KNN_ALGO_PARAM_M_SETTING,
                 INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING,
                 INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING,
                 KNN_ALGO_PARAM_INDEX_THREAD_QTY_SETTING,
@@ -357,6 +366,16 @@ public class KNNSettings {
         return getIndexSettingValue(index, KNN_ALGO_PARAM_EF_SEARCH, 512);
     }
 
+    /**
+     *
+     * @param index Name of the index
+     * @return spaceType value
+     */
+    public static String getSpaceType(String index) {
+        return KNNSettings.state().clusterService.state().getMetaData()
+            .index(index).getSettings().get(KNN_SPACE_TYPE, SpaceTypes.l2.getValue());
+    }
+
     public static int getIndexSettingValue(String index, String settingName, int defaultValue) {
         return KNNSettings.state().clusterService.state().getMetaData()
                                                  .index(index).getSettings()
@@ -367,4 +386,14 @@ public class KNNSettings {
         this.clusterService = clusterService;
     }
 
+    static class SpaceTypeValidator implements Setting.Validator<String> {
+
+        private Set<String> types = SpaceTypes.getValues();
+
+        @Override public void validate(String value) {
+            if (value == null || !types.contains(value.toLowerCase())){
+                throw new InvalidParameterException(String.format("Unsupported space type: %s", value));
+            }
+        }
+    }
 }
