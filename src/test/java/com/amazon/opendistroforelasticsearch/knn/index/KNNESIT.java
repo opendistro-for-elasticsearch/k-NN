@@ -167,6 +167,18 @@ public class KNNESIT extends KNNRestTestCase {
         assertThat(ex.getMessage(), containsString("KNN vector values cannot be NaN"));
     }
 
+    public void testVectorMappingValidationInvalidVectorInfinity() throws IOException {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .build();
+
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 2));
+
+        Float[] vector = {Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY};
+        Exception ex = expectThrows(ResponseException.class, () -> addKnnDoc(INDEX_NAME, "3", FIELD_NAME, vector));
+        assertThat(ex.getMessage(), containsString("KNN vector values cannot be infinity"));
+    }
+
     public void testVectorMappingValidationUpdateDimension() throws Exception {
         Settings settings = Settings.builder()
                                     .put(getKNNDefaultIndexSettings())
