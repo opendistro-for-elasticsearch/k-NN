@@ -155,6 +155,18 @@ public class KNNESIT extends KNNRestTestCase {
                 KNNVectorFieldMapper.MAX_DIMENSION + " for vector: " + FIELD_NAME));
     }
 
+    public void testVectorMappingValidationInvalidVectorNaN() throws IOException {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .build();
+
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 2));
+
+        Float[] vector = {Float.NaN, Float.NaN};
+        Exception ex = expectThrows(ResponseException.class, () -> addKnnDoc(INDEX_NAME, "3", FIELD_NAME, vector));
+        assertThat(ex.getMessage(), containsString("KNN vector values cannot be NaN"));
+    }
+
     public void testVectorMappingValidationUpdateDimension() throws Exception {
         Settings settings = Settings.builder()
                                     .put(getKNNDefaultIndexSettings())
