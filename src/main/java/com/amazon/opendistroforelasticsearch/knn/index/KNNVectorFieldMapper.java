@@ -246,15 +246,35 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
 
         ArrayList<Float> vector = new ArrayList<>();
         XContentParser.Token token = context.parser().currentToken();
-
+        float value;
         if (token == XContentParser.Token.START_ARRAY) {
             token = context.parser().nextToken();
             while (token != XContentParser.Token.END_ARRAY) {
-                vector.add(context.parser().floatValue());
+                value = context.parser().floatValue();
+
+                if (Float.isNaN(value)) {
+                    throw new IllegalArgumentException("KNN vector values cannot be NaN");
+                }
+
+                if (Float.isInfinite(value)) {
+                    throw new IllegalArgumentException("KNN vector values cannot be infinity");
+                }
+
+                vector.add(value);
                 token = context.parser().nextToken();
             }
         } else if (token == XContentParser.Token.VALUE_NUMBER) {
-            vector.add(context.parser().floatValue());
+            value = context.parser().floatValue();
+
+            if (Float.isNaN(value)) {
+                throw new IllegalArgumentException("KNN vector values cannot be NaN");
+            }
+
+            if (Float.isInfinite(value)) {
+                throw new IllegalArgumentException("KNN vector values cannot be infinity");
+            }
+
+            vector.add(value);
             context.parser().nextToken();
         }
 
