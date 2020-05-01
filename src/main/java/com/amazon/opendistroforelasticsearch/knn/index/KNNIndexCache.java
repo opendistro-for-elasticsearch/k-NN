@@ -16,6 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheStats;
@@ -29,20 +30,29 @@ import org.elasticsearch.watcher.FileWatcher;
 import org.elasticsearch.watcher.ResourceWatcherService;
 import org.elasticsearch.watcher.WatcherHandle;
 
+import java.io.Closeable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.getCircuitBreakerLimit;
 
 /**
  * KNNIndex level caching with weight based, time based evictions. This caching helps us
  * to manage the hnsw graphs in the memory and garbage collect them after specified timeout
  * or when weightCircuitBreaker is hit.
  */
-public class KNNIndexCache {
+public class KNNIndexCache implements Closeable {
+    public static String GRAPH_COUNT = "graph_count";
+
     private static Logger logger = LogManager.getLogger(KNNIndexCache.class);
 
     private static KNNIndexCache INSTANCE;
@@ -58,6 +68,10 @@ public class KNNIndexCache {
 
     public static void setResourceWatcherService(final ResourceWatcherService resourceWatcherService) {
         getInstance().resourceWatcherService = resourceWatcherService;
+    }
+
+    public void close() {
+        executor.shutdown();
     }
 
     /**
@@ -77,7 +91,7 @@ public class KNNIndexCache {
                 .concurrencyLevel(1)
                 .removalListener(k -> onRemoval(k));
         if(KNNSettings.state().getSettingValue(KNNSettings.KNN_MEMORY_CIRCUIT_BREAKER_ENABLED)) {
-            cacheBuilder.maximumWeight(KNNSettings.getCircuitBreakerLimit().getKb()).weigher((k, v) -> (int)v.getKnnIndex().getIndexSize());
+            cacheBuilder.maximumWeight(getCircuitBreakerLimit().getKb()).weigher((k, v) -> (int)v.getKnnIndex().getIndexSize());
         }
 
         if(KNNSettings.state().getSettingValue(KNNSettings.KNN_CACHE_ITEM_EXPIRY_ENABLED)) {
@@ -112,6 +126,9 @@ public class KNNIndexCache {
         knnIndexCacheEntry.getFileWatcherHandle().stop();
 
         executor.execute(() -> knnIndexCacheEntry.getKnnIndex().close());
+
+        String esIndexName = removalNotification.getValue().getEsIndexName();
+        String indexPathUrl = removalNotification.getValue().getIndexPathUrl();
 
         if (RemovalCause.SIZE == removalNotification.getCause()) {
             KNNSettings.state().updateCircuitBreakerSettings(true);
@@ -148,12 +165,71 @@ public class KNNIndexCache {
     }
 
     /**
+     * Get the stats of all of the Elasticsearch indices currently loaded into the cache
+     *
+     * @return Map containing all of the Elasticsearch indices in the cache and their stats
+     */
+    public Map<String, Map<String, Object>> getIndicesCacheStats() {
+        Map<String, Map<String, Object>> statValues = new HashMap<>();
+        String indexName;
+        for (Map.Entry<String, KNNIndexCacheEntry> index : cache.asMap().entrySet()) {
+            indexName = index.getValue().getEsIndexName();
+            statValues.putIfAbsent(indexName, new HashMap<>());
+            statValues.get(indexName).put(GRAPH_COUNT, ((Integer) statValues.get(indexName)
+                    .getOrDefault(GRAPH_COUNT, 0)) + 1);
+            statValues.get(indexName).putIfAbsent(StatNames.GRAPH_MEMORY_USAGE.getName(),
+                    getWeightInKilobytes(indexName));
+            statValues.get(indexName).putIfAbsent(StatNames.GRAPH_MEMORY_USAGE_PERCENTAGE.getName(),
+                    getWeightAsPercentage(indexName));
+        }
+        
+        return statValues;
+    }
+
+    protected Set<String> getGraphNamesForIndex(String indexName) {
+        return cache.asMap().values().stream()
+                .filter(knnIndexCacheEntry -> indexName.equals(knnIndexCacheEntry.getEsIndexName()))
+                .map(KNNIndexCacheEntry::getIndexPathUrl)
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * Returns the current weight of the cache in KiloBytes
      *
      * @return Weight of the cache in kilobytes
      */
     public Long getWeightInKilobytes() {
         return cache.asMap().values().stream().map(KNNIndexCacheEntry::getKnnIndex).mapToLong(KNNIndex::getIndexSize).sum();
+    }
+
+    /**
+     * Returns the current weight of an index in the cache in KiloBytes
+     *
+     * @param indexName Name if index to get the weight for
+     * @return Weight of the index in the cache in kilobytes
+     */
+    public Long getWeightInKilobytes(final String indexName) {
+        return cache.asMap().values().stream()
+                .filter(knnIndexCacheEntry -> indexName.equals(knnIndexCacheEntry.getEsIndexName()))
+                .map(KNNIndexCacheEntry::getKnnIndex).mapToLong(KNNIndex::getIndexSize).sum();
+    }
+
+    /**
+     * Returns how full the cache is as a percentage of the total cache capacity
+     *
+     * @return Percentage of the cache full
+     */
+    public Float getWeightAsPercentage() {
+        return 100 * getWeightInKilobytes() / (float) getCircuitBreakerLimit().getKb();
+    }
+
+    /**
+     * Returns the how much space an index is taking up in the cache is as a percentage of the total cache capacity
+     *
+     * @return Percentage of the cache full
+     */
+    public Float getWeightAsPercentage(final String indexName) {
+        return 100 * getWeightInKilobytes(indexName) / (float) getCircuitBreakerLimit().getKb();
     }
 
     /**
@@ -172,6 +248,24 @@ public class KNNIndexCache {
      */
     public void setCacheCapacityReached(Boolean value) {
         cacheCapacityReached.set(value);
+    }
+
+    /**
+     * Evict a graph in the cache manually
+     *
+     * @param indexFilePath path to segment file. Also, key in cache
+     */
+    public void evictGraphFromCache(String indexFilePath) {
+        logger.info("[KNN] " + indexFilePath  + " invalidated explicitly");
+        cache.invalidate(indexFilePath);
+    }
+
+    /**
+     * Evict all graphs in the cache manually
+     */
+    public void evictAllGraphsFromCache() {
+        logger.info("[KNN] All entries in cache invalidated explicitly");
+        cache.invalidateAll();
     }
 
     /**
@@ -203,7 +297,7 @@ public class KNNIndexCache {
         // causes us to invalidate an entry before the key has been fully loaded.
         final WatcherHandle<FileWatcher> watcherHandle = resourceWatcherService.add(fileWatcher);
 
-        return new KNNIndexCacheEntry(knnIndex, watcherHandle);
+        return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
     }
 
     /**
@@ -213,15 +307,28 @@ public class KNNIndexCache {
      */
     private static class KNNIndexCacheEntry {
         private final KNNIndex knnIndex;
+        private final String indexPathUrl;
+        private final String esIndexName;
         private final WatcherHandle<FileWatcher> fileWatcherHandle;
 
-        private KNNIndexCacheEntry(final KNNIndex knnIndex, final WatcherHandle<FileWatcher> fileWatcherHandle) {
+        private KNNIndexCacheEntry(final KNNIndex knnIndex, final String indexPathUrl, final String esIndexName,
+                                   final WatcherHandle<FileWatcher> fileWatcherHandle) {
             this.knnIndex = knnIndex;
+            this.indexPathUrl = indexPathUrl;
+            this.esIndexName = esIndexName;
             this.fileWatcherHandle = fileWatcherHandle;
         }
 
         private KNNIndex getKnnIndex() {
             return knnIndex;
+        }
+
+        private String getIndexPathUrl() {
+            return indexPathUrl;
+        }
+
+        private String getEsIndexName() {
+            return esIndexName;
         }
 
         private WatcherHandle<FileWatcher> getFileWatcherHandle() {
