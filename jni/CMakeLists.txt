@@ -54,3 +54,7 @@ target_include_directories(${KNN_INDEX} PRIVATE $ENV{JAVA_HOME}/include $ENV{JAV
 set_target_properties(${KNN_INDEX} PROPERTIES SUFFIX ${LIB_EXT})
 set_target_properties(${KNN_INDEX} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(${KNN_INDEX} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../buildSrc)
+
+# Log directory where library will be placed
+get_target_property(JNILibDir ${KNN_INDEX} LIBRARY_OUTPUT_DIRECTORY)
+message(STATUS "JNI Library Output Directory: ${JNILibDir}")
