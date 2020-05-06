@@ -49,9 +49,11 @@ def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || 
 def usingMultiNode = project.properties.containsKey('numNodes')
 // Only apply jacoco test coverage if we are running a local single node cluster
 def integTestDependOnJniLib = false
-if (!usingRemoteCluster && !usingMultiNode) {
+if (!usingRemoteCluster) {
     integTestDependOnJniLib = true
-    apply from: 'build-tools/knnplugin-coverage.gradle'
+    if (!usingMultiNode) {
+        apply from: 'build-tools/knnplugin-coverage.gradle'
+    }
 }
 
 ext {
