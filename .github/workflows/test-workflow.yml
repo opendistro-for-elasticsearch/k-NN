@@ -22,5 +22,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
+      - name: Run build JNI lib
+        run: |
+          ./gradlew buildJniLib
       - name: Build with Gradle
         run: ./gradlew build

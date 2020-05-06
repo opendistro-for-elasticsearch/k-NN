@@ -171,6 +171,12 @@ run {
     }
 }
 
+task buildJniLib(type:Exec) {
+    workingDir 'jni'
+    commandLine 'cmake .'
+    commandLine 'make'
+}
+
 //TODO fix these
 forbiddenApis.ignoreFailures = true
 forbiddenPatterns {

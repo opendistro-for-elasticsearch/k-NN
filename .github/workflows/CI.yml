@@ -23,6 +23,10 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
 
+      - name: Run build JNI lib
+        run: |
+          ./gradlew buildJniLib
+
       - name: Run build
         run: |
           ./gradlew build
