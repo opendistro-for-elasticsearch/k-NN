@@ -48,7 +48,9 @@ apply plugin: 'elasticsearch.esplugin'
 def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || System.properties.containsKey('tests.cluster')
 def usingMultiNode = project.properties.containsKey('numNodes')
 // Only apply jacoco test coverage if we are running a local single node cluster
+def integTestDependOnJniLib = true
 if (!usingRemoteCluster && !usingMultiNode) {
+    integTestDependOnJniLib = false
     apply from: 'build-tools/knnplugin-coverage.gradle'
 }
 
@@ -128,7 +130,9 @@ test {
 
 def _numNodes = findProperty('numNodes') as Integer ?: 1
 integTest {
-    dependsOn buildJniLib
+    if (integTestDependOnJniLib) {
+        dependsOn buildJniLib
+    }
     runner {
         systemProperty 'tests.security.manager', 'false'
         systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
