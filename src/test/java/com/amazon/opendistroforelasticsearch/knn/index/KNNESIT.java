@@ -36,6 +36,20 @@ public class KNNESIT extends KNNRestTestCase {
     }
 
     /**
+     * Block adding new docs to KNN index when circuit breaker trips
+     */
+    public void testAddKNNDocBlockedWhenCbTrips() throws Exception {
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        updateClusterSettings("knn.circuit_breaker.triggered", "true");
+
+        Float[] vector  = {6.0f, 6.0f};
+        ResponseException ex = expectThrows(
+                ResponseException.class, () -> addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector));
+        assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
+                containsString("Cannot update KNN vector field when circuit breaker is triggered."));
+    }
+
+    /**
      * Able to update docs in KNN index
      */
     public void testUpdateKNNDoc() throws Exception {
@@ -46,6 +60,23 @@ public class KNNESIT extends KNNRestTestCase {
         // update
         Float[] updatedVector  = {8.0f, 8.0f};
         updateKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+    }
+
+    /**
+     * Block updating docs under KNN index when circuit breaker trips
+     */
+    public void testUpdateKNNDocBlockedWhenCbTrips() throws Exception {
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] vector  = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+
+        // update
+        updateClusterSettings("knn.circuit_breaker.triggered", "true");
+        Float[] updatedVector  = {8.0f, 8.0f};
+        ResponseException ex = expectThrows(
+                ResponseException.class, () -> updateKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector));
+        assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
+                containsString("Cannot update KNN vector field when circuit breaker is triggered."));
     }
 
     /**

@@ -242,6 +242,10 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
                                                     "update knn.plugin.enabled setting to true");
         }
 
+        if (KNNSettings.isCircuitBreakerTriggered()) {
+            throw new IllegalStateException("Cannot update KNN vector field when circuit breaker is triggered.");
+        }
+
         context.path().add(simpleName());
 
         ArrayList<Float> vector = new ArrayList<>();
