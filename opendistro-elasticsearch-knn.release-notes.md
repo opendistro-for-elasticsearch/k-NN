@@ -2,7 +2,7 @@
 
 ## Version 1.7.0 (Version compatible with elasticsearch 7.6.1)
 ### Features
-* Feature [#90](https://github.com/opendistro-for-elasticsearch/k-NN/pull/90): Support cosine similarity (issue [#28](https://github.com/opendistro-for-elasticsearch/k-NN/issues/28))
+* Feature [#90](https://github.com/opendistro-for-elasticsearch/k-NN/pull/90): Support cosine similarity (issue [#28](https://github.com/opendistro-for-elasticsearch/k-NN/issues/28)). ```Note``` this feature is experimental
 
 ### Enhancements
 * Enhancement [#89](https://github.com/opendistro-for-elasticsearch/k-NN/pull/89): Add stats to track the number of requests and errors for KNN query and index operations. (issue [#88](https://github.com/opendistro-for-elasticsearch/k-NN/issues/88))
