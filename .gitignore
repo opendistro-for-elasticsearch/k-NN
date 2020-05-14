@@ -14,3 +14,4 @@ jni/CMakeCache.txt
 jni/CMakeFiles
 jni/Makefile
 jni/cmake_install.cmake
+jni/release

@@ -23,6 +23,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Target Library to be built
 set(KNN_INDEX KNNIndexV1_7_3_6)
 
+# Only install KNN_INDEX shared library
+set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
+
 # Check if similarity search exists
 find_path(NMS_REPO_DIR NAMES similarity_search PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib REQUIRED)
 
@@ -37,24 +40,24 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search)
 
 # Set OS specific variables
 if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
+    set(CMAKE_MACOSX_RPATH 1)
     set(JVM_OS_TYPE darwin)
-    set(LIB_EXT .jnilib)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
     set(JVM_OS_TYPE linux)
-    set(LIB_EXT .so)
 else()
     message( FATAL_ERROR "Unable to run on system: ${CMAKE_SYSTEM_NAME}")
 endif()
 
 # Compile the library
-add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/v1736/com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex.cpp)
+add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex.cpp)
 target_link_libraries(${KNN_INDEX} NonMetricSpaceLib)
-target_include_directories(${KNN_INDEX} PRIVATE $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search/include)
+target_include_directories(${KNN_INDEX} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search/include)
 
-set_target_properties(${KNN_INDEX} PROPERTIES SUFFIX ${LIB_EXT})
+
 set_target_properties(${KNN_INDEX} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-set_target_properties(${KNN_INDEX} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../buildSrc)
+set_target_properties(${KNN_INDEX} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/release)
 
-# Log directory where library will be placed
-get_target_property(JNILibDir ${KNN_INDEX} LIBRARY_OUTPUT_DIRECTORY)
-message(STATUS "JNI Library Output Directory: ${JNILibDir}")
+# Installation rules for shared library
+install(TARGETS ${KNN_INDEX}
+        LIBRARY DESTINATION lib
+        COMPONENT library)
