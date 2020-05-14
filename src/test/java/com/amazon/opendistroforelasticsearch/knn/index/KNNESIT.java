@@ -45,8 +45,13 @@ public class KNNESIT extends KNNRestTestCase {
         Float[] vector  = {6.0f, 6.0f};
         ResponseException ex = expectThrows(
                 ResponseException.class, () -> addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector));
-        assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
-                containsString("Cannot update KNN vector field when circuit breaker is triggered."));
+        String expMessage = "Indexing knn vector fields is rejected as circuit breaker triggered." +
+                " Check _opendistro/_knn/stats for detailed state";
+        assertThat(EntityUtils.toString(ex.getResponse().getEntity()), containsString(expMessage));
+
+        // reset
+        updateClusterSettings("knn.circuit_breaker.triggered", "false");
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
     }
 
     /**
@@ -75,8 +80,13 @@ public class KNNESIT extends KNNRestTestCase {
         Float[] updatedVector  = {8.0f, 8.0f};
         ResponseException ex = expectThrows(
                 ResponseException.class, () -> updateKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector));
-        assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
-                containsString("Cannot update KNN vector field when circuit breaker is triggered."));
+        String expMessage = "Indexing knn vector fields is rejected as circuit breaker triggered." +
+                " Check _opendistro/_knn/stats for detailed state";
+        assertThat(EntityUtils.toString(ex.getResponse().getEntity()), containsString(expMessage));
+
+        // reset
+        updateClusterSettings("knn.circuit_breaker.triggered", "false");
+        updateKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
     }
 
     /**
