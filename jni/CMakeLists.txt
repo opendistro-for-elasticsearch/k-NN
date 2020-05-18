@@ -22,9 +22,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Target Library to be built
 set(KNN_INDEX KNNIndexV1_7_3_6)
-
-# Only install KNN_INDEX shared library
-set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
+set(KNN_PACKAGE_NAME opendistro-knnlib)
 
 # Check if similarity search exists
 find_path(NMS_REPO_DIR NAMES similarity_search PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib REQUIRED)
@@ -53,7 +51,6 @@ add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opend
 target_link_libraries(${KNN_INDEX} NonMetricSpaceLib)
 target_include_directories(${KNN_INDEX} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search/include)
 
-
 set_target_properties(${KNN_INDEX} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(${KNN_INDEX} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/release)
 
@@ -61,3 +58,16 @@ set_target_properties(${KNN_INDEX} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_C
 install(TARGETS ${KNN_INDEX}
         LIBRARY DESTINATION lib
         COMPONENT library)
+
+# CPack section to build RPM
+set(CPACK_PACKAGE_VERSION ${VERSION})
+set(CPACK_GENERATOR "RPM;DEB")
+set(CPACK_PACKAGE_NAME ${KNN_PACKAGE_NAME})
+SET(CPACK_OUTPUT_FILE_PREFIX packages)
+set(CPACK_PACKAGE_RELEASE 0.1)
+set(CPACK_PACKAGE_VERSION 1.8.0.0)
+set(CPACK_PACKAGE_CONTACT "Jack Mazanec")
+set(CPACK_PACKAGE_VENDOR "Amazon")
+set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}_${JVM_OS_TYPE}.${CMAKE_SYSTEM_PROCESSOR}")
+include(CPack)
