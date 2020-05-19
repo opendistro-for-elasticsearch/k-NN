@@ -16,12 +16,14 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import org.apache.http.util.EntityUtils;
+import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 
@@ -36,6 +38,25 @@ public class KNNESIT extends KNNRestTestCase {
     }
 
     /**
+     * Block adding new docs to KNN index when circuit breaker trips
+     */
+    public void testAddKNNDocBlockedWhenCbTrips() throws Exception {
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        updateClusterSettings("knn.circuit_breaker.triggered", "true");
+
+        Float[] vector  = {6.0f, 6.0f};
+        ResponseException ex = expectThrows(
+                ResponseException.class, () -> addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector));
+        String expMessage = "Indexing knn vector fields is rejected as circuit breaker triggered." +
+                " Check _opendistro/_knn/stats for detailed state";
+        assertThat(EntityUtils.toString(ex.getResponse().getEntity()), containsString(expMessage));
+
+        // reset
+        updateClusterSettings("knn.circuit_breaker.triggered", "false");
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+    }
+
+    /**
      * Able to update docs in KNN index
      */
     public void testUpdateKNNDoc() throws Exception {
@@ -45,6 +66,28 @@ public class KNNESIT extends KNNRestTestCase {
 
         // update
         Float[] updatedVector  = {8.0f, 8.0f};
+        updateKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+    }
+
+    /**
+     * Block updating docs under KNN index when circuit breaker trips
+     */
+    public void testUpdateKNNDocBlockedWhenCbTrips() throws Exception {
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] vector  = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+
+        // update
+        updateClusterSettings("knn.circuit_breaker.triggered", "true");
+        Float[] updatedVector  = {8.0f, 8.0f};
+        ResponseException ex = expectThrows(
+                ResponseException.class, () -> updateKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector));
+        String expMessage = "Indexing knn vector fields is rejected as circuit breaker triggered." +
+                " Check _opendistro/_knn/stats for detailed state";
+        assertThat(EntityUtils.toString(ex.getResponse().getEntity()), containsString(expMessage));
+
+        // reset
+        updateClusterSettings("knn.circuit_breaker.triggered", "false");
         updateKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
     }
 
@@ -94,6 +137,38 @@ public class KNNESIT extends KNNRestTestCase {
         int k = 1; //  nearest 1 neighbor
         KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
         searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
+    }
+
+    public void testAddAndSearchIndexWhenCBTrips() throws Exception {
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        for (int i=1; i<=4; i++) {
+            Float[] vector  = {(float)i, (float)(i+1)};
+            addKnnDoc(INDEX_NAME, Integer.toString(i), FIELD_NAME, vector);
+        }
+
+        float[] queryVector = {1.0f, 1.0f}; // vector to be queried
+        int k = 10; //  nearest 10 neighbor
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        assertEquals(4, results.size());
+
+        updateClusterSettings("knn.circuit_breaker.triggered", "true");
+        // Try add another doc
+        Float[] vector  = {1.0f, 2.0f};
+        ResponseException ex = expectThrows(
+                ResponseException.class, () -> addKnnDoc(INDEX_NAME, "5", FIELD_NAME, vector));
+
+        // Still get 4 docs
+        response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
+        results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        assertEquals(4, results.size());
+
+        updateClusterSettings("knn.circuit_breaker.triggered", "false");
+        addKnnDoc(INDEX_NAME, "5", FIELD_NAME, vector);
+        response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
+        results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        assertEquals(5, results.size());
     }
 
     public void testIndexingVectorValidationDifferentSizes() throws Exception {
