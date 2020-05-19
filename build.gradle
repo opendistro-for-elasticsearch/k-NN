@@ -51,9 +51,6 @@ def usingMultiNode = project.properties.containsKey('numNodes')
 def integTestDependOnJniLib = false
 if (!usingRemoteCluster) {
     integTestDependOnJniLib = true
-    if (!usingMultiNode) {
-        //apply from: 'build-tools/knnplugin-coverage.gradle'
-    }
 }
 
 ext {
@@ -78,6 +75,35 @@ allprojects {
 jacoco {
     toolVersion = "0.8.5"
 }
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it)
+        }))
+    }
+}
+test.finalizedBy(project.tasks.jacocoTestReport)
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.5
+            }
+
+        }
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it)
+        }))
+    }
+}
+check.dependsOn jacocoTestCoverageVerification
 
 check.dependsOn jacocoTestReport
 
