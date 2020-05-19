@@ -1,4 +1,4 @@
-name: Build and Test k-NN
+name: Build and Sanity docker k-NN
 on:
   push:
     branches:
