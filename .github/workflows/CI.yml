@@ -9,7 +9,7 @@ jobs:
   Build-k-NN:
     strategy:
       matrix:
-        java: [13]
+        java: [14]
 
     name: Build and Test k-NN Plugin
     runs-on: ubuntu-latest
