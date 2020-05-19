@@ -40,8 +40,10 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search E
 if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
     set(CMAKE_MACOSX_RPATH 1)
     set(JVM_OS_TYPE darwin)
+    set(LIB_EXT .jnilib)
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL Linux)
     set(JVM_OS_TYPE linux)
+    set(LIB_EXT .so)
 else()
     message( FATAL_ERROR "Unable to run on system: ${CMAKE_SYSTEM_NAME}")
 endif()
@@ -51,6 +53,7 @@ add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opend
 target_link_libraries(${KNN_INDEX} NonMetricSpaceLib)
 target_include_directories(${KNN_INDEX} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search/include)
 
+set_target_properties(${KNN_INDEX} PROPERTIES SUFFIX ${LIB_EXT})
 set_target_properties(${KNN_INDEX} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(${KNN_INDEX} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/release)
 
@@ -59,15 +62,26 @@ install(TARGETS ${KNN_INDEX}
         LIBRARY DESTINATION lib
         COMPONENT library)
 
-# CPack section to build RPM
+# CPack section to build artifacts
 set(CPACK_PACKAGE_VERSION ${VERSION})
-set(CPACK_GENERATOR "RPM;DEB")
+set(CMAKE_INSTALL_PREFIX /usr)
+set(CPACK_GENERATOR "RPM;DEB;ZIP")
 set(CPACK_PACKAGE_NAME ${KNN_PACKAGE_NAME})
 SET(CPACK_OUTPUT_FILE_PREFIX packages)
 set(CPACK_PACKAGE_RELEASE 0.1)
 set(CPACK_PACKAGE_VERSION 1.8.0.0)
-set(CPACK_PACKAGE_CONTACT "Jack Mazanec")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "KNN JNI library built off of NMSLIB for OpenDistro for Elasticsearch. Reference documentation can be found at https://opendistro.github.io/for-elasticsearch-docs/.")
 set(CPACK_PACKAGE_VENDOR "Amazon")
+set(CPACK_PACKAGE_CONTACT "Maintainer: OpenDistro for Elasticsearch Team <opendistro@amazon.com>")
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}_${JVM_OS_TYPE}.${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
+
+# RPM Specific variables
+set(CPACK_RPM_PACKAGE_RELEASE ${CPACK_PACKAGE_RELEASE})
+set(CPACK_RPM_PACKAGE_URL "https://opendistro.github.io/elasticsearch/downloads")
+set(CPACK_RPM_PACKAGE_DESCRIPTION "Open Distro for Elasticsearch KNN")
+set(CPACK_RPM_PACKAGE_LICENSE "ASL-2.0")
+
+# DEB Specific variables
+
 include(CPack)
