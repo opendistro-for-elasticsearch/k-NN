@@ -20,6 +20,7 @@ import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsAction
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsRequest;
 
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStats;
+import com.google.common.collect.ImmutableList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
@@ -32,6 +33,7 @@ import org.elasticsearch.rest.action.RestActions;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -53,16 +55,22 @@ public class RestKNNStatsHandler extends BaseRestHandler {
      * @param knnStats KNNStats
      */
     public RestKNNStatsHandler(Settings settings, RestController controller, KNNStats knnStats) {
-        controller.registerHandler(RestRequest.Method.GET, KNNPlugin.KNN_BASE_URI + "/{nodeId}/stats/",this);
-        controller.registerHandler(RestRequest.Method.GET, KNNPlugin.KNN_BASE_URI + "/{nodeId}/stats/{stat}",this);
-        controller.registerHandler(RestRequest.Method.GET, KNNPlugin.KNN_BASE_URI + "/stats/",this);
-        controller.registerHandler(RestRequest.Method.GET, KNNPlugin.KNN_BASE_URI + "/stats/{stat}",this);
         this.knnStats = knnStats;
     }
 
     @Override
     public String getName() {
         return NAME;
+    }
+
+    @Override
+    public List<Route> routes() {
+        return ImmutableList.of(
+                new Route(RestRequest.Method.GET, KNNPlugin.KNN_BASE_URI + "/{nodeId}/stats/"),
+                new Route(RestRequest.Method.GET, KNNPlugin.KNN_BASE_URI + "/{nodeId}/stats/{stat}"),
+                new Route(RestRequest.Method.GET, KNNPlugin.KNN_BASE_URI + "/stats/"),
+                new Route(RestRequest.Method.GET, KNNPlugin.KNN_BASE_URI + "/stats/{stat}")
+        );
     }
 
     @Override

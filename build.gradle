@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 
 buildscript {
     ext {
-        es_version = System.getProperty("es.version", "7.6.1")
+        es_version = System.getProperty("es.version", "7.7.0")
         es_group = "org.elasticsearch"
         distribution = 'oss-zip'
     }
@@ -38,7 +38,7 @@ buildscript {
 
 plugins {
     id 'java-library'
-    id 'nebula.ospackage' version "8.2.0" apply false
+    id 'nebula.ospackage' version "8.3.0" apply false
     id 'idea'
     id 'jacoco'
 }
@@ -46,18 +46,13 @@ plugins {
 apply plugin: 'elasticsearch.esplugin'
 
 def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || System.properties.containsKey('tests.cluster')
-def usingMultiNode = project.properties.containsKey('numNodes')
-// Only apply jacoco test coverage if we are running a local single node cluster
 def integTestDependOnJniLib = false
 if (!usingRemoteCluster) {
     integTestDependOnJniLib = true
-    if (!usingMultiNode) {
-        apply from: 'build-tools/knnplugin-coverage.gradle'
-    }
 }
 
 ext {
-    opendistroVersion = '1.7.0'
+    opendistroVersion = '1.8.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.TXT')
@@ -76,8 +71,37 @@ allprojects {
 
 
 jacoco {
-    toolVersion = "0.8.3"
+    toolVersion = "0.8.5"
 }
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it)
+        }))
+    }
+}
+test.finalizedBy(project.tasks.jacocoTestReport)
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.5
+            }
+
+        }
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it)
+        }))
+    }
+}
+check.dependsOn jacocoTestCoverageVerification
 
 check.dependsOn jacocoTestReport
 
