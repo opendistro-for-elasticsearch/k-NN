@@ -63,25 +63,31 @@ install(TARGETS ${KNN_INDEX}
         COMPONENT library)
 
 # CPack section to build artifacts
-set(CPACK_PACKAGE_VERSION ${VERSION})
-set(CMAKE_INSTALL_PREFIX /usr)
-set(CPACK_GENERATOR "RPM;DEB;ZIP")
+set(KNN_MAINTAINER "OpenDistro for Elasticsearch Team <opendistro@amazon.com>")
+set(ODFE_DOWNLOAD_URL "https://opendistro.github.io/elasticsearch/downloads")
 set(CPACK_PACKAGE_NAME ${KNN_PACKAGE_NAME})
+set(CPACK_PACKAGE_VERSION 1.8.0.0)
+set(CMAKE_INSTALL_PREFIX /usr)
+set(CPACK_GENERATOR "RPM;DEB")
 SET(CPACK_OUTPUT_FILE_PREFIX packages)
 set(CPACK_PACKAGE_RELEASE 0.1)
-set(CPACK_PACKAGE_VERSION 1.8.0.0)
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "KNN JNI library built off of NMSLIB for OpenDistro for Elasticsearch. Reference documentation can be found at https://opendistro.github.io/for-elasticsearch-docs/.")
 set(CPACK_PACKAGE_VENDOR "Amazon")
-set(CPACK_PACKAGE_CONTACT "Maintainer: OpenDistro for Elasticsearch Team <opendistro@amazon.com>")
+set(CPACK_PACKAGE_CONTACT "Maintainer: ${KNN_MAINTAINER}")
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
 
 # RPM Specific variables
 set(CPACK_RPM_PACKAGE_RELEASE ${CPACK_PACKAGE_RELEASE})
-set(CPACK_RPM_PACKAGE_URL "https://opendistro.github.io/elasticsearch/downloads")
-set(CPACK_RPM_PACKAGE_DESCRIPTION "Open Distro for Elasticsearch KNN")
+set(CPACK_RPM_PACKAGE_URL ${ODFE_DOWNLOAD_URL})
+set(CPACK_RPM_PACKAGE_DESCRIPTION "Open Distro for Elasticsearch KNN JNI Library")
 set(CPACK_RPM_PACKAGE_LICENSE "ASL-2.0")
 
 # DEB Specific variables
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE ${ODFE_DOWNLOAD_URL})
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER ${KNN_MAINTAINER})
+set(CPACK_DEBIAN_PACKAGE_SOURCE ${CPACK_PACKAGE_NAME})
+set(CPACK_DEBIAN_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION})
+set(CPACK_DEBIAN_PACKAGE_SECTION "libs")
 
 include(CPack)
