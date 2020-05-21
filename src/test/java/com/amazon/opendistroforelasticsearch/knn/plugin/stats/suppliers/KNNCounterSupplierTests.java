@@ -20,6 +20,7 @@ import org.elasticsearch.test.ESTestCase;
 
 public class KNNCounterSupplierTests extends ESTestCase {
     public void testNormal() {
+        KNNCounter.GRAPH_QUERY_REQUESTS.set(0L);
         KNNCounterSupplier knnCounterSupplier = new KNNCounterSupplier(KNNCounter.GRAPH_QUERY_REQUESTS);
         assertEquals((Long) 0L, knnCounterSupplier.get());
         KNNCounter.GRAPH_QUERY_REQUESTS.increment();
