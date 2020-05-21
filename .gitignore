@@ -17,4 +17,4 @@ jni/cmake*
 jni/CPack*
 jni/_CPack*
 jni/release
-
+jni/packages
