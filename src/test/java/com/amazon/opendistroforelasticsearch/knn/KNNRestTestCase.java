@@ -13,8 +13,9 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index;
+package com.amazon.opendistroforelasticsearch.knn;
 
+import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;

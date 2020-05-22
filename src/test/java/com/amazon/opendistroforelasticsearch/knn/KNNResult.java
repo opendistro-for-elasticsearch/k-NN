@@ -13,7 +13,7 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index;
+package com.amazon.opendistroforelasticsearch.knn;
 
 public class KNNResult {
     private String docId;

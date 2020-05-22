@@ -15,9 +15,9 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.stats;
 
-import org.elasticsearch.test.ESTestCase;
+import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 
-public class KNNCounterTests extends ESTestCase {
+public class KNNCounterTests extends KNNTestCase {
     public void testGetName() {
         assertEquals(StatNames.GRAPH_QUERY_ERRORS.getName(), KNNCounter.GRAPH_QUERY_ERRORS.getName());
     }
