@@ -32,19 +32,19 @@ public class KNNQueryBuilderTests extends ESTestCase {
          * -ve k
          */
         expectThrows(IllegalArgumentException.class,
-                () ->  new KNNQueryBuilder("myvector", queryVector, -1));
+                () ->  new KNNQueryBuilder("myvector", queryVector, -1, null));
 
         /**
          * zero k
          */
         expectThrows(IllegalArgumentException.class,
-                () ->  new KNNQueryBuilder("myvector", queryVector, 0));
+                () ->  new KNNQueryBuilder("myvector", queryVector, 0, null));
 
         /**
          * k > KNNQueryBuilder.K_MAX
          */
         expectThrows(IllegalArgumentException.class,
-                () ->  new KNNQueryBuilder("myvector", queryVector, KNNQueryBuilder.K_MAX + 1));
+                () ->  new KNNQueryBuilder("myvector", queryVector, KNNQueryBuilder.K_MAX + 1, null));
     }
 
     public void testEmptyVector() {
@@ -53,19 +53,19 @@ public class KNNQueryBuilderTests extends ESTestCase {
          */
         float[] queryVector = null;
         expectThrows(IllegalArgumentException.class,
-                () -> new KNNQueryBuilder("myvector", queryVector, 1));
+                () -> new KNNQueryBuilder("myvector", queryVector, 1, null));
 
         /**
          * empty query vector
          */
         float[] queryVector1 = {};
         expectThrows(IllegalArgumentException.class,
-                () -> new KNNQueryBuilder("myvector", queryVector1, 1));
+                () -> new KNNQueryBuilder("myvector", queryVector1, 1, null));
     }
 
     public void testFromXcontent() throws Exception {
         float[] queryVector = {1.0f, 2.0f, 3.0f, 4.0f};
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1, null);
         XContentBuilder builder = XContentFactory.jsonBuilder();
         builder.startObject();
         builder.startObject(knnQueryBuilder.fieldName());
@@ -81,7 +81,7 @@ public class KNNQueryBuilderTests extends ESTestCase {
 
     public void testDoToQuery() throws Exception {
         float[] queryVector = {1.0f, 2.0f, 3.0f, 4.0f};
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1, null);
         Index dummyIndex = new Index("dummy", "dummy");
         QueryShardContext mockQueryShardContext = Mockito.mock(QueryShardContext.class);
         Mockito.when(mockQueryShardContext.index()).thenReturn(dummyIndex);

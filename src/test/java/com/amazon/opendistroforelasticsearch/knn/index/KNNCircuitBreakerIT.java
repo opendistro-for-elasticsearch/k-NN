@@ -72,8 +72,8 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
 
         // Ensure that each shard is searched over so that each Lucene segment gets loaded into memory
         for (int i = 0; i < 15; i++) {
-            searchKNNIndex(indexName1, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
-            searchKNNIndex(indexName2, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
+            searchKNNIndex(indexName1, new KNNQueryBuilder(FIELD_NAME, qvector, k, null), k);
+            searchKNNIndex(indexName2, new KNNQueryBuilder(FIELD_NAME, qvector, k, null), k);
         }
 
         // Give cluster 5 seconds to update settings and then assert that Cb get triggered

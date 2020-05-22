@@ -102,7 +102,8 @@ public class  KNNCodecTestCase extends ESTestCase {
         indexInput.close();
 
         IndexSearcher searcher = new IndexSearcher(reader);
-        assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 2.5f}, 1, "myindex")));
+        assertEquals(1, searcher.count(
+                new KNNQuery("test_vector", new float[] {1.0f, 2.5f}, 1, null, "myindex")));
 
         reader.close();
         writer.close();
@@ -151,14 +152,14 @@ public class  KNNCodecTestCase extends ESTestCase {
 
         // query to verify distance for each of the field
         IndexSearcher searcher = new IndexSearcher(reader);
-        float score = searcher.search(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, "dummy"), 10).scoreDocs[0].score;
-        float score1 = searcher.search(new KNNQuery("my_vector", new float[] {1.0f, 2.0f}, 1, "dummy"), 10).scoreDocs[0].score;
+        float score = searcher.search(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, null, "dummy"), 10).scoreDocs[0].score;
+        float score1 = searcher.search(new KNNQuery("my_vector", new float[] {1.0f, 2.0f}, 1, null, "dummy"), 10).scoreDocs[0].score;
         assertEquals(score, 0.1667f, 0.01f);
         assertEquals(score1, 0.0714f, 0.01f);
 
         // query to determine the hits
-        assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, "dummy")));
-        assertEquals(1, searcher.count(new KNNQuery("my_vector", new float[] {1.0f, 1.0f}, 1, "dummy")));
+        assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, null, "dummy")));
+        assertEquals(1, searcher.count(new KNNQuery("my_vector", new float[] {1.0f, 1.0f}, 1, null, "dummy")));
 
         reader.close();
         dir.close();

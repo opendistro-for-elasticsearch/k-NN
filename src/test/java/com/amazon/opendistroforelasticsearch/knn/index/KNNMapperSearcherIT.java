@@ -54,7 +54,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         float[] queryVector = {1.0f, 1.0f}; // vector to be queried
         int k = 1; //  nearest 1 neighbor
 
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, null);
 
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
         List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
@@ -74,7 +74,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
          */
         float[] queryVector = {2.0f, 2.0f}; // vector to be queried
         int k = 3; //nearest 3 neighbors
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, null);
 
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
         List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
@@ -96,7 +96,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         float[] queryVector = {1.0f, 1.0f}; // vector to be queried
         int k = 1; //  nearest 1 neighbor
 
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, null);
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
         List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
 
@@ -140,7 +140,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         float[] queryVector = {1.0f, 1.0f}; // vector to be queried
         int k = 1; //  nearest 1 neighbor
 
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, null);
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
         List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
 
@@ -168,7 +168,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
 
         float[] queryVector = {1.0f, 1.0f}; // vector to be queried
         int k = 1; //  nearest 1 neighbor
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, null);
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
         List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
 
@@ -183,7 +183,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
          */
         deleteKnnDoc(INDEX_NAME, "2");
 
-        knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k+1);
+        knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k+1, null);
         response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
         results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
 
@@ -198,7 +198,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
      */
     public void testNegativeK() {
         float[] vector = {1.0f, 2.0f};
-        expectThrows(IllegalArgumentException.class, () -> new KNNQueryBuilder(FIELD_NAME, vector, -1));
+        expectThrows(IllegalArgumentException.class, () -> new KNNQueryBuilder(FIELD_NAME, vector, -1, null));
     }
 
     /**
@@ -206,7 +206,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
      */
     public void testZeroK() {
         float[] vector = {1.0f, 2.0f};
-        expectThrows(IllegalArgumentException.class, () -> new KNNQueryBuilder(FIELD_NAME, vector, 0));
+        expectThrows(IllegalArgumentException.class, () -> new KNNQueryBuilder(FIELD_NAME, vector, 0, null));
     }
 
     /**
@@ -219,7 +219,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         float[] queryVector = {1.0f, 1.0f}; // vector to be queried
         int k = KNNQueryBuilder.K_MAX; //  nearest 1 neighbor
 
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, null);
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
         List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
         assertEquals(results.size(), 4);

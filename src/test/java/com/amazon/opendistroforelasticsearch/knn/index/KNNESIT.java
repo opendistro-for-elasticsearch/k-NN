@@ -135,7 +135,7 @@ public class KNNESIT extends KNNRestTestCase {
 
         float[] queryVector = {1.0f, 1.0f}; // vector to be queried
         int k = 1; //  nearest 1 neighbor
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, null);
         searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
     }
 
@@ -148,7 +148,7 @@ public class KNNESIT extends KNNRestTestCase {
 
         float[] queryVector = {1.0f, 1.0f}; // vector to be queried
         int k = 10; //  nearest 10 neighbor
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, null);
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
         List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
         assertEquals(4, results.size());
