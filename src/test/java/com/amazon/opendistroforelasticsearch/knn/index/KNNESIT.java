@@ -21,9 +21,6 @@ import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.Index;
-import org.elasticsearch.index.query.QueryShardContext;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.List;
