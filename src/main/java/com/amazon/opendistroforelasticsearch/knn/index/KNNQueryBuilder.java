@@ -142,16 +142,18 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
                             k = parser.intValue();
                         } else if (EF_SEARCH_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                             efSearch = parser.intValue();
-                        }
-                        else if (AbstractQueryBuilder.NAME_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
+                        } else if (AbstractQueryBuilder.NAME_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                             queryName = parser.text();
                         } else {
                             throw new ParsingException(parser.getTokenLocation(),
                                     "[" + NAME + "] query does not support [" + currentFieldName + "]");
                         }
                     } else {
-                        throw new ParsingException(parser.getTokenLocation(),
-                                "[" + NAME + "] unknown token [" + token + "] after [" + currentFieldName + "]");
+                        if (!(token == XContentParser.Token.VALUE_NULL
+                                && EF_SEARCH_FIELD.match(currentFieldName, parser.getDeprecationHandler()))){
+                            throw new ParsingException(parser.getTokenLocation(),
+                                    "[" + NAME + "] unknown token [" + token + "] after [" + currentFieldName + "]");
+                        }
                     }
                 }
             } else {
@@ -191,6 +193,10 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
 
     public int getK() {
         return this.k;
+    }
+
+    public Integer getEfSearch() {
+        return this.efSearch;
     }
 
     @Override
