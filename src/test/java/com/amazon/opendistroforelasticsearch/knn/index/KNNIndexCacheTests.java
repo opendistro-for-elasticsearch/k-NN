@@ -29,7 +29,6 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.elasticsearch.test.hamcrest.ElasticsearchAssertions;
-import org.junit.Before;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -43,8 +42,9 @@ public class KNNIndexCacheTests extends ESSingleNodeTestCase {
     private final String testIndexName = "test_index";
     private final String testFieldName = "test_field";
 
-    @Before
-    public void setup() {
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
         // Reset all of the counters
         for (KNNCounter knnCounter : KNNCounter.values()) {
             knnCounter.set(0L);
