@@ -13,16 +13,21 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.plugin.stats.suppliers;
+package com.amazon.opendistroforelasticsearch.knn;
 
-import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
+import org.elasticsearch.test.ESTestCase;
+import org.junit.Before;
 
-public class KNNCounterSupplierTests extends KNNTestCase {
-    public void testNormal() {
-        KNNCounterSupplier knnCounterSupplier = new KNNCounterSupplier(KNNCounter.GRAPH_QUERY_REQUESTS);
-        assertEquals((Long) 0L, knnCounterSupplier.get());
-        KNNCounter.GRAPH_QUERY_REQUESTS.increment();
-        assertEquals((Long) 1L, knnCounterSupplier.get());
+/**
+ * Base class for integration tests for KNN plugin. Contains several methods for testing KNN ES functionality.
+ */
+public class KNNTestCase extends ESTestCase {
+    @Before
+    public void resetCounters() {
+        // Reset all of the counters
+        for (KNNCounter knnCounter : KNNCounter.values()) {
+            knnCounter.set(0L);
+        }
     }
 }

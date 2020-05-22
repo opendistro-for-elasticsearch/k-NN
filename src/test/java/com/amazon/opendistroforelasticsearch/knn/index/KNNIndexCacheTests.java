@@ -16,6 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
@@ -28,6 +29,7 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.elasticsearch.test.hamcrest.ElasticsearchAssertions;
+import org.junit.Before;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -40,6 +42,14 @@ import static com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache.GRAP
 public class KNNIndexCacheTests extends ESSingleNodeTestCase {
     private final String testIndexName = "test_index";
     private final String testFieldName = "test_field";
+
+    @Before
+    public void setup() {
+        // Reset all of the counters
+        for (KNNCounter knnCounter : KNNCounter.values()) {
+            knnCounter.set(0L);
+        }
+    }
 
     @Override
     protected Collection<Class<? extends Plugin>> getPlugins() {

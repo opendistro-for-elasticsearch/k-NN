@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.action;
 
-import com.amazon.opendistroforelasticsearch.knn.index.KNNRestTestCase;
+import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStats;
 
