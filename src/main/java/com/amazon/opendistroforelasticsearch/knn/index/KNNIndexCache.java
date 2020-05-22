@@ -144,6 +144,7 @@ public class KNNIndexCache implements Closeable {
      *
      * @param key indexPath where the serialized hnsw graph is stored
      * @param indexName index name
+     * @param efSearch HNSW parameter that represents "the size of the dynamic list for the nearest neighbors"
      * @return KNNIndex holding the heap pointer of the loaded graph
      */
     public KNNIndex getIndex(String key, final String indexName, final int efSearch) {
@@ -226,6 +227,7 @@ public class KNNIndexCache implements Closeable {
     /**
      * Returns the how much space an index is taking up in the cache is as a percentage of the total cache capacity
      *
+     * @param indexName Name of index
      * @return Percentage of the cache full
      */
     public Float getWeightAsPercentage(final String indexName) {
