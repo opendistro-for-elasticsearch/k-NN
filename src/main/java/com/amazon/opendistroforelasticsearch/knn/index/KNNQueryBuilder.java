@@ -38,6 +38,8 @@ import java.util.Objects;
  */
 public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
     private static Logger logger = LogManager.getLogger(KNNQueryBuilder.class);
+    public static final ParseField EF_SEARCH_FIELD = new ParseField("ef_search");
+    public static int EF_SEARCH_MIN = 2;
     public static final ParseField VECTOR_FIELD = new ParseField("vector");
     public static final ParseField K_FIELD = new ParseField("k");
     public static int K_MAX = 10000;
@@ -51,6 +53,7 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
     private final String fieldName;
     private final float[] vector;
     private int k = 0;
+    private Integer efSearch;
 
     /**
      * Constructs a new knn query
@@ -58,8 +61,10 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
      * @param fieldName Name of the filed
      * @param vector    Array of floating points
      * @param k         K nearest neighbours for the given vector
+     * @param efSearch HNSW parameter that represents "the size of the dynamic list
+     *                  for the nearest neighbors" (used during the search)
      */
-    public KNNQueryBuilder(String fieldName, float[] vector, int k) {
+    public KNNQueryBuilder(String fieldName, float[] vector, int k, Integer efSearch) {
         if (Strings.isNullOrEmpty(fieldName)) {
             throw new IllegalArgumentException("[" + NAME + "] requires fieldName");
         }
@@ -75,10 +80,14 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
         if (k > K_MAX) {
             throw new IllegalArgumentException("[" + NAME + "] requires k <= " + K_MAX);
         }
+        if (efSearch != null && efSearch < 2) {
+            throw new IllegalArgumentException("[" + NAME + "] requires ef_search >= " + EF_SEARCH_MIN);
+        }
 
         this.fieldName = fieldName;
         this.vector = vector;
         this.k = k;
+        this.efSearch = efSearch;
     }
 
     private static float[] ObjectsToFloats(List<Object> objs) {
@@ -99,6 +108,7 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
             fieldName = in.readString();
             vector = in.readFloatArray();
             k = in.readInt();
+            efSearch = in.readOptionalInt();
         } catch (IOException ex) {
             throw new RuntimeException("[KNN] Unable to create KNNQueryBuilder: " + ex);
         }
@@ -108,6 +118,7 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
         String fieldName = null;
         List<Object> vector = null;
         float boost = AbstractQueryBuilder.DEFAULT_BOOST;
+        Integer efSearch = null;
         int k = 0;
         String queryName = null;
         String currentFieldName = null;
@@ -129,7 +140,10 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
                             boost = parser.floatValue();
                         } else if (K_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                             k = parser.intValue();
-                        } else if (AbstractQueryBuilder.NAME_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
+                        } else if (EF_SEARCH_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
+                            efSearch = parser.intValue();
+                        }
+                        else if (AbstractQueryBuilder.NAME_FIELD.match(currentFieldName, parser.getDeprecationHandler())) {
                             queryName = parser.text();
                         } else {
                             throw new ParsingException(parser.getTokenLocation(),
@@ -147,7 +161,7 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
             }
         }
 
-        KNNQueryBuilder knnQuery = new KNNQueryBuilder(fieldName, ObjectsToFloats(vector), k);
+        KNNQueryBuilder knnQuery = new KNNQueryBuilder(fieldName, ObjectsToFloats(vector), k, efSearch);
         knnQuery.queryName(queryName);
         knnQuery.boost(boost);
         return knnQuery;
@@ -158,6 +172,7 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
         out.writeString(fieldName);
         out.writeFloatArray(vector);
         out.writeInt(k);
+        out.writeOptionalInt(efSearch);
     }
 
     /**
@@ -185,6 +200,7 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
 
         builder.field(VECTOR_FIELD.getPreferredName(), vector);
         builder.field(K_FIELD.getPreferredName(), k);
+        builder.field(EF_SEARCH_FIELD.getPreferredName(), efSearch);
         printBoostAndQueryName(builder);
         builder.endObject();
         builder.endObject();
@@ -192,19 +208,19 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
 
     @Override
     protected Query doToQuery(QueryShardContext context) throws IOException {
-        return new KNNQuery(this.fieldName, vector, k, context.index().getName());
+        return new KNNQuery(this.fieldName, vector, k, efSearch, context.index().getName());
     }
 
     @Override
     protected boolean doEquals(KNNQueryBuilder other) {
         return Objects.equals(fieldName, other.fieldName) &&
                        Objects.equals(vector, other.vector) &&
-                       Objects.equals(k, other.k);
+                       Objects.equals(k, other.k) && Objects.equals(efSearch, other.efSearch);
     }
 
     @Override
     protected int doHashCode() {
-        return Objects.hash(fieldName, vector, k);
+        return Objects.hash(fieldName, vector, k, efSearch);
     }
 
     @Override
