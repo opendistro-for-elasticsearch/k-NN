@@ -21,6 +21,9 @@ import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.Index;
+import org.elasticsearch.index.query.QueryShardContext;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.List;
@@ -136,6 +139,9 @@ public class KNNESIT extends KNNRestTestCase {
         float[] queryVector = {1.0f, 1.0f}; // vector to be queried
         int k = 1; //  nearest 1 neighbor
         KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, null);
+        searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
+
+        knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, 400);
         searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
     }
 

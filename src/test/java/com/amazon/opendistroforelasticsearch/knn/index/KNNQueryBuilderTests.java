@@ -71,22 +71,38 @@ public class KNNQueryBuilderTests extends ESTestCase {
         builder.startObject(knnQueryBuilder.fieldName());
         builder.field(KNNQueryBuilder.VECTOR_FIELD.getPreferredName(), knnQueryBuilder.vector());
         builder.field(KNNQueryBuilder.K_FIELD.getPreferredName(), knnQueryBuilder.getK());
+        builder.field(KNNQueryBuilder.EF_SEARCH_FIELD.getPreferredName(), knnQueryBuilder.getEfSearch());
         builder.endObject();
         builder.endObject();
         XContentParser contentParser = createParser(builder);
         contentParser.nextToken();
         KNNQueryBuilder actualBuilder = KNNQueryBuilder.fromXContent(contentParser);
         actualBuilder.equals(knnQueryBuilder);
+
+        knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1, 400);
+        builder = XContentFactory.jsonBuilder();
+        builder.startObject();
+        builder.startObject(knnQueryBuilder.fieldName());
+        builder.field(KNNQueryBuilder.VECTOR_FIELD.getPreferredName(), knnQueryBuilder.vector());
+        builder.field(KNNQueryBuilder.K_FIELD.getPreferredName(), knnQueryBuilder.getK());
+        builder.field(KNNQueryBuilder.EF_SEARCH_FIELD.getPreferredName(), knnQueryBuilder.getEfSearch());
+        builder.endObject();
+        builder.endObject();
+        contentParser = createParser(builder);
+        contentParser.nextToken();
+        actualBuilder = KNNQueryBuilder.fromXContent(contentParser);
+        actualBuilder.equals(knnQueryBuilder);
     }
 
     public void testDoToQuery() throws Exception {
         float[] queryVector = {1.0f, 2.0f, 3.0f, 4.0f};
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1, null);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1, 512);
         Index dummyIndex = new Index("dummy", "dummy");
         QueryShardContext mockQueryShardContext = Mockito.mock(QueryShardContext.class);
         Mockito.when(mockQueryShardContext.index()).thenReturn(dummyIndex);
         KNNQuery query = (KNNQuery)knnQueryBuilder.doToQuery(mockQueryShardContext);
         assertEquals(knnQueryBuilder.getK(), query.getK());
+        assertEquals((int)knnQueryBuilder.getEfSearch(), query.getEfSearch());
         assertEquals(knnQueryBuilder.fieldName(), query.getField());
         assertEquals(knnQueryBuilder.vector(), query.getQueryVector());
     }
