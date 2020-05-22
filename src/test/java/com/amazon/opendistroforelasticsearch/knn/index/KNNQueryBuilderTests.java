@@ -47,6 +47,16 @@ public class KNNQueryBuilderTests extends ESTestCase {
                 () ->  new KNNQueryBuilder("myvector", queryVector, KNNQueryBuilder.K_MAX + 1, null));
     }
 
+    public void testInValidEfSearch() {
+        float[] queryVector = {1.0f, 1.0f};
+
+        /**
+         * efSearch < KNNQueryBuilder.EF_SEARCH_MIN
+         */
+        expectThrows(IllegalArgumentException.class,
+                () ->  new KNNQueryBuilder("myvector", queryVector, 1, KNNQueryBuilder.EF_SEARCH_MIN - 1));
+    }
+
     public void testEmptyVector() {
         /**
          * null query vector

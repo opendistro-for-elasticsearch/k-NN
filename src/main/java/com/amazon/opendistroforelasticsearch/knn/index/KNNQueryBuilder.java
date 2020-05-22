@@ -80,7 +80,7 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
         if (k > K_MAX) {
             throw new IllegalArgumentException("[" + NAME + "] requires k <= " + K_MAX);
         }
-        if (efSearch != null && efSearch < 2) {
+        if (efSearch != null && efSearch < EF_SEARCH_MIN) {
             throw new IllegalArgumentException("[" + NAME + "] requires ef_search >= " + EF_SEARCH_MIN);
         }
 
