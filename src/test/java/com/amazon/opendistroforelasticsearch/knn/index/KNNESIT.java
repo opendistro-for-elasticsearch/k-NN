@@ -15,6 +15,8 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
+import com.amazon.opendistroforelasticsearch.knn.KNNResult;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;

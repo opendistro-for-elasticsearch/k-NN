@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.codec;
 
+import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQuery;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
@@ -37,7 +38,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.watcher.ResourceWatcherService;
 import org.mockito.Mockito;
 
@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
 /**
  * Test used for testing Codecs
  */
-public class  KNNCodecTestCase extends ESTestCase {
+public class  KNNCodecTestCase extends KNNTestCase {
 
     protected void setUpMockClusterService() {
         ClusterService clusterService = mock(ClusterService.class, RETURNS_DEEP_STUBS);

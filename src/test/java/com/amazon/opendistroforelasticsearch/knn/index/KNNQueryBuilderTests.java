@@ -15,15 +15,15 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.QueryShardContext;
-import org.elasticsearch.test.ESTestCase;
 import org.mockito.Mockito;
 
-public class KNNQueryBuilderTests extends ESTestCase {
+public class KNNQueryBuilderTests extends KNNTestCase {
 
     public void testInvalidK() {
         float[] queryVector = {1.0f, 1.0f};
