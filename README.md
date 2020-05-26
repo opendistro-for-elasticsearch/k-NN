@@ -30,7 +30,19 @@ cmake .
 make
 ```
 
-The library will be placed in the `buildSrc` directory.
+The library will be placed in the `jni/release` directory.
+
+## Build JNI Library RPM/DEB
+
+To build an RPM or DEB of the JNI library, follow these steps:
+
+```
+cd jni
+cmake .
+make package
+```
+
+The artifacts will be placed in the `jni/packages` directory.
 
 ## Running Multi-node Cluster Locally
 
