@@ -23,7 +23,8 @@ import java.util.Set;
  */
 public enum SpaceTypes {
   l2("l2"),
-  cosinesimil("cosinesimil");
+  cosinesimil("cosinesimil"),
+  negdotprod("negdotprod");
 
   private String value;
 

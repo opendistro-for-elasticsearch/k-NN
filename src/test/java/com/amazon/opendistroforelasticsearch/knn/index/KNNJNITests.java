@@ -160,6 +160,55 @@ public class KNNJNITests extends ESTestCase {
         dir.close();
     }
 
+    public void testAddAndQueryHnswIndexNegDotProd() throws Exception {
+        int[] docs = {0, 1, 2};
+
+        float[][] vectors = {
+                {1.0f, -1.0f},
+                {-1.0f, 1.0f},
+                {0.0f, 0.0f}
+        };
+
+        Directory dir = newFSDirectory(createTempDir());
+        String segmentName = "_dummy1";
+        String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
+                String.format("%s.hnsw", segmentName)).toString();
+
+        String[] algoParams = {};
+        AccessController.doPrivileged(
+                new PrivilegedAction<Void>() {
+                    public Void run() {
+                        KNNIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceTypes.negdotprod.getValue());
+                        return null;
+                    }
+                }
+        );
+
+        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy1.hnsw"));
+
+        float[] queryVector = {2.0f, -2.0f};
+        String[] algoQueryParams = {"efSearch=20"};
+
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, algoQueryParams, SpaceTypes.negdotprod.getValue());
+        final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
+
+        Map<Integer, Float> scores = Arrays.stream(results).collect(
+                Collectors.toMap(result -> result.getId(), result -> result.getScore()));
+        logger.info(scores);
+
+        assertEquals(results.length, 3);
+        /*
+         * scores are evaluated using cosine similarity. Distance of the documents with
+         * respect to query vector are as follows
+         * doc0 = 0.0, doc1 = 0.29289,  doc2 = 1.0
+         * Nearest neighbor is doc1 then doc0 then doc2
+         */
+        assertEquals(scores.get(0), -4.0, 1e-4);
+        assertEquals(scores.get(1), 4.0, 1e-4);
+        assertEquals(scores.get(2), 0.0, 1e-4);
+        dir.close();
+    }
+
     public void testAssertExceptionFromJni() throws Exception {
 
         Directory dir = newFSDirectory(createTempDir());
