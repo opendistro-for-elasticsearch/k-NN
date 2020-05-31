@@ -150,9 +150,9 @@ task buildJniLib(type:Exec) {
 
 task makeJniLib(type: Copy) {
     dependsOn buildJniLib
-    from "$buildDir/jni/release"
+    from "$rootDir/jni/release"
     include "*"
-    into "$buildDir/buildSrc"
+    into "$rootDir/buildSrc"
 }
 
 test {
