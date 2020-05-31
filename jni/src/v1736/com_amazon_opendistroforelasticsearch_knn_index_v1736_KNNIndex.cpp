@@ -40,6 +40,8 @@ using similarity::KNNQueue;
 
 extern "C"
 
+const char* data_suff = ".dat";
+
 struct IndexWrapper {
   IndexWrapper(string spaceType) {
     space.reset(SpaceFactoryRegistry<float>::Instance().CreateSpace(spaceType, AnyParams()));
@@ -85,6 +87,13 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
     }
 }
 
+void freeAndClearObjectVector(ObjectVector& data) {
+    for (auto datum : data) {
+        delete datum;
+    }
+    data.clear();
+}
+
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex_saveIndex(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams, jstring spaceType)
 {
     Space<float>* space = NULL;
@@ -121,6 +130,9 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v173
         index->CreateIndex(AnyParams(paramsList));
         has_exception_in_stack(env);
         const char *indexString = env->GetStringUTFChars(indexPath, 0);
+        string indexPathString(indexString);
+        vector<string> dummy;
+        space->WriteObjectVectorBinData(dataset, dummy, indexPathString + data_suff);
         index->SaveIndex(indexString);
         env->ReleaseStringUTFChars(indexPath, indexString);
         has_exception_in_stack(env);
@@ -190,6 +202,9 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v17
         env->ReleaseStringUTFChars(spaceType, spaceTypeCStr);
         has_exception_in_stack(env);
         IndexWrapper *indexWrapper = new IndexWrapper(spaceTypeString);
+        vector<string> dummy;
+        freeAndClearObjectVector(indexWrapper->data);
+        indexWrapper->space->ReadObjectVectorFromBinData(indexWrapper->data, dummy, indexPathString + data_suff);
         indexWrapper->index->LoadIndex(indexPathString);
 
         // Parse and set query params
