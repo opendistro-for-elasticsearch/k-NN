@@ -1,5 +1,7 @@
 name: Build and Release k-NN
 on:
+  repository_dispatch:
+    types: [build-and-release-kNN]  
   push:
     tags:
       - v*
