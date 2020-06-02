@@ -1,7 +1,5 @@
 name: Build and Release k-NN
 on:
-  repository_dispatch:
-    types: [build-and-release-kNN]  
   push:
     tags:
       - v*
@@ -11,7 +9,7 @@ jobs:
     strategy:
       matrix:
         java: [14]
-        compiler: [g++-7]
+        compiler: [g++-5]
 
     name: Build and Release k-NN Plugin
     runs-on: ubuntu-16.04
