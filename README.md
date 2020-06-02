@@ -44,6 +44,8 @@ make package
 
 The artifacts will be placed in the `jni/packages` directory.
 
+Additionally, we build an RPM and DEB in [this GitHub action](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/.github/workflows/CD.yml). We use Ubuntu 16.04 to build with g++ 7.5.0.
+
 ## Running Multi-node Cluster Locally
 
 It can be useful to test and debug on a multi-node cluster. In order to launch a 3 node cluster with the KNN plugin installed, run the following command:
