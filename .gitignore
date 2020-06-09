@@ -13,4 +13,8 @@ oss/*
 jni/CMakeCache.txt
 jni/CMakeFiles
 jni/Makefile
-jni/cmake_install.cmake
+jni/cmake*
+jni/CPack*
+jni/_CPack*
+jni/release
+jni/packages
