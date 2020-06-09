@@ -15,6 +15,8 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
+import com.amazon.opendistroforelasticsearch.knn.KNNResult;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
@@ -135,10 +137,7 @@ public class KNNESIT extends KNNRestTestCase {
 
         float[] queryVector = {1.0f, 1.0f}; // vector to be queried
         int k = 1; //  nearest 1 neighbor
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, null);
-        searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
-
-        knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, 400);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
         searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
     }
 
@@ -151,7 +150,7 @@ public class KNNESIT extends KNNRestTestCase {
 
         float[] queryVector = {1.0f, 1.0f}; // vector to be queried
         int k = 10; //  nearest 10 neighbor
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k, null);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
         List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
         assertEquals(4, results.size());

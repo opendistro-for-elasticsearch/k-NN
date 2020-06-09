@@ -31,13 +31,11 @@ public class KNNQuery extends Query {
     private final float[] queryVector;
     private final int k;
     private final String indexName;
-    private final int efSearch;
 
-    public KNNQuery(String field, float[] queryVector, int k, Integer efSearch, String indexName) {
+    public KNNQuery(String field, float[] queryVector, int k, String indexName) {
         this.field = field;
         this.queryVector = queryVector;
         this.k = k;
-        this.efSearch = (efSearch == null? KNNSettings.getEfSearchParam(indexName):efSearch);
         this.indexName = indexName;
     }
 
@@ -52,8 +50,6 @@ public class KNNQuery extends Query {
     public int getK() {
         return this.k;
     }
-
-    public int getEfSearch() { return this.efSearch; }
 
     public String getIndexName() { return this.indexName; }
 
@@ -80,7 +76,7 @@ public class KNNQuery extends Query {
 
     @Override
     public int hashCode() {
-        return field.hashCode() ^ queryVector.hashCode() ^ k ^ efSearch;
+        return field.hashCode() ^ queryVector.hashCode() ^ k;
     }
 
     @Override
@@ -90,7 +86,6 @@ public class KNNQuery extends Query {
     }
 
     private boolean equalsTo(KNNQuery other) {
-        return this.field.equals(other.getField()) && this.queryVector.equals(other.getQueryVector())
-                && this.k == other.getK() && this.efSearch == other.getEfSearch();
+        return this.field.equals(other.getField()) && this.queryVector.equals(other.getQueryVector()) && this.k == other.getK();
     }
 };

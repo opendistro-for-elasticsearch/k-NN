@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.settings.Settings;
@@ -36,7 +37,7 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
         addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
 
         float[] qvector = {1.0f, 2.0f};
-        Response response = searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1, null), 1);
+        Response response = searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
         assertEquals("knn query failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
 
         //disable plugin
@@ -59,7 +60,7 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
         addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
 
         float[] qvector = {1.0f, 2.0f};
-        Response response = searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1, null), 1);
+        Response response = searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
         assertEquals("knn query failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
 
         //update settings
@@ -67,11 +68,11 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
 
         // indexing should be blocked
         Exception ex = expectThrows(ResponseException.class,
-                () -> searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1, null), 1));
+                () -> searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1));
         assertThat(ex.getMessage(), containsString("KNN plugin is disabled"));
         //enable plugin
         updateClusterSettings(KNNSettings.KNN_PLUGIN_ENABLED, true);
-        searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1, null), 1);
+        searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
     }
 
     public void testCreateIndexWithInvalidSpaceType() throws IOException {

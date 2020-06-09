@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.action;
 
-import com.amazon.opendistroforelasticsearch.knn.index.KNNRestTestCase;
+import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStats;
 
@@ -89,7 +89,7 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
 
         // First search: Ensure that misses=1
         float[] qvector = {6.0f, 6.0f};
-        searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1, null), 1);
+        searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
 
         response = getKnnStats(Collections.emptyList(), Collections.emptyList());
         responseBody = EntityUtils.toString(response.getEntity());
@@ -102,7 +102,7 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         assertEquals((Integer) (missCount0 + 1), missCount1);
 
         // Second search: Ensure that hits=1
-        searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1, null), 1);
+        searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
 
         response = getKnnStats(Collections.emptyList(), Collections.emptyList());
         responseBody = EntityUtils.toString(response.getEntity());

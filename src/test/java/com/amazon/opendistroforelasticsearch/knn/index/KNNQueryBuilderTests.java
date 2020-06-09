@@ -15,15 +15,15 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.QueryShardContext;
-import org.elasticsearch.test.ESTestCase;
 import org.mockito.Mockito;
 
-public class KNNQueryBuilderTests extends ESTestCase {
+public class KNNQueryBuilderTests extends KNNTestCase {
 
     public void testInvalidK() {
         float[] queryVector = {1.0f, 1.0f};
@@ -32,29 +32,19 @@ public class KNNQueryBuilderTests extends ESTestCase {
          * -ve k
          */
         expectThrows(IllegalArgumentException.class,
-                () ->  new KNNQueryBuilder("myvector", queryVector, -1, null));
+                () ->  new KNNQueryBuilder("myvector", queryVector, -1));
 
         /**
          * zero k
          */
         expectThrows(IllegalArgumentException.class,
-                () ->  new KNNQueryBuilder("myvector", queryVector, 0, null));
+                () ->  new KNNQueryBuilder("myvector", queryVector, 0));
 
         /**
          * k > KNNQueryBuilder.K_MAX
          */
         expectThrows(IllegalArgumentException.class,
-                () ->  new KNNQueryBuilder("myvector", queryVector, KNNQueryBuilder.K_MAX + 1, null));
-    }
-
-    public void testInValidEfSearch() {
-        float[] queryVector = {1.0f, 1.0f};
-
-        /**
-         * efSearch < KNNQueryBuilder.EF_SEARCH_MIN
-         */
-        expectThrows(IllegalArgumentException.class,
-                () ->  new KNNQueryBuilder("myvector", queryVector, 1, KNNQueryBuilder.EF_SEARCH_MIN - 1));
+                () ->  new KNNQueryBuilder("myvector", queryVector, KNNQueryBuilder.K_MAX + 1));
     }
 
     public void testEmptyVector() {
@@ -63,56 +53,40 @@ public class KNNQueryBuilderTests extends ESTestCase {
          */
         float[] queryVector = null;
         expectThrows(IllegalArgumentException.class,
-                () -> new KNNQueryBuilder("myvector", queryVector, 1, null));
+                () -> new KNNQueryBuilder("myvector", queryVector, 1));
 
         /**
          * empty query vector
          */
         float[] queryVector1 = {};
         expectThrows(IllegalArgumentException.class,
-                () -> new KNNQueryBuilder("myvector", queryVector1, 1, null));
+                () -> new KNNQueryBuilder("myvector", queryVector1, 1));
     }
 
     public void testFromXcontent() throws Exception {
         float[] queryVector = {1.0f, 2.0f, 3.0f, 4.0f};
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1, null);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1);
         XContentBuilder builder = XContentFactory.jsonBuilder();
         builder.startObject();
         builder.startObject(knnQueryBuilder.fieldName());
         builder.field(KNNQueryBuilder.VECTOR_FIELD.getPreferredName(), knnQueryBuilder.vector());
         builder.field(KNNQueryBuilder.K_FIELD.getPreferredName(), knnQueryBuilder.getK());
-        builder.field(KNNQueryBuilder.EF_SEARCH_FIELD.getPreferredName(), knnQueryBuilder.getEfSearch());
         builder.endObject();
         builder.endObject();
         XContentParser contentParser = createParser(builder);
         contentParser.nextToken();
         KNNQueryBuilder actualBuilder = KNNQueryBuilder.fromXContent(contentParser);
         actualBuilder.equals(knnQueryBuilder);
-
-        knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1, 400);
-        builder = XContentFactory.jsonBuilder();
-        builder.startObject();
-        builder.startObject(knnQueryBuilder.fieldName());
-        builder.field(KNNQueryBuilder.VECTOR_FIELD.getPreferredName(), knnQueryBuilder.vector());
-        builder.field(KNNQueryBuilder.K_FIELD.getPreferredName(), knnQueryBuilder.getK());
-        builder.field(KNNQueryBuilder.EF_SEARCH_FIELD.getPreferredName(), knnQueryBuilder.getEfSearch());
-        builder.endObject();
-        builder.endObject();
-        contentParser = createParser(builder);
-        contentParser.nextToken();
-        actualBuilder = KNNQueryBuilder.fromXContent(contentParser);
-        actualBuilder.equals(knnQueryBuilder);
     }
 
     public void testDoToQuery() throws Exception {
         float[] queryVector = {1.0f, 2.0f, 3.0f, 4.0f};
-        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1, 512);
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1);
         Index dummyIndex = new Index("dummy", "dummy");
         QueryShardContext mockQueryShardContext = Mockito.mock(QueryShardContext.class);
         Mockito.when(mockQueryShardContext.index()).thenReturn(dummyIndex);
         KNNQuery query = (KNNQuery)knnQueryBuilder.doToQuery(mockQueryShardContext);
         assertEquals(knnQueryBuilder.getK(), query.getK());
-        assertEquals((int)knnQueryBuilder.getEfSearch(), query.getEfSearch());
         assertEquals(knnQueryBuilder.fieldName(), query.getField());
         assertEquals(knnQueryBuilder.vector(), query.getQueryVector());
     }

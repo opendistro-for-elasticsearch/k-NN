@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.codec;
 
+import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQuery;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
@@ -37,7 +38,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.watcher.ResourceWatcherService;
 import org.mockito.Mockito;
 
@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
 /**
  * Test used for testing Codecs
  */
-public class  KNNCodecTestCase extends ESTestCase {
+public class  KNNCodecTestCase extends KNNTestCase {
 
     protected void setUpMockClusterService() {
         ClusterService clusterService = mock(ClusterService.class, RETURNS_DEEP_STUBS);
@@ -102,8 +102,7 @@ public class  KNNCodecTestCase extends ESTestCase {
         indexInput.close();
 
         IndexSearcher searcher = new IndexSearcher(reader);
-        assertEquals(1, searcher.count(
-                new KNNQuery("test_vector", new float[] {1.0f, 2.5f}, 1, null, "myindex")));
+        assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 2.5f}, 1, "myindex")));
 
         reader.close();
         writer.close();
@@ -152,14 +151,14 @@ public class  KNNCodecTestCase extends ESTestCase {
 
         // query to verify distance for each of the field
         IndexSearcher searcher = new IndexSearcher(reader);
-        float score = searcher.search(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, null, "dummy"), 10).scoreDocs[0].score;
-        float score1 = searcher.search(new KNNQuery("my_vector", new float[] {1.0f, 2.0f}, 1, null, "dummy"), 10).scoreDocs[0].score;
+        float score = searcher.search(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, "dummy"), 10).scoreDocs[0].score;
+        float score1 = searcher.search(new KNNQuery("my_vector", new float[] {1.0f, 2.0f}, 1, "dummy"), 10).scoreDocs[0].score;
         assertEquals(score, 0.1667f, 0.01f);
         assertEquals(score1, 0.0714f, 0.01f);
 
         // query to determine the hits
-        assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, null, "dummy")));
-        assertEquals(1, searcher.count(new KNNQuery("my_vector", new float[] {1.0f, 1.0f}, 1, null, "dummy")));
+        assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, "dummy")));
+        assertEquals(1, searcher.count(new KNNQuery("my_vector", new float[] {1.0f, 1.0f}, 1, "dummy")));
 
         reader.close();
         dir.close();
