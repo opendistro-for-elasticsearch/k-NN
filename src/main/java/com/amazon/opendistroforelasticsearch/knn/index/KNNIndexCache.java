@@ -144,12 +144,11 @@ public class KNNIndexCache implements Closeable {
      *
      * @param key indexPath where the serialized hnsw graph is stored
      * @param indexName index name
-     * @param efSearch HNSW parameter that represents "the size of the dynamic list for the nearest neighbors"
      * @return KNNIndex holding the heap pointer of the loaded graph
      */
-    public KNNIndex getIndex(String key, final String indexName, final int efSearch) {
+    public KNNIndex getIndex(String key, final String indexName) {
         try {
-            final KNNIndexCacheEntry knnIndexCacheEntry = cache.get(key, () -> loadIndex(key, indexName, efSearch));
+            final KNNIndexCacheEntry knnIndexCacheEntry = cache.get(key, () -> loadIndex(key, indexName));
             return knnIndexCacheEntry.getKnnIndex();
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
@@ -227,7 +226,6 @@ public class KNNIndexCache implements Closeable {
     /**
      * Returns the how much space an index is taking up in the cache is as a percentage of the total cache capacity
      *
-     * @param indexName Name of index
      * @return Percentage of the cache full
      */
     public Float getWeightAsPercentage(final String indexName) {
@@ -275,12 +273,11 @@ public class KNNIndexCache implements Closeable {
      *
      * @param indexPathUrl path for serialized hnsw graph
      * @param indexName index name
-     * @param efSearch HNSW parameter that represents "the size of the dynamic list for the nearest neighbors"
      * @return KNNIndex holding the heap pointer of the loaded graph
      * @throws Exception Exception could occur when registering the index path
      * to Resource watcher or if the JNI call throws
      */
-    public KNNIndexCacheEntry loadIndex(String indexPathUrl, String indexName, int efSearch) throws Exception {
+    public KNNIndexCacheEntry loadIndex(String indexPathUrl, String indexName) throws Exception {
         if(Strings.isNullOrEmpty(indexPathUrl))
             throw new IllegalStateException("indexPath is null while performing load index");
         logger.debug("Loading index on cache miss .. {}", indexPathUrl);
@@ -293,8 +290,7 @@ public class KNNIndexCache implements Closeable {
         // the entry
         fileWatcher.init();
 
-        final KNNIndex knnIndex = KNNIndex.loadIndex(
-                indexPathUrl, getQueryParams(indexName, efSearch), KNNSettings.getSpaceType(indexName));
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
 
         // TODO verify that this is safe - ideally we'd explicitly ensure that the FileWatcher is only checked
         // after the guava cache has finished loading the key to avoid a race condition where the watcher
@@ -348,7 +344,7 @@ public class KNNIndexCache implements Closeable {
         }
     };
 
-    private String[] getQueryParams(String indexName, int efSearch) {
-        return new String[] {"efSearch=" + efSearch};
+    private String[] getQueryParams(String indexName) {
+        return new String[] {"efSearch=" + KNNSettings.getEfSearchParam(indexName)};
     }
 }
