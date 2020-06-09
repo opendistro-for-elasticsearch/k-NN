@@ -22,6 +22,8 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 
@@ -86,6 +88,18 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
         Exception ex = expectThrows(ResponseException.class,
             () -> createKnnIndex(INDEX_NAME, invalidSettings, createKnnIndexMapping(FIELD_NAME, 2)));
         assertThat(ex.getMessage(), containsString(String.format("Unsupported space type: %s", invalidSpaceType)));
+    }
+
+    public void testUpdateIndexSetting() throws IOException {
+        Settings settings = Settings.builder()
+                .put("index.knn", true)
+                .put(KNNSettings.KNN_ALGO_PARAM_EF_SEARCH, 512)
+                .build();
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 2));
+        assertEquals("512", getIndexSettingByName(INDEX_NAME, KNNSettings.KNN_ALGO_PARAM_EF_SEARCH));
+
+        updateIndexSettings(INDEX_NAME, Settings.builder().put(KNNSettings.KNN_ALGO_PARAM_EF_SEARCH, 400));
+        assertEquals("400", getIndexSettingByName(INDEX_NAME, KNNSettings.KNN_ALGO_PARAM_EF_SEARCH));
     }
 }
 
