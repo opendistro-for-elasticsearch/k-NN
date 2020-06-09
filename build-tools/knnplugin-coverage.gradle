@@ -55,15 +55,6 @@ integTest.runner {
     systemProperty 'jacoco.dir', "${jacocoDir}"
 }
 
-testClusters.integTest {
-    jvmArgs " ${dummyIntegTest.jacoco.getAsJvmArg()}"
-    systemProperty 'com.sun.management.jmxremote', "true"
-    systemProperty 'com.sun.management.jmxremote.authenticate', "false"
-    systemProperty 'com.sun.management.jmxremote.port', "7777"
-    systemProperty 'com.sun.management.jmxremote.ssl', "false"
-    systemProperty 'java.rmi.server.hostname', "127.0.0.1"
-}
-
 jacocoTestReport {
     dependsOn integTest, test
     executionData.from = [dummyTest.jacoco.destinationFile, dummyIntegTest.jacoco.destinationFile]
@@ -77,6 +68,19 @@ jacocoTestReport {
     }
 }
 
-project.gradle.projectsEvaluated {
-    jacocoTestReport.dependsOn integTest.runner
+
+allprojects{
+    afterEvaluate {
+        jacocoTestReport.dependsOn integTest.runner
+
+        testClusters.integTest {
+            jvmArgs " ${dummyIntegTest.jacoco.getAsJvmArg()}"
+            systemProperty 'com.sun.management.jmxremote', "true"
+            systemProperty 'com.sun.management.jmxremote.authenticate', "false"
+            systemProperty 'com.sun.management.jmxremote.port', "7777"
+            systemProperty 'com.sun.management.jmxremote.ssl', "false"
+            systemProperty 'java.rmi.server.hostname', "127.0.0.1"
+        }
+    }
 }
+
