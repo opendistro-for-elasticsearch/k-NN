@@ -98,6 +98,12 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
 
         updateIndexSettings(INDEX_NAME, Settings.builder().put(KNNSettings.KNN_ALGO_PARAM_EF_SEARCH, 400));
         assertEquals("400", getIndexSettingByName(INDEX_NAME, KNNSettings.KNN_ALGO_PARAM_EF_SEARCH));
+
+        Exception ex = expectThrows(ResponseException.class,
+                () -> updateIndexSettings(INDEX_NAME,
+                        Settings.builder().put(KNNSettings.KNN_ALGO_PARAM_EF_SEARCH, 1)));
+        assertThat(ex.getMessage(),
+                containsString("Failed to parse value [1] for setting [index.knn.algo_param.ef_search] must be >= 2"));
     }
 }
 
