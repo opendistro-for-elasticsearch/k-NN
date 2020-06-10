@@ -403,7 +403,7 @@ public class KNNSettings {
         module.addSettingsUpdateConsumer(
                 INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING,
                 newVal -> {
-                    logger.debug("The value of setting [{}] changed to [{}]", KNN_ALGO_PARAM_EF_SEARCH, newVal);
+                    logger.debug("The value of [KNN] setting [{}] changed to [{}]", KNN_ALGO_PARAM_EF_SEARCH, newVal);
                     latestSettings.put(KNN_ALGO_PARAM_EF_SEARCH, newVal);
                     // TODO: replace cache-rebuild with index reload into the cache
                     KNNWeight.knnIndexCache.rebuild();
