@@ -137,7 +137,7 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
         assertEquals((Integer) (missCount0 + 1), missCount1);
         assertEquals(hitCount0, hitCount1);
 
-        // Update ef_search: previous KNN stats reset
+        // Update ef_search
         updateIndexSettings(INDEX_NAME, Settings.builder().put(KNNSettings.KNN_ALGO_PARAM_EF_SEARCH, 400));
         response = getKnnStats(Collections.emptyList(), Collections.emptyList());
         responseBody = EntityUtils.toString(response.getEntity());
@@ -146,8 +146,6 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
         Integer hitCount2 = (Integer) nodeStats2.get(StatNames.HIT_COUNT.getName());
         Integer missCount2 = (Integer) nodeStats2.get(StatNames.MISS_COUNT.getName());
 
-        assertEquals(missCount0, missCount2);
-        assertEquals(hitCount0, hitCount2);
         // Search after update: should miss
         searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
 
@@ -158,8 +156,8 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
         Integer hitCount3 = (Integer) nodeStats3.get(StatNames.HIT_COUNT.getName());
         Integer missCount3 = (Integer) nodeStats3.get(StatNames.MISS_COUNT.getName());
 
-        assertEquals(missCount1, missCount3);
-        assertEquals(hitCount1, hitCount3);
+        assertEquals((Integer) (missCount2 + 1), missCount3);
+        assertEquals(hitCount2, hitCount3);
     }
 }
 
