@@ -405,7 +405,7 @@ public class KNNSettings {
                 newVal -> {
                     logger.debug("The value of setting [{}] changed to [{}]", KNN_ALGO_PARAM_EF_SEARCH, newVal);
                     latestSettings.put(KNN_ALGO_PARAM_EF_SEARCH, newVal);
-                    // spawn a thread
+                    // TODO: replace cache-rebuild with index reload into the cache
                     KNNWeight.knnIndexCache.rebuild();
                 });
     }
