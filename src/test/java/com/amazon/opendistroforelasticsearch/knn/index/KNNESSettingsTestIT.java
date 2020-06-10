@@ -118,10 +118,6 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
         Integer hitCount0 = (Integer) nodeStats0.get(StatNames.HIT_COUNT.getName());
         Integer missCount0 = (Integer) nodeStats0.get(StatNames.MISS_COUNT.getName());
 
-        Settings settings = Settings.builder()
-                .put("index.knn", true)
-                .put(KNNSettings.KNN_ALGO_PARAM_EF_SEARCH, 512)
-                .build();
         createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
 
         Float[] vector = {6.0f, 6.0f};
