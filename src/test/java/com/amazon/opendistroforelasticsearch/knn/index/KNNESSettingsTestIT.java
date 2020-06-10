@@ -16,12 +16,16 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
+import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 
@@ -104,6 +108,62 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
                         Settings.builder().put(KNNSettings.KNN_ALGO_PARAM_EF_SEARCH, 1)));
         assertThat(ex.getMessage(),
                 containsString("Failed to parse value [1] for setting [index.knn.algo_param.ef_search] must be >= 2"));
+    }
+
+    public void testKNNStatsAfterUpdateIndexSetting() throws IOException {
+        Response response = getKnnStats(Collections.emptyList(), Collections.emptyList());
+        String responseBody = EntityUtils.toString(response.getEntity());
+
+        Map<String, Object> nodeStats0 = parseNodeStatsResponse(responseBody).get(0);
+        Integer hitCount0 = (Integer) nodeStats0.get(StatNames.HIT_COUNT.getName());
+        Integer missCount0 = (Integer) nodeStats0.get(StatNames.MISS_COUNT.getName());
+
+        Settings settings = Settings.builder()
+                .put("index.knn", true)
+                .put(KNNSettings.KNN_ALGO_PARAM_EF_SEARCH, 512)
+                .build();
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+
+        Float[] vector = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+
+        float[] qvector = {6.0f, 6.0f};
+        // First search: should miss
+        searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
+
+        response = getKnnStats(Collections.emptyList(), Collections.emptyList());
+        responseBody = EntityUtils.toString(response.getEntity());
+
+        Map<String, Object> nodeStats1 = parseNodeStatsResponse(responseBody).get(0);
+        Integer hitCount1 = (Integer) nodeStats1.get(StatNames.HIT_COUNT.getName());
+        Integer missCount1 = (Integer) nodeStats1.get(StatNames.MISS_COUNT.getName());
+
+        assertEquals((Integer) (missCount0 + 1), missCount1);
+        assertEquals(hitCount0, hitCount1);
+
+        // Update ef_search: previous KNN stats reset
+        updateIndexSettings(INDEX_NAME, Settings.builder().put(KNNSettings.KNN_ALGO_PARAM_EF_SEARCH, 400));
+        response = getKnnStats(Collections.emptyList(), Collections.emptyList());
+        responseBody = EntityUtils.toString(response.getEntity());
+
+        Map<String, Object> nodeStats2 = parseNodeStatsResponse(responseBody).get(0);
+        Integer hitCount2 = (Integer) nodeStats2.get(StatNames.HIT_COUNT.getName());
+        Integer missCount2 = (Integer) nodeStats2.get(StatNames.MISS_COUNT.getName());
+
+        assertEquals(missCount0, missCount2);
+        assertEquals(hitCount0, hitCount2);
+        // Search after update: should miss
+        searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
+
+        response = getKnnStats(Collections.emptyList(), Collections.emptyList());
+        responseBody = EntityUtils.toString(response.getEntity());
+
+        Map<String, Object> nodeStats3 = parseNodeStatsResponse(responseBody).get(0);
+        Integer hitCount3 = (Integer) nodeStats3.get(StatNames.HIT_COUNT.getName());
+        Integer missCount3 = (Integer) nodeStats3.get(StatNames.MISS_COUNT.getName());
+
+        assertEquals(missCount1, missCount3);
+        assertEquals(hitCount1, hitCount3);
     }
 }
 
