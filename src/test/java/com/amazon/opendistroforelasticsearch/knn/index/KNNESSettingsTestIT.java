@@ -124,7 +124,7 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
         addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
 
         float[] qvector = {6.0f, 6.0f};
-        // First search: should miss
+        // First search to load graph into cache
         searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
 
         response = getKnnStats(Collections.emptyList(), Collections.emptyList());
