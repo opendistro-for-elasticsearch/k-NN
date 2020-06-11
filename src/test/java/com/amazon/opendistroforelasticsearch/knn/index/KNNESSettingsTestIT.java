@@ -110,14 +110,8 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
                 containsString("Failed to parse value [1] for setting [index.knn.algo_param.ef_search] must be >= 2"));
     }
 
-    public void testKNNStatsAfterUpdateIndexSetting() throws IOException {
-        Response response = getKnnStats(Collections.emptyList(), Collections.emptyList());
-        String responseBody = EntityUtils.toString(response.getEntity());
-
-        Map<String, Object> nodeStats0 = parseNodeStatsResponse(responseBody).get(0);
-        Integer hitCount0 = (Integer) nodeStats0.get(StatNames.HIT_COUNT.getName());
-        Integer missCount0 = (Integer) nodeStats0.get(StatNames.MISS_COUNT.getName());
-
+    @SuppressWarnings("unchecked")
+    public void testCacheRebuiltAfterUpdateIndexSettings() throws IOException {
         createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
 
         Float[] vector = {6.0f, 6.0f};
@@ -127,37 +121,23 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
         // First search to load graph into cache
         searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
 
-        response = getKnnStats(Collections.emptyList(), Collections.emptyList());
-        responseBody = EntityUtils.toString(response.getEntity());
+        Response response = getKnnStats(Collections.emptyList(), Collections.emptyList());
+        String responseBody = EntityUtils.toString(response.getEntity());
 
-        Map<String, Object> nodeStats1 = parseNodeStatsResponse(responseBody).get(0);
-        Integer hitCount1 = (Integer) nodeStats1.get(StatNames.HIT_COUNT.getName());
-        Integer missCount1 = (Integer) nodeStats1.get(StatNames.MISS_COUNT.getName());
+        Map<String, Object> nodeStats = parseNodeStatsResponse(responseBody).get(0);
+        Map<String, Object> indicesInCache = (Map<String, Object>) nodeStats.get(StatNames.INDICES_IN_CACHE.getName());
 
-        assertEquals((Integer) (missCount0 + 1), missCount1);
-        assertEquals(hitCount0, hitCount1);
+        assertEquals(1, indicesInCache.size());
 
         // Update ef_search
         updateIndexSettings(INDEX_NAME, Settings.builder().put(KNNSettings.KNN_ALGO_PARAM_EF_SEARCH, 400));
         response = getKnnStats(Collections.emptyList(), Collections.emptyList());
         responseBody = EntityUtils.toString(response.getEntity());
 
-        Map<String, Object> nodeStats2 = parseNodeStatsResponse(responseBody).get(0);
-        Integer hitCount2 = (Integer) nodeStats2.get(StatNames.HIT_COUNT.getName());
-        Integer missCount2 = (Integer) nodeStats2.get(StatNames.MISS_COUNT.getName());
+        nodeStats = parseNodeStatsResponse(responseBody).get(0);
+        indicesInCache = (Map<String, Object>) nodeStats.get(StatNames.INDICES_IN_CACHE.getName());
 
-        // Search after update: should miss
-        searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
-
-        response = getKnnStats(Collections.emptyList(), Collections.emptyList());
-        responseBody = EntityUtils.toString(response.getEntity());
-
-        Map<String, Object> nodeStats3 = parseNodeStatsResponse(responseBody).get(0);
-        Integer hitCount3 = (Integer) nodeStats3.get(StatNames.HIT_COUNT.getName());
-        Integer missCount3 = (Integer) nodeStats3.get(StatNames.MISS_COUNT.getName());
-
-        assertEquals((Integer) (missCount2 + 1), missCount3);
-        assertEquals(hitCount2, hitCount3);
+        assertEquals(0, indicesInCache.size());
     }
 }
 
