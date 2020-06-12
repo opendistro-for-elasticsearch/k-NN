@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
 import com.google.common.cache.Cache;
@@ -24,16 +25,32 @@ import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalNotification;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.FilterLeafReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.SegmentReader;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.env.NodeEnvironment;
+import org.elasticsearch.index.shard.IndexShard;
+import org.elasticsearch.index.shard.ShardId;
+import org.elasticsearch.index.shard.ShardPath;
+import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.watcher.FileChangesListener;
 import org.elasticsearch.watcher.FileWatcher;
 import org.elasticsearch.watcher.ResourceWatcherService;
 import org.elasticsearch.watcher.WatcherHandle;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -59,8 +76,11 @@ public class KNNIndexCache implements Closeable {
 
     private Cache<String, KNNIndexCacheEntry> cache;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private ThreadPool threadPool;
     private AtomicBoolean cacheCapacityReached;
     private ResourceWatcherService resourceWatcherService;
+    private ClusterService clusterService;
+    private NodeEnvironment nodeEnvironment;
 
     private KNNIndexCache() {
         initCache();
@@ -68,6 +88,18 @@ public class KNNIndexCache implements Closeable {
 
     public static void setResourceWatcherService(final ResourceWatcherService resourceWatcherService) {
         getInstance().resourceWatcherService = resourceWatcherService;
+    }
+
+    public static void setClusterService(final ClusterService clusterService) {
+        getInstance().clusterService = clusterService;
+    }
+
+    public static void setNodeEnvironment(final NodeEnvironment nodeEnvironment) {
+        getInstance().nodeEnvironment = nodeEnvironment;
+    }
+
+    public static void setThreadPool(final ThreadPool threadPool) {
+        getInstance().threadPool = threadPool;
     }
 
     public void close() {
@@ -269,19 +301,19 @@ public class KNNIndexCache implements Closeable {
     }
 
     /**
-     * Loads hnsw index to memory. Registers the location of the serialized graph with ResourceWatcher.
+     * Loads k-NN Lucene index to memory. Registers the location of the serialized graph with ResourceWatcher.
      *
-     * @param indexPathUrl path for serialized hnsw graph
+     * @param segmentPath path for serialized k-NN segment
      * @param indexName index name
      * @return KNNIndex holding the heap pointer of the loaded graph
      * @throws Exception Exception could occur when registering the index path
      * to Resource watcher or if the JNI call throws
      */
-    public KNNIndexCacheEntry loadIndex(String indexPathUrl, String indexName) throws Exception {
-        if(Strings.isNullOrEmpty(indexPathUrl))
+    public KNNIndexCacheEntry loadIndex(String segmentPath, String indexName) throws Exception {
+        if(Strings.isNullOrEmpty(segmentPath))
             throw new IllegalStateException("indexPath is null while performing load index");
-        logger.debug("Loading index on cache miss .. {}", indexPathUrl);
-        Path indexPath = Paths.get(indexPathUrl);
+        logger.info("[KNN] Loading index: {}", segmentPath);
+        Path indexPath = Paths.get(segmentPath);
         FileWatcher fileWatcher = new FileWatcher(indexPath);
         fileWatcher.addListener(KNN_INDEX_FILE_DELETED_LISTENER);
 
@@ -290,14 +322,95 @@ public class KNNIndexCache implements Closeable {
         // the entry
         fileWatcher.init();
 
-        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
+        final KNNIndex knnIndex = KNNIndex.loadIndex(segmentPath, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
 
         // TODO verify that this is safe - ideally we'd explicitly ensure that the FileWatcher is only checked
         // after the guava cache has finished loading the key to avoid a race condition where the watcher
         // causes us to invalidate an entry before the key has been fully loaded.
         final WatcherHandle<FileWatcher> watcherHandle = resourceWatcherService.add(fileWatcher);
 
-        return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
+        return new KNNIndexCacheEntry(knnIndex, segmentPath, indexName, watcherHandle);
+    }
+
+
+    public boolean loadIndex(IndexShard indexShard) {
+        try {
+            for (String hnswPath : getHNSWPaths(indexShard.shardPath())) {
+                threadPool.executor(ThreadPool.Names.GENERIC).submit(
+                        () -> cache.get(hnswPath, () -> loadIndex(hnswPath, indexShard.shardId().getIndexName()))
+                );
+            }
+        } catch (IOException ex) {
+            logger.error("[KNN] Unable to load shard={} into graph: {}", indexShard.shardId(), ex);
+            return false;
+        }
+
+        return true;
+    }
+
+//    /**
+//     * Loads all of the segments for the Elasticsearch index into the cache
+//     *
+//     * I think functionality of getting segment information should be encapsulated in the KNNIndex class.
+//     *
+//     * @param indexName Name of index
+//     * @throws IOException thrown if index is invalid
+//     */
+//    public void loadIndex(String indexName) throws IOException {
+//        Index index = this.clusterService.state().getMetaData().getIndices().get(indexName).getIndex();
+//        Set<ShardId> shardIds = nodeEnvironment.findAllShardIds(index);
+//
+//        for (ShardId shardId : shardIds) {
+//            threadPool.executor(ThreadPool.Names.GENERIC).submit(() -> {
+//                try {
+//                    for (String hnswPath : getIndexPaths(shardId)) {
+//                        cache.get(hnswPath, () -> loadIndex(hnswPath, indexName));
+//                    }
+//                } catch (Exception ex) {
+//                    logger.error("[KNN] Unable to load shard={} into graph: {}", shardId, ex);
+//                }
+//            });
+//        }
+//    }
+
+    private List<String> getHNSWPaths(ShardPath shardPath) throws IOException {
+        IndexReader indexReader = getIndexReader(shardPath);
+        List<String> hnswFiles = new ArrayList<>();
+        for (LeafReaderContext leafReaderContext : indexReader.leaves()) {
+            SegmentReader reader = (SegmentReader) FilterLeafReader.unwrap(leafReaderContext.reader());
+            hnswFiles.addAll(reader.getSegmentInfo().files().stream()
+                    .filter(fileName -> fileName.endsWith(getHnswFileExtension(reader)))
+                    .map(fileName -> shardPath.resolveIndex().resolve(fileName).toString())
+                    .collect(Collectors.toList()));
+        }
+
+        return hnswFiles;
+    }
+
+    private List<String> getIndexPaths(ShardId shardId, String fieldName) throws IOException {
+        ShardPath shardPath = ShardPath.loadShardPath(logger, nodeEnvironment, shardId, null);
+        IndexReader indexReader = getIndexReader(shardPath);
+        List<String> hnswFiles = new ArrayList<>();
+        for (LeafReaderContext leafReaderContext : indexReader.leaves()) {
+            SegmentReader reader = (SegmentReader) FilterLeafReader.unwrap(leafReaderContext.reader());
+            hnswFiles.addAll(reader.getSegmentInfo().files().stream()
+                    .filter(fileName -> fileName.endsWith(getHnswFileExtension(reader)))
+                    .filter(fileName -> fileName.contains(fieldName))
+                    .map(fileName -> shardPath.resolveIndex().resolve(fileName).toString())
+                    .collect(Collectors.toList()));
+        }
+
+        return hnswFiles;
+    }
+
+    private IndexReader getIndexReader(ShardPath shardPath) throws IOException {
+        Directory directory = FSDirectory.open(shardPath.resolveIndex());
+        return DirectoryReader.open(directory);
+    }
+
+    private String getHnswFileExtension(SegmentReader reader) {
+        return reader.getSegmentInfo().info.getUseCompoundFile() ? KNNCodecUtil.HNSW_COMPOUND_EXTENSION :
+                KNNCodecUtil.HNSW_EXTENSION;
     }
 
     /**

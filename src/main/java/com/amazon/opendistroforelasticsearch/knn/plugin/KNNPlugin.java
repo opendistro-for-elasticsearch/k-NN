@@ -22,9 +22,12 @@ import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 
 import com.amazon.opendistroforelasticsearch.knn.plugin.rest.RestKNNStatsHandler;
+import com.amazon.opendistroforelasticsearch.knn.plugin.rest.RestKNNWarmupHandler;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStats;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsAction;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsTransportAction;
+import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNWarmupAction;
+import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNWarmupTransportAction;
 import com.google.common.collect.ImmutableList;
 
 import org.elasticsearch.action.ActionRequest;
@@ -119,7 +122,10 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
                                                NamedXContentRegistry xContentRegistry, Environment environment,
                                                NodeEnvironment nodeEnvironment, NamedWriteableRegistry namedWriteableRegistry,
                                                IndexNameExpressionResolver indexNameExpressionResolver) {
+        KNNIndexCache.setClusterService(clusterService);
+        KNNIndexCache.setThreadPool(threadPool);
         KNNIndexCache.setResourceWatcherService(resourceWatcherService);
+        KNNIndexCache.setNodeEnvironment(nodeEnvironment);
         KNNSettings.state().initialize(client, clusterService);
         KNNCircuitBreaker.getInstance().initialize(threadPool, clusterService, client);
         knnStats = new KNNStats(KNN_STATS);
@@ -140,8 +146,9 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
                                              Supplier<DiscoveryNodes> nodesInCluster) {
 
         RestKNNStatsHandler restKNNStatsHandler = new RestKNNStatsHandler(settings, restController, knnStats);
+        RestKNNWarmupHandler restKNNWarmupHandler = new RestKNNWarmupHandler(settings, restController);
 
-        return Arrays.asList(restKNNStatsHandler);
+        return Arrays.asList(restKNNStatsHandler, restKNNWarmupHandler);
     }
 
     /**
@@ -150,7 +157,8 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
     @Override
     public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
         return Arrays.asList(
-                new ActionHandler<>(KNNStatsAction.INSTANCE, KNNStatsTransportAction.class)
+                new ActionHandler<>(KNNStatsAction.INSTANCE, KNNStatsTransportAction.class),
+                new ActionHandler<>(KNNWarmupAction.INSTANCE, KNNWarmupTransportAction.class)
         );
     }
 
