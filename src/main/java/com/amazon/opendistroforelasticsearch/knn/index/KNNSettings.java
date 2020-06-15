@@ -28,6 +28,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.IndexModule;
 import org.elasticsearch.monitor.jvm.JvmInfo;
 import org.elasticsearch.monitor.os.OsProbe;
 
@@ -107,7 +108,8 @@ public class KNNSettings {
     public static final Setting<Integer> INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING =  Setting.intSetting(KNN_ALGO_PARAM_EF_SEARCH,
             512,
             2,
-            IndexScope);
+            IndexScope,
+            Dynamic);
 
     /**
      * ef_constrution - the parameter has the same meaning as ef, but controls the index_time/index_accuracy.
@@ -395,5 +397,16 @@ public class KNNSettings {
                 throw new InvalidParameterException(String.format("Unsupported space type: %s", value));
             }
         }
+    }
+
+    public void onIndexModule(IndexModule module) {
+        module.addSettingsUpdateConsumer(
+                INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING,
+                newVal -> {
+                    logger.debug("The value of [KNN] setting [{}] changed to [{}]", KNN_ALGO_PARAM_EF_SEARCH, newVal);
+                    latestSettings.put(KNN_ALGO_PARAM_EF_SEARCH, newVal);
+                    // TODO: replace cache-rebuild with index reload into the cache
+                    KNNWeight.knnIndexCache.rebuild();
+                });
     }
 }

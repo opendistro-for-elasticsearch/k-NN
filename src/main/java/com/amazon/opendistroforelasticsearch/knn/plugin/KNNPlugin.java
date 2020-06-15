@@ -42,6 +42,7 @@ import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
+import org.elasticsearch.index.IndexModule;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.engine.EngineFactory;
 import org.elasticsearch.index.mapper.Mapper;
@@ -160,5 +161,10 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
             return Optional.of(new KNNEngineFactory());
         }
         return Optional.empty();
+    }
+
+    @Override
+    public void onIndexModule(IndexModule indexModule) {
+        KNNSettings.state().onIndexModule(indexModule);
     }
 }
