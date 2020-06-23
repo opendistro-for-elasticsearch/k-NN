@@ -374,12 +374,12 @@ public class KNNSettings {
      * @return spaceType value
      */
     public static String getSpaceType(String index) {
-        return KNNSettings.state().clusterService.state().getMetaData()
+        return KNNSettings.state().clusterService.state().getMetadata()
             .index(index).getSettings().get(KNN_SPACE_TYPE, SpaceTypes.l2.getValue());
     }
 
     public static int getIndexSettingValue(String index, String settingName, int defaultValue) {
-        return KNNSettings.state().clusterService.state().getMetaData()
+        return KNNSettings.state().clusterService.state().getMetadata()
                                                  .index(index).getSettings()
                                                  .getAsInt(settingName, defaultValue);
     }
