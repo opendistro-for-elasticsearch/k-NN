@@ -15,7 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
 import com.google.common.cache.Cache;
@@ -25,19 +24,9 @@ import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalNotification;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.FilterLeafReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.SegmentReader;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.env.NodeEnvironment;
-import org.elasticsearch.index.shard.IndexShard;
-import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.index.shard.ShardPath;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.watcher.FileChangesListener;
 import org.elasticsearch.watcher.FileWatcher;
@@ -48,7 +37,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -332,85 +320,12 @@ public class KNNIndexCache implements Closeable {
         return new KNNIndexCacheEntry(knnIndex, segmentPath, indexName, watcherHandle);
     }
 
-
-    public boolean loadIndex(IndexShard indexShard) {
-        try {
-            for (String hnswPath : getHNSWPaths(indexShard.shardPath())) {
-                threadPool.executor(ThreadPool.Names.GENERIC).submit(
-                        () -> cache.get(hnswPath, () -> loadIndex(hnswPath, indexShard.shardId().getIndexName()))
-                );
-            }
-        } catch (IOException ex) {
-            logger.error("[KNN] Unable to load shard={} into graph: {}", indexShard.shardId(), ex);
-            return false;
-        }
-
-        return true;
-    }
-
-//    /**
-//     * Loads all of the segments for the Elasticsearch index into the cache
-//     *
-//     * I think functionality of getting segment information should be encapsulated in the KNNIndex class.
-//     *
-//     * @param indexName Name of index
-//     * @throws IOException thrown if index is invalid
-//     */
-//    public void loadIndex(String indexName) throws IOException {
-//        Index index = this.clusterService.state().getMetaData().getIndices().get(indexName).getIndex();
-//        Set<ShardId> shardIds = nodeEnvironment.findAllShardIds(index);
-//
-//        for (ShardId shardId : shardIds) {
-//            threadPool.executor(ThreadPool.Names.GENERIC).submit(() -> {
-//                try {
-//                    for (String hnswPath : getIndexPaths(shardId)) {
-//                        cache.get(hnswPath, () -> loadIndex(hnswPath, indexName));
-//                    }
-//                } catch (Exception ex) {
-//                    logger.error("[KNN] Unable to load shard={} into graph: {}", shardId, ex);
-//                }
-//            });
-//        }
-//    }
-
-    private List<String> getHNSWPaths(ShardPath shardPath) throws IOException {
-        IndexReader indexReader = getIndexReader(shardPath);
-        List<String> hnswFiles = new ArrayList<>();
-        for (LeafReaderContext leafReaderContext : indexReader.leaves()) {
-            SegmentReader reader = (SegmentReader) FilterLeafReader.unwrap(leafReaderContext.reader());
-            hnswFiles.addAll(reader.getSegmentInfo().files().stream()
-                    .filter(fileName -> fileName.endsWith(getHnswFileExtension(reader)))
-                    .map(fileName -> shardPath.resolveIndex().resolve(fileName).toString())
-                    .collect(Collectors.toList()));
-        }
-
-        return hnswFiles;
-    }
-
-    private List<String> getIndexPaths(ShardId shardId, String fieldName) throws IOException {
-        ShardPath shardPath = ShardPath.loadShardPath(logger, nodeEnvironment, shardId, null);
-        IndexReader indexReader = getIndexReader(shardPath);
-        List<String> hnswFiles = new ArrayList<>();
-        for (LeafReaderContext leafReaderContext : indexReader.leaves()) {
-            SegmentReader reader = (SegmentReader) FilterLeafReader.unwrap(leafReaderContext.reader());
-            hnswFiles.addAll(reader.getSegmentInfo().files().stream()
-                    .filter(fileName -> fileName.endsWith(getHnswFileExtension(reader)))
-                    .filter(fileName -> fileName.contains(fieldName))
-                    .map(fileName -> shardPath.resolveIndex().resolve(fileName).toString())
-                    .collect(Collectors.toList()));
-        }
-
-        return hnswFiles;
-    }
-
-    private IndexReader getIndexReader(ShardPath shardPath) throws IOException {
-        Directory directory = FSDirectory.open(shardPath.resolveIndex());
-        return DirectoryReader.open(directory);
-    }
-
-    private String getHnswFileExtension(SegmentReader reader) {
-        return reader.getSegmentInfo().info.getUseCompoundFile() ? KNNCodecUtil.HNSW_COMPOUND_EXTENSION :
-                KNNCodecUtil.HNSW_EXTENSION;
+    public int loadIndex(KNNIndexShard knnIndexShard) throws IOException {
+        List<String> hnswPaths = knnIndexShard.getHNSWPaths();
+        hnswPaths.forEach(segmentPath -> executor.submit(
+                () -> getIndex(segmentPath, knnIndexShard.getIndexName()))
+        );
+        return hnswPaths.size();
     }
 
     /**

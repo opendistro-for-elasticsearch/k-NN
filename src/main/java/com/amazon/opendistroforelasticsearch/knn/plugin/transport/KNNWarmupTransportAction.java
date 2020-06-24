@@ -16,6 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.plugin.transport;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache;
+import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexShard;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.FailedNodeException;
@@ -24,6 +25,7 @@ import org.elasticsearch.action.support.nodes.TransportNodesAction;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -34,7 +36,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.StreamSupport;
 
 public class KNNWarmupTransportAction extends TransportNodesAction<KNNWarmupRequest, KNNWarmupResponse,
@@ -43,6 +45,7 @@ public class KNNWarmupTransportAction extends TransportNodesAction<KNNWarmupRequ
     public static Logger logger = LogManager.getLogger(KNNWarmupTransportAction.class);
 
     private IndicesService indicesService;
+    private NodeEnvironment nodeEnvironment;
 
     @Inject
     public KNNWarmupTransportAction(
@@ -50,11 +53,13 @@ public class KNNWarmupTransportAction extends TransportNodesAction<KNNWarmupRequ
             ClusterService clusterService,
             TransportService transportService,
             ActionFilters actionFilters,
-            IndicesService indicesService
+            IndicesService indicesService,
+            NodeEnvironment nodeEnvironment
     ) {
         super(KNNWarmupAction.NAME, threadPool, clusterService, transportService, actionFilters, KNNWarmupRequest::new,
                 KNNWarmupNodeRequest::new, ThreadPool.Names.MANAGEMENT, KNNWarmupNodeResponse.class);
         this.indicesService = indicesService;
+        this.nodeEnvironment = nodeEnvironment;
     }
 
     @Override
@@ -79,19 +84,38 @@ public class KNNWarmupTransportAction extends TransportNodesAction<KNNWarmupRequ
 
     @Override
     protected KNNWarmupNodeResponse nodeOperation(KNNWarmupNodeRequest request) {
-        AtomicBoolean acknowledged = new AtomicBoolean(true);
-        Arrays.stream(request.getIndices())
+        AtomicInteger failureCount = new AtomicInteger(0);
+        int graphCount = Arrays.stream(request.getIndices())
                 .map(indexName -> clusterService.state().getMetaData().getIndices().get(indexName))
                 .filter(Objects::nonNull)
                 .filter(index -> indicesService.hasIndex(index.getIndex()))
                 .map(index -> indicesService.indexServiceSafe(index.getIndex()).iterator())
-                .forEach(indexShardIterator ->
-                        StreamSupport.stream(Spliterators.spliteratorUnknownSize(
-                                indexShardIterator, Spliterator.ORDERED), false)
-                                .map(indexShard ->  KNNIndexCache.getInstance().loadIndex(indexShard))
-                                .forEach(shardAcknowledged -> acknowledged.set(acknowledged.get() && shardAcknowledged))
-                );
+                .map(indexShardIterator ->
+                        StreamSupport.stream(Spliterators.spliteratorUnknownSize(indexShardIterator, Spliterator.ORDERED), false)
+                                .map(indexShard -> {
+                                    try {
+                                        return new KNNIndexShard(indexShard, nodeEnvironment);
+                                    } catch (KNNIndexShard.NotKNNIndexException e) {
+                                        e.printStackTrace();
+                                        failureCount.getAndIncrement();
+                                        return null;
+                                    }
+                                })
+                                .filter(Objects::nonNull)
+                                .map(knnIndexShard -> {
+                                    try {
+                                        return KNNIndexCache.getInstance().loadIndex(knnIndexShard);
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                        failureCount.getAndIncrement();
+                                        return 0;
+                                    }
+                                })
+                                .mapToInt(Integer::intValue)
+                                .sum()
+                )
+                .mapToInt(Integer::intValue).sum();
 
-        return new KNNWarmupNodeResponse(clusterService.localNode(), acknowledged.get());
+        return new KNNWarmupNodeResponse(clusterService.localNode(), graphCount, failureCount.get());
     }
 }

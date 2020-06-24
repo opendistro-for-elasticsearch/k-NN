@@ -26,11 +26,13 @@ import java.io.IOException;
 
 public class KNNWarmupNodeResponse extends BaseNodeResponse implements ToXContentFragment {
 
-    boolean acknowledged;
+    int graphCount;
+    int failureCount;
 
     public KNNWarmupNodeResponse(StreamInput in) throws IOException {
         super(in);
-        acknowledged = in.readBoolean();
+        graphCount = in.readInt();
+        failureCount = in.readInt();
     }
 
     /**
@@ -38,19 +40,22 @@ public class KNNWarmupNodeResponse extends BaseNodeResponse implements ToXConten
      *
      * @param node node
      */
-    public KNNWarmupNodeResponse(DiscoveryNode node, boolean acknowledged) {
+    public KNNWarmupNodeResponse(DiscoveryNode node, int graphCount, int failureCount) {
         super(node);
-        this.acknowledged = acknowledged;
+        this.graphCount = graphCount;
+        this.failureCount = failureCount;
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-        out.writeBoolean(acknowledged);
+        out.writeInt(graphCount);
+        out.writeInt(failureCount);
     }
 
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.field("acknowledged", acknowledged);
+        builder.field("graph_count", graphCount);
+        builder.field("failure_count", failureCount);
         return builder;
     }
 }
