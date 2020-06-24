@@ -235,6 +235,11 @@ public class KNNVectorFieldMapper extends FieldMapper {
     }
 
     @Override
+    public final boolean parsesArrayValue() {
+        return true;
+    }
+
+    @Override
     public void parse(ParseContext context) throws IOException {
         if (!KNNSettings.isKNNPluginEnabled()) {
             throw new IllegalStateException("KNN plugin is disabled. To enable " +
