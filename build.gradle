@@ -57,7 +57,7 @@ if (!usingRemoteCluster) {
 }
 
 ext {
-    opendistroVersion = '1.8.0'
+    opendistroVersion = '1.9.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.TXT')
