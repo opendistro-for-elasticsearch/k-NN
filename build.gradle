@@ -40,7 +40,7 @@ plugins {
     id 'java-library'
     id 'nebula.ospackage' version "8.3.0" apply false
     id 'idea'
-    //id 'jacoco'
+    id 'jacoco'
 }
 
 apply plugin: 'elasticsearch.esplugin'
@@ -52,12 +52,12 @@ def integTestDependOnJniLib = false
 if (!usingRemoteCluster) {
     integTestDependOnJniLib = true
     if (!usingMultiNode) {
-       // apply from: 'build-tools/knnplugin-coverage.gradle'
+        apply from: 'build-tools/knnplugin-coverage.gradle'
     }
 }
 
 ext {
-    opendistroVersion = '1.9.0'
+    opendistroVersion = '1.8.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.TXT')
@@ -75,11 +75,11 @@ allprojects {
 }
 
 
-//jacoco {
-//    toolVersion = "0.8.5"
-//}
-//
-//check.dependsOn jacocoTestReport
+jacoco {
+    toolVersion = "0.8.5"
+}
+
+check.dependsOn jacocoTestReport
 
 esplugin {
     name 'opendistro-knn'
