@@ -66,6 +66,7 @@ public enum KNNCounter {
     }
 
     /**
+     * @param value counter value
      * Set the value of a counter
      */
     public void set(long value) {

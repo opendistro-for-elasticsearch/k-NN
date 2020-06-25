@@ -15,7 +15,7 @@
 
 buildscript {
     ext {
-        es_version = System.getProperty("es.version", "7.7.0")
+        es_version = System.getProperty("es.version", "7.8.0")
         es_group = "org.elasticsearch"
         distribution = 'oss-zip'
     }
@@ -202,8 +202,7 @@ forbiddenPatterns {
 // see https://github.com/elastic/elasticsearch/blob/323f312bbc829a63056a79ebe45adced5099f6e6/buildSrc/src/main/java/org/elasticsearch/gradle/precommit/TestingConventionsTasks.java
 // enable testingConventions check will cause errors like:  "Classes ending with [Tests] must subclass [LuceneTestCase]"
 testingConventions.enabled = false
-licenseHeaders.enabled = true
-
+validateNebulaPom.enabled = false
 apply plugin: 'nebula.ospackage'
 
 // This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
@@ -224,7 +223,7 @@ afterEvaluate {
         dirMode 0755
 
         requires('elasticsearch-oss', versions.elasticsearch, EQUAL)
-        requires("opendistro-knnlib",  "1.8.0.0",  EQUAL)
+        requires("opendistro-knnlib",  "${opendistroVersion}.0",  EQUAL)
         packager = 'Amazon'
         vendor = 'Amazon'
         os = 'LINUX'

@@ -74,7 +74,7 @@ allprojects{
         jacocoTestReport.dependsOn integTest.runner
 
         testClusters.integTest {
-            jvmArgs " ${dummyIntegTest.jacoco.getAsJvmArg()}"
+            jvmArgs " ${dummyIntegTest.jacoco.getAsJvmArg()}".replace('javaagent:','javaagent:/')
             systemProperty 'com.sun.management.jmxremote', "true"
             systemProperty 'com.sun.management.jmxremote.authenticate', "false"
             systemProperty 'com.sun.management.jmxremote.port', "7777"

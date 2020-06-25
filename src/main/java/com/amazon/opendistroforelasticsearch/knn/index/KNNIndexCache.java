@@ -225,7 +225,7 @@ public class KNNIndexCache implements Closeable {
 
     /**
      * Returns the how much space an index is taking up in the cache is as a percentage of the total cache capacity
-     *
+     * @param indexName name of the index
      * @return Percentage of the cache full
      */
     public Float getWeightAsPercentage(final String indexName) {

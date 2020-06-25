@@ -44,11 +44,11 @@ public class KNNIndexCacheTests extends ESSingleNodeTestCase {
 
     @Override
     public void setUp() throws Exception {
-        super.setUp();
         // Reset all of the counters
         for (KNNCounter knnCounter : KNNCounter.values()) {
             knnCounter.set(0L);
         }
+        super.setUp();
     }
 
     @Override
@@ -63,9 +63,9 @@ public class KNNIndexCacheTests extends ESSingleNodeTestCase {
 
     @Override
     public void tearDown() throws Exception {
+        super.tearDown();
         KNNIndexCache.getInstance().evictAllGraphsFromCache();
         KNNIndexCache.getInstance().close();
-        super.tearDown();
     }
 
     public void testGetIndicesCacheStats() throws IOException, InterruptedException, ExecutionException {

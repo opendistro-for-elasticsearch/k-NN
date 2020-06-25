@@ -57,7 +57,7 @@ public class  KNNCodecTestCase extends KNNTestCase {
     protected void setUpMockClusterService() {
         ClusterService clusterService = mock(ClusterService.class, RETURNS_DEEP_STUBS);
         Settings settings = Settings.Builder.EMPTY_SETTINGS;
-        when(clusterService.state().getMetaData().index(Mockito.anyString()).getSettings()).thenReturn(settings);
+        when(clusterService.state().getMetadata().index(Mockito.anyString()).getSettings()).thenReturn(settings);
         KNNSettings.state().setClusterService(clusterService);
     }
 
