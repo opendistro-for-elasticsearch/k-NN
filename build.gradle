@@ -124,28 +124,21 @@ task buildJniLib(type:Exec) {
     commandLine 'make'
 }
 
-task makeJniLib(type: Copy) {
-    dependsOn buildJniLib
-    from "$rootDir/jni/release"
-    include "*"
-    into "$rootDir/buildSrc"
-}
-
 test {
-    dependsOn makeJniLib
+    dependsOn buildJniLib
     systemProperty 'tests.security.manager', 'false'
-    systemProperty "java.library.path", "$rootDir/buildSrc"
+    systemProperty "java.library.path", "$rootDir/jni/release"
 }
 
 def _numNodes = findProperty('numNodes') as Integer ?: 1
 integTest {
     if (integTestDependOnJniLib) {
-        dependsOn makeJniLib
+        dependsOn buildJniLib
     }
     runner {
         systemProperty 'tests.security.manager', 'false'
         systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
-        systemProperty "java.library.path", "$rootDir/buildSrc"
+        systemProperty "java.library.path", "$rootDir/jni/release"
         // allows integration test classes to access test resource from project root path
         systemProperty('project.root', project.rootDir.absolutePath)
 
@@ -184,11 +177,11 @@ testClusters.integTest {
                 debugPort += 1
             }
         }
-        systemProperty("java.library.path", "$rootDir/buildSrc")
+        systemProperty("java.library.path", "$rootDir/jni/release")
 }
 
 run {
-    dependsOn makeJniLib
+    dependsOn buildJniLib
     doFirst {
         // There seems to be an issue when running multi node run or integ tasks with unicast_hosts
         // not being written, the waitForAllConditions ensures it's written
