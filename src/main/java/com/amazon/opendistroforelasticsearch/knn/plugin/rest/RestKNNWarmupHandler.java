@@ -25,18 +25,12 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.action.RestActions;
+import org.elasticsearch.rest.action.RestToXContentListener;
 
 import java.util.List;
 
-/**
- * This handler is responsible for processing Warmup API RestRequests and converting them to transport requests. From
- * the rest request, an array of indices should be extracted and passed to all nodes through the transport layer
- */
 public class RestKNNWarmupHandler extends BaseRestHandler {
     public static String NAME = "knn_warmup_action";
-
-
 
     public RestKNNWarmupHandler(Settings settings, RestController controller) {}
 
@@ -55,7 +49,7 @@ public class RestKNNWarmupHandler extends BaseRestHandler {
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) {
         KNNWarmupRequest knnWarmupRequest = createKNNWarmupRequest(request);
-        return channel -> client.execute(KNNWarmupAction.INSTANCE, knnWarmupRequest, new RestActions.NodesResponseRestListener<>(channel));
+        return channel -> client.execute(KNNWarmupAction.INSTANCE, knnWarmupRequest, new RestToXContentListener<>(channel));
     }
 
     /**

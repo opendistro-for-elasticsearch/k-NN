@@ -320,12 +320,8 @@ public class KNNIndexCache implements Closeable {
         return new KNNIndexCacheEntry(knnIndex, segmentPath, indexName, watcherHandle);
     }
 
-    public int loadIndex(KNNIndexShard knnIndexShard) throws IOException {
-        List<String> hnswPaths = knnIndexShard.getHNSWPaths();
-        hnswPaths.forEach(segmentPath -> executor.submit(
-                () -> getIndex(segmentPath, knnIndexShard.getIndexName()))
-        );
-        return hnswPaths.size();
+    public void loadIndex(KNNIndexShard knnIndexShard) throws IOException {
+        knnIndexShard.getHNSWPaths().forEach(segmentPath -> getIndex(segmentPath, knnIndexShard.getIndexName()));
     }
 
     /**

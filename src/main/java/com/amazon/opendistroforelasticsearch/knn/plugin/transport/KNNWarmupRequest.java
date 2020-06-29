@@ -15,35 +15,24 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.transport;
 
-import org.elasticsearch.action.support.nodes.BaseNodesRequest;
+import org.elasticsearch.action.support.broadcast.BroadcastRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
 import java.io.IOException;
 
-/**
- * Transport request to get nodes to load indices into cache
- */
-public class KNNWarmupRequest extends BaseNodesRequest<KNNWarmupRequest> {
-    private String[] indices;
+public class KNNWarmupRequest extends BroadcastRequest<KNNWarmupRequest> {
 
     public KNNWarmupRequest(StreamInput in) throws IOException {
         super(in);
-        indices = in.readStringArray();
     }
 
-    public KNNWarmupRequest(String[] indices, String... nodeIds) {
-        super(nodeIds);
-        this.indices = indices;
-    }
-
-    public String[] getIndices() {
-        return this.indices;
+    public KNNWarmupRequest(String... indices) {
+        super(indices);
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-        out.writeStringArray(indices);
     }
 }

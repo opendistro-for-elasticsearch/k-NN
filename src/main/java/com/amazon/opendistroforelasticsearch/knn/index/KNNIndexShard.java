@@ -16,8 +16,6 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.FilterLeafReader;
 import org.apache.lucene.index.IndexReader;
@@ -26,7 +24,6 @@ import org.apache.lucene.index.SegmentInfo;
 import org.apache.lucene.index.SegmentReader;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ShardPath;
 
@@ -38,15 +35,9 @@ import java.util.stream.Collectors;
 
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.KNN_INDEX;
 
-/**
- * KNNIndexShard decorates an IndexShard. Exposes methods to get the index name of the shard and the hnsw graphs the
- * shard has.
- */
 public class KNNIndexShard {
     private IndexShard indexShard;
-    private NodeEnvironment nodeEnvironment;
-
-    private static Logger logger = LogManager.getLogger(KNNIndexShard.class);
+    private KNNIndexCache knnIndexCache;
 
     public static class NotKNNIndexException extends Exception {
         public NotKNNIndexException(String errorMessage) {
@@ -54,14 +45,14 @@ public class KNNIndexShard {
         }
     }
 
-    public KNNIndexShard(IndexShard indexShard, NodeEnvironment nodeEnvironment)
+    public KNNIndexShard(IndexShard indexShard)
             throws NotKNNIndexException {
         if (!indexShard.indexSettings().getSettings().get(KNN_INDEX).equals("true")) {
             throw new NotKNNIndexException("[KNN] Exception validating " + indexShard.shardId().getIndexName() + ".");
         }
 
         this.indexShard = indexShard;
-        this.nodeEnvironment = nodeEnvironment;
+        this.knnIndexCache = KNNIndexCache.getInstance();
     }
 
     public IndexShard getIndexShard() {
@@ -75,14 +66,7 @@ public class KNNIndexShard {
             SegmentReader reader = (SegmentReader) FilterLeafReader.unwrap(leafReaderContext.reader());
             hnswFiles.addAll(reader.getSegmentInfo().files().stream()
                     .filter(fileName -> fileName.endsWith(getHNSWFileExtension(reader.getSegmentInfo().info)))
-                    .map(fileName -> {
-                        try {
-                            return getShardPath().resolveIndex().resolve(fileName).toString();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        return null;
-                    })
+                    .map(fileName -> shardPath().resolveIndex().resolve(fileName).toString())
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList()));
         }
@@ -94,12 +78,16 @@ public class KNNIndexShard {
         return indexShard.shardId().getIndexName();
     }
 
-    private ShardPath getShardPath() throws IOException {
-        return ShardPath.loadShardPath(logger, nodeEnvironment, indexShard.shardId(), null);
+    public void warmup() throws IOException {
+        knnIndexCache.loadIndex(this);
+    }
+
+    private ShardPath shardPath() {
+        return indexShard.shardPath();
     }
 
     private IndexReader getIndexReader() throws IOException {
-        Directory directory = FSDirectory.open(getShardPath().resolveIndex());
+        Directory directory = FSDirectory.open(shardPath().resolveIndex());
         return DirectoryReader.open(directory);
     }
 
