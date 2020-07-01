@@ -1,4 +1,4 @@
-## Version 1.9.0 (Version compatible with elasticsearch 7.8.0)
+## Version 1.9.0.0 (Version compatible with elasticsearch 7.8.0)
 ### Features
 * Feature [#147](https://github.com/opendistro-for-elasticsearch/k-NN/pull/147): ODFE 1.9 support for Elasticsearch version 7.8.0 (issue [#146](https://github.com/opendistro-for-elasticsearch/k-NN/issues/146)).
 
