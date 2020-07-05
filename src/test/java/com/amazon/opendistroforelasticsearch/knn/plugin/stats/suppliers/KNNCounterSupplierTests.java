@@ -15,10 +15,10 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.stats.suppliers;
 
+import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
-import org.elasticsearch.test.ESTestCase;
 
-public class KNNCounterSupplierTests extends ESTestCase {
+public class KNNCounterSupplierTests extends KNNTestCase {
     public void testNormal() {
         KNNCounterSupplier knnCounterSupplier = new KNNCounterSupplier(KNNCounter.GRAPH_QUERY_REQUESTS);
         assertEquals((Long) 0L, knnCounterSupplier.get());

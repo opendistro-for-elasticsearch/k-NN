@@ -30,7 +30,21 @@ cmake .
 make
 ```
 
-The library will be placed in the `buildSrc` directory.
+The library will be placed in the `jni/release` directory.
+
+## Build JNI Library RPM/DEB
+
+To build an RPM or DEB of the JNI library, follow these steps:
+
+```
+cd jni
+cmake .
+make package
+```
+
+The artifacts will be placed in the `jni/packages` directory.
+
+Additionally, we build the RPM and DEB in [this GitHub action](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/.github/workflows/CD.yml). We use Ubuntu 16.04 with g++ 5.4.0.
 
 ## Running Multi-node Cluster Locally
 

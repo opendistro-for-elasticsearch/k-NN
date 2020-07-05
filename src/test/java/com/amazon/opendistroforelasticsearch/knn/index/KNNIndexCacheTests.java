@@ -16,6 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
@@ -42,6 +43,15 @@ public class KNNIndexCacheTests extends ESSingleNodeTestCase {
     private final String testFieldName = "test_field";
 
     @Override
+    public void setUp() throws Exception {
+        // Reset all of the counters
+        for (KNNCounter knnCounter : KNNCounter.values()) {
+            knnCounter.set(0L);
+        }
+        super.setUp();
+    }
+
+    @Override
     protected Collection<Class<? extends Plugin>> getPlugins() {
         return Collections.singletonList(KNNPlugin.class);
     }
@@ -53,9 +63,9 @@ public class KNNIndexCacheTests extends ESSingleNodeTestCase {
 
     @Override
     public void tearDown() throws Exception {
+        super.tearDown();
         KNNIndexCache.getInstance().evictAllGraphsFromCache();
         KNNIndexCache.getInstance().close();
-        super.tearDown();
     }
 
     public void testGetIndicesCacheStats() throws IOException, InterruptedException, ExecutionException {

@@ -64,4 +64,12 @@ public enum KNNCounter {
     public void increment() {
         count.getAndIncrement();
     }
+
+    /**
+     * @param value counter value
+     * Set the value of a counter
+     */
+    public void set(long value) {
+        count.set(value);
+    }
 }

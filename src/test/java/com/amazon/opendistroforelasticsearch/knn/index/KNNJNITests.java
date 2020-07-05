@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +23,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.FilterDirectory;
-import org.elasticsearch.test.ESTestCase;
 
 import java.nio.file.Paths;
 import java.security.AccessController;
@@ -31,7 +31,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class KNNJNITests extends ESTestCase {
+public class KNNJNITests extends KNNTestCase {
     private static final Logger logger = LogManager.getLogger(KNNJNITests.class);
 
     public void testCreateHnswIndex() throws Exception {

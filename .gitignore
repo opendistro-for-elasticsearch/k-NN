@@ -8,9 +8,14 @@ build
 *.log
 out/
 buildSrc/es-knn-offline-repo-*
+buildSrc/libKNNIndexV1_7_3_6*
 oss/*
 *.iml
 jni/CMakeCache.txt
 jni/CMakeFiles
 jni/Makefile
-jni/cmake_install.cmake
+jni/cmake*
+jni/CPack*
+jni/_CPack*
+jni/release
+jni/packages
