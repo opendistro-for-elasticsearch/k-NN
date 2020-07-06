@@ -52,16 +52,26 @@ public class KNN80CompoundFormat extends CompoundFormat {
          */
         Set<String> hnswFiles = si.files().stream().filter(file -> file.endsWith(KNNCodecUtil.HNSW_EXTENSION))
                                      .collect(Collectors.toSet());
+        Set<String> hnswdatFiles = si.files().stream()
+                .filter(file -> file.endsWith(KNNCodecUtil.HNSW_EXTENSION + ".dat"))
+                .collect(Collectors.toSet());
 
         Set<String> segmentFiles = new HashSet<>();
         segmentFiles.addAll(si.files());
 
-        if (!hnswFiles.isEmpty()) {
+        if (!hnswFiles.isEmpty() || !hnswdatFiles.isEmpty()) {
             for (String hnswFile: hnswFiles) {
                 String hnswCompoundFile = hnswFile + "c";
                 dir.copyFrom(dir, hnswFile, hnswCompoundFile, context);
             }
+            for (String hnswdatFile: hnswdatFiles) {
+                String suffix = KNNCodecUtil.HNSW_EXTENSION + ".dat";
+                String hnswdatCompoundFile = hnswdatFile.substring(0, hnswdatFile.length()-suffix.length())
+                        + KNNCodecUtil.HNSW_EXTENSION + "c.dat";
+                dir.copyFrom(dir, hnswdatFile, hnswdatCompoundFile, context);
+            }
             segmentFiles.removeAll(hnswFiles);
+            segmentFiles.removeAll(hnswdatFiles);
             si.setFiles(segmentFiles);
         }
         Codec.getDefault().compoundFormat().write(dir, si, context);
