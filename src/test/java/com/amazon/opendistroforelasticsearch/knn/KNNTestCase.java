@@ -15,19 +15,28 @@
 
 package com.amazon.opendistroforelasticsearch.knn;
 
+import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.elasticsearch.test.ESTestCase;
-import org.junit.Before;
 
 /**
  * Base class for integration tests for KNN plugin. Contains several methods for testing KNN ES functionality.
  */
 public class KNNTestCase extends ESTestCase {
-    @Before
-    public void resetCounters() {
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+        resetState();
+    }
+
+    public static void resetState() {
         // Reset all of the counters
         for (KNNCounter knnCounter : KNNCounter.values()) {
             knnCounter.set(0L);
         }
+
+        // Clean up the cache
+        KNNIndexCache.getInstance().evictAllGraphsFromCache();
+        KNNIndexCache.getInstance().close();
     }
 }
