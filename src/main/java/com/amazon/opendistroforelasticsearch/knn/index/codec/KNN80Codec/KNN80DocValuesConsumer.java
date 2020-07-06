@@ -56,6 +56,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
     private final Logger logger = LogManager.getLogger(KNN80DocValuesConsumer.class);
 
     private final String TEMP_SUFFIX = "tmp";
+    private final String DAT_SUFFIX = ".dat";
     private DocValuesConsumer delegatee;
     private SegmentWriteState state;
 
@@ -110,6 +111,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             );
 
             String hsnwTempFileName = hnswFileName + TEMP_SUFFIX;
+            String hsnwTempDatFileName = hsnwTempFileName + DAT_SUFFIX;
 
             /**
              * Adds Footer to the serialized graph
@@ -121,19 +123,19 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
              * bytes and result in index corruption issues.
              */
             try (IndexInput is = state.directory.openInput(hsnwTempFileName, state.context);
-                 IndexInput isData = state.directory.openInput(hsnwTempFileName + ".dat", state.context);
+                 IndexInput datIs = state.directory.openInput(hsnwTempDatFileName, state.context);
                  IndexOutput os = state.directory.createOutput(hnswFileName, state.context);
-                 IndexOutput osData = state.directory.createOutput(hnswFileName + ".dat", state.context)) {
+                 IndexOutput datOs = state.directory.createOutput(hnswFileName + DAT_SUFFIX, state.context)) {
                 os.copyBytes(is, is.length());
-                osData.copyBytes(isData, isData.length());
+                datOs.copyBytes(datIs, datIs.length());
                 CodecUtil.writeFooter(os);
-                CodecUtil.writeFooter(osData);
+                CodecUtil.writeFooter(datOs);
             } catch (Exception ex) {
                 KNNCounter.GRAPH_INDEX_ERRORS.increment();
                 throw new RuntimeException("[KNN] Adding footer to serialized graph failed: " + ex);
             } finally {
                 IOUtils.deleteFilesIgnoringExceptions(state.directory, hsnwTempFileName);
-                IOUtils.deleteFilesIgnoringExceptions(state.directory, hsnwTempFileName + ".dat");
+                IOUtils.deleteFilesIgnoringExceptions(state.directory, hsnwTempDatFileName);
             }
         }
     }
