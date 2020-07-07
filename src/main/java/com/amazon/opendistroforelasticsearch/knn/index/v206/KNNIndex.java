@@ -29,16 +29,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * JNI layer to communicate with the nmslib
- * This class refers to the nms library build with version tag 1.7.3.6
- * See <a href="https://github.com/nmslib/nmslib/tree/v1.7.3.6">tag1.7.3.6</a>
+ * This class refers to the nms library build with version tag 2.0.6
+ * See <a href="https://github.com/nmslib/nmslib/tree/v2.0.6">tag2.0.6</a>
  */
 public class KNNIndex implements AutoCloseable {
-    public static NmsLibVersion VERSION = NmsLibVersion.V1736;
+    public static NmsLibVersion VERSION = NmsLibVersion.V206;
 
     static {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-                System.loadLibrary(NmsLibVersion.V1736.indexLibraryVersion());
+                System.loadLibrary(NmsLibVersion.V206.indexLibraryVersion());
                 return null;
             }
         });
