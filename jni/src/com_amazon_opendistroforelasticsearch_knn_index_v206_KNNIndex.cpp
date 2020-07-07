@@ -13,7 +13,7 @@
  *   permissions and limitations under the License.
  */
 
-#include "com_amazon_opendistroforelasticsearch_knn_index_v1736_KNNIndex.h"
+#include "com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex.h"
 
 #include "init.h"
 #include "index.h"
