@@ -153,6 +153,6 @@ public class KNNIndex implements AutoCloseable {
     // Deletes memory pointed to by index pointer (needs write lock)
     private static native void gc(long indexPointer);
 
-    // Calls nmslib's initLibrary function: https://github.com/nmslib/nmslib/blob/v1.7.3.6/similarity_search/include/init.h#L27
+    // Calls nmslib's initLibrary function: https://github.com/nmslib/nmslib/blob/v2.0.6/similarity_search/include/init.h#L27
     private static native void initLibrary();
 }

@@ -92,7 +92,7 @@ public class KNNWeight extends Weight {
 
             /**
              * TODO Add logic to pick up the right nmslib version based on the version
-             * in the name of the file. As of now we have one version 1.7.3.6.
+             * in the name of the file. As of now we have one version 2.0.6
              * So deferring this to future releases
              */
 
