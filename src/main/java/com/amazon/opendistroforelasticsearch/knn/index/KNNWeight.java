@@ -16,7 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
-import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.v206.KNNIndex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.FieldInfo;
@@ -92,7 +92,7 @@ public class KNNWeight extends Weight {
 
             /**
              * TODO Add logic to pick up the right nmslib version based on the version
-             * in the name of the file. As of now we have one version 1.7.3.6.
+             * in the name of the file. As of now we have one version 2.0.6
              * So deferring this to future releases
              */
 
