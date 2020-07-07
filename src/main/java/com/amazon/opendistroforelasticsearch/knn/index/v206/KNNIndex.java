@@ -13,7 +13,7 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.v1736;
+package com.amazon.opendistroforelasticsearch.knn.index.v206;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
