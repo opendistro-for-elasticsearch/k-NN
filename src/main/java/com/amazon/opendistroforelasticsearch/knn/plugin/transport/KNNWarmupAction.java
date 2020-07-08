@@ -18,18 +18,11 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.transport;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.common.io.stream.Writeable;
 
-/**
- * KNNWarmupAction reads in KNNWarmupResponse from a stream.
- *
- */
 public class KNNWarmupAction extends ActionType<KNNWarmupResponse> {
 
     public static final KNNWarmupAction INSTANCE = new KNNWarmupAction();
     public static final String NAME = "cluster:admin/knn_warmup_action";
 
-    /**
-     * Constructor
-     */
     private KNNWarmupAction() {
         super(NAME, KNNWarmupResponse::new);
     }

@@ -52,12 +52,6 @@ public class RestKNNWarmupHandler extends BaseRestHandler {
         return channel -> client.execute(KNNWarmupAction.INSTANCE, knnWarmupRequest, new RestToXContentListener<>(channel));
     }
 
-    /**
-     * Take a RestRequest and converts it into KNNWarmupRequest
-     *
-     * @param request RestRequest for warmup API
-     * @return Transport request for warmup API
-     */
     private KNNWarmupRequest createKNNWarmupRequest(RestRequest request) {
         String[] indices = Strings.splitStringByCommaToArray(request.param("index"));
         return new KNNWarmupRequest(indices);
