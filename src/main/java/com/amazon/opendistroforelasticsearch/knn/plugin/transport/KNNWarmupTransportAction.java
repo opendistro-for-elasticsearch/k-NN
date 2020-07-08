@@ -58,7 +58,10 @@ public class KNNWarmupTransportAction extends TransportBroadcastByNodeAction<KNN
     }
 
     @Override
-    protected KNNWarmupResponse newResponse(KNNWarmupRequest request, int totalShards, int successfulShards, int failedShards, List<EmptyResult> emptyResults, List<DefaultShardOperationFailedException> shardFailures, ClusterState clusterState) {
+    protected KNNWarmupResponse newResponse(KNNWarmupRequest request, int totalShards, int successfulShards,
+                                            int failedShards, List<EmptyResult> emptyResults,
+                                            List<DefaultShardOperationFailedException> shardFailures,
+                                            ClusterState clusterState) {
         return new KNNWarmupResponse(totalShards, successfulShards, failedShards, shardFailures);
     }
 
@@ -80,17 +83,17 @@ public class KNNWarmupTransportAction extends TransportBroadcastByNodeAction<KNN
     }
 
     @Override
-    protected ShardsIterator shards(ClusterState clusterState, KNNWarmupRequest request, String[] concreteIndices) {
-        return clusterState.routingTable().allShards(concreteIndices);
+    protected ShardsIterator shards(ClusterState state, KNNWarmupRequest request, String[] concreteIndices) {
+        return state.routingTable().allShards(concreteIndices);
     }
 
     @Override
     protected ClusterBlockException checkGlobalBlock(ClusterState state, KNNWarmupRequest request) {
-        return state.blocks().globalBlockedException(ClusterBlockLevel.READ);
+        return state.blocks().globalBlockedException(ClusterBlockLevel.METADATA_READ);
     }
 
     @Override
     protected ClusterBlockException checkRequestBlock(ClusterState state, KNNWarmupRequest request, String[] concreteIndices) {
-        return state.blocks().indicesBlockedException(ClusterBlockLevel.READ, concreteIndices);
+        return state.blocks().indicesBlockedException(ClusterBlockLevel.METADATA_READ, concreteIndices);
     }
 }
