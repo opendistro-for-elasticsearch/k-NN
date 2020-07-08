@@ -34,7 +34,6 @@ import org.elasticsearch.watcher.ResourceWatcherService;
 import org.elasticsearch.watcher.WatcherHandle;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -173,6 +172,17 @@ public class KNNIndexCache implements Closeable {
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Loads list of segments for the given index into the cache and returns list of KNNIndex's.
+     *
+     * @param segmentPaths List of segmentPaths
+     * @param indexName Name of index
+     * @return List of KNNIndex's from the segment paths
+     */
+    public List<KNNIndex> getIndices(List<String> segmentPaths, String indexName) {
+        return segmentPaths.stream().map(segmentPath -> getIndex(segmentPath, indexName)).collect(Collectors.toList());
     }
 
     /**
@@ -318,10 +328,6 @@ public class KNNIndexCache implements Closeable {
         final WatcherHandle<FileWatcher> watcherHandle = resourceWatcherService.add(fileWatcher);
 
         return new KNNIndexCacheEntry(knnIndex, segmentPath, indexName, watcherHandle);
-    }
-
-    public void loadIndex(KNNIndexShard knnIndexShard) throws IOException {
-        knnIndexShard.getHNSWPaths().forEach(segmentPath -> getIndex(segmentPath, knnIndexShard.getIndexName()));
     }
 
     /**
