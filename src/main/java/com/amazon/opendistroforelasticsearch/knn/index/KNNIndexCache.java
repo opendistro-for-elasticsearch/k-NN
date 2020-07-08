@@ -24,10 +24,7 @@ import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalNotification;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.env.NodeEnvironment;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.watcher.FileChangesListener;
 import org.elasticsearch.watcher.FileWatcher;
 import org.elasticsearch.watcher.ResourceWatcherService;
@@ -63,11 +60,8 @@ public class KNNIndexCache implements Closeable {
 
     private Cache<String, KNNIndexCacheEntry> cache;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
-    private ThreadPool threadPool;
     private AtomicBoolean cacheCapacityReached;
     private ResourceWatcherService resourceWatcherService;
-    private ClusterService clusterService;
-    private NodeEnvironment nodeEnvironment;
 
     private KNNIndexCache() {
         initCache();
@@ -75,18 +69,6 @@ public class KNNIndexCache implements Closeable {
 
     public static void setResourceWatcherService(final ResourceWatcherService resourceWatcherService) {
         getInstance().resourceWatcherService = resourceWatcherService;
-    }
-
-    public static void setClusterService(final ClusterService clusterService) {
-        getInstance().clusterService = clusterService;
-    }
-
-    public static void setNodeEnvironment(final NodeEnvironment nodeEnvironment) {
-        getInstance().nodeEnvironment = nodeEnvironment;
-    }
-
-    public static void setThreadPool(final ThreadPool threadPool) {
-        getInstance().threadPool = threadPool;
     }
 
     public void close() {

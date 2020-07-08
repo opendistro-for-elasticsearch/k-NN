@@ -122,10 +122,7 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
                                                NamedXContentRegistry xContentRegistry, Environment environment,
                                                NodeEnvironment nodeEnvironment, NamedWriteableRegistry namedWriteableRegistry,
                                                IndexNameExpressionResolver indexNameExpressionResolver) {
-        KNNIndexCache.setClusterService(clusterService);
-        KNNIndexCache.setThreadPool(threadPool);
         KNNIndexCache.setResourceWatcherService(resourceWatcherService);
-        KNNIndexCache.setNodeEnvironment(nodeEnvironment);
         KNNSettings.state().initialize(client, clusterService);
         KNNCircuitBreaker.getInstance().initialize(threadPool, clusterService, client);
         knnStats = new KNNStats(KNN_STATS);
