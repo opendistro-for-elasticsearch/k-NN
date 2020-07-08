@@ -17,8 +17,14 @@ cmake_minimum_required(VERSION 2.8)
 
 project(KNNIndexV1_7_3_6)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+# Corner case. For CMake 2.8, there is no option to specify set(CMAKE_CXX_STANDARD 11). Instead, the flag manually needs
+# to be set.
+if (CMAKE_VERSION VERSION_LESS "3.1")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+else()
+    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD_REQUIRED True)
+endif()
 
 # Target Library to be built
 set(KNN_INDEX KNNIndexV1_7_3_6)
@@ -66,7 +72,7 @@ install(TARGETS ${KNN_INDEX}
 set(KNN_MAINTAINER "OpenDistro for Elasticsearch Team <opendistro@amazon.com>")
 set(ODFE_DOWNLOAD_URL "https://opendistro.github.io/elasticsearch/downloads")
 set(CPACK_PACKAGE_NAME ${KNN_PACKAGE_NAME})
-set(CPACK_PACKAGE_VERSION 1.8.0.0)
+set(CPACK_PACKAGE_VERSION 1.9.0.0)
 set(CMAKE_INSTALL_PREFIX /usr)
 set(CPACK_GENERATOR "RPM;DEB")
 SET(CPACK_OUTPUT_FILE_PREFIX packages)

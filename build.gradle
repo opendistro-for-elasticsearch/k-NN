@@ -15,7 +15,7 @@
 
 buildscript {
     ext {
-        es_version = System.getProperty("es.version", "7.7.0")
+        es_version = System.getProperty("es.version", "7.8.0")
         es_group = "org.elasticsearch"
         distribution = 'oss-zip'
     }
@@ -46,13 +46,18 @@ plugins {
 apply plugin: 'elasticsearch.esplugin'
 
 def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || System.properties.containsKey('tests.cluster')
+def usingMultiNode = project.properties.containsKey('numNodes')
+// Only apply jacoco test coverage if we are running a local single node cluster
 def integTestDependOnJniLib = false
 if (!usingRemoteCluster) {
     integTestDependOnJniLib = true
+    if (!usingMultiNode) {
+        apply from: 'build-tools/knnplugin-coverage.gradle'
+    }
 }
 
 ext {
-    opendistroVersion = '1.8.0'
+    opendistroVersion = '1.9.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.TXT')
@@ -73,35 +78,6 @@ allprojects {
 jacoco {
     toolVersion = "0.8.5"
 }
-
-jacocoTestReport {
-    reports {
-        xml.enabled false
-        csv.enabled false
-    }
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it)
-        }))
-    }
-}
-test.finalizedBy(project.tasks.jacocoTestReport)
-jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            limit {
-                minimum = 0.5
-            }
-
-        }
-    }
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it)
-        }))
-    }
-}
-check.dependsOn jacocoTestCoverageVerification
 
 check.dependsOn jacocoTestReport
 
@@ -148,28 +124,21 @@ task buildJniLib(type:Exec) {
     commandLine 'make'
 }
 
-task makeJniLib(type: Copy) {
-    dependsOn buildJniLib
-    from "$rootDir/jni/release"
-    include "*"
-    into "$rootDir/buildSrc"
-}
-
 test {
-    dependsOn makeJniLib
+    dependsOn buildJniLib
     systemProperty 'tests.security.manager', 'false'
-    systemProperty "java.library.path", "$rootDir/buildSrc"
+    systemProperty "java.library.path", "$rootDir/jni/release"
 }
 
 def _numNodes = findProperty('numNodes') as Integer ?: 1
 integTest {
     if (integTestDependOnJniLib) {
-        dependsOn makeJniLib
+        dependsOn buildJniLib
     }
     runner {
         systemProperty 'tests.security.manager', 'false'
         systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
-        systemProperty "java.library.path", "$rootDir/buildSrc"
+        systemProperty "java.library.path", "$rootDir/jni/release"
         // allows integration test classes to access test resource from project root path
         systemProperty('project.root', project.rootDir.absolutePath)
 
@@ -208,11 +177,11 @@ testClusters.integTest {
                 debugPort += 1
             }
         }
-        systemProperty("java.library.path", "$rootDir/buildSrc")
+        systemProperty("java.library.path", "$rootDir/jni/release")
 }
 
 run {
-    dependsOn makeJniLib
+    dependsOn buildJniLib
     doFirst {
         // There seems to be an issue when running multi node run or integ tasks with unicast_hosts
         // not being written, the waitForAllConditions ensures it's written
@@ -233,8 +202,7 @@ forbiddenPatterns {
 // see https://github.com/elastic/elasticsearch/blob/323f312bbc829a63056a79ebe45adced5099f6e6/buildSrc/src/main/java/org/elasticsearch/gradle/precommit/TestingConventionsTasks.java
 // enable testingConventions check will cause errors like:  "Classes ending with [Tests] must subclass [LuceneTestCase]"
 testingConventions.enabled = false
-licenseHeaders.enabled = true
-
+validateNebulaPom.enabled = false
 apply plugin: 'nebula.ospackage'
 
 // This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
@@ -255,7 +223,7 @@ afterEvaluate {
         dirMode 0755
 
         requires('elasticsearch-oss', versions.elasticsearch, EQUAL)
-        requires("opendistro-knnlib",  "1.8.0.0",  EQUAL)
+        requires("opendistro-knnlib",  "${opendistroVersion}.0",  EQUAL)
         packager = 'Amazon'
         vendor = 'Amazon'
         os = 'LINUX'

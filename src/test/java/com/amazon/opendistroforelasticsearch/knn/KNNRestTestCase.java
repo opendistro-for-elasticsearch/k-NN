@@ -359,4 +359,15 @@ public class KNNRestTestCase extends ESRestTestCase {
 
         return nodeResponses;
     }
+
+    /**
+     * Get specific Index setting value from response
+     */
+    protected String getIndexSettingByName(String indexName, String settingName) throws IOException {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> settings =
+                (Map<String, Object>) ((Map<String, Object>) getIndexSettings(indexName).get(indexName))
+                        .get("settings");
+        return (String)settings.get(settingName);
+    }
 }
