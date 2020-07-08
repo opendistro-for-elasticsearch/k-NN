@@ -16,14 +16,15 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
-import org.apache.lucene.index.DirectoryReader;
+import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.FilterLeafReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.SegmentInfo;
 import org.apache.lucene.index.SegmentReader;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
+import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ShardPath;
 
@@ -35,19 +36,24 @@ import java.util.stream.Collectors;
 
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.KNN_INDEX;
 
+/**
+ * KNNIndexShard wraps indexShard and adds methods to perform KNN related operations against the shard
+ */
 public class KNNIndexShard {
     private IndexShard indexShard;
     private KNNIndexCache knnIndexCache;
 
+    private static Logger logger = LogManager.getLogger(KNNIndexShard.class);
+
     public static class NotKNNIndexException extends Exception {
         public NotKNNIndexException(String errorMessage) {
-            super(errorMessage + " The index does not have index.knn setting set to true");
+            super(errorMessage + " The index does not have index.knn setting set to true.");
         }
     }
 
     public KNNIndexShard(IndexShard indexShard)
             throws NotKNNIndexException {
-        if (!indexShard.indexSettings().getSettings().get(KNN_INDEX).equals("true")) {
+        if (!"true".equals(indexShard.indexSettings().getSettings().get(KNN_INDEX))) {
             throw new NotKNNIndexException("[KNN] Exception validating " + indexShard.shardId().getIndexName() + ".");
         }
 
@@ -59,8 +65,25 @@ public class KNNIndexShard {
         return indexShard;
     }
 
-    public List<String> getHNSWPaths() throws IOException {
-        IndexReader indexReader = getIndexReader();
+    public String getIndexName() {
+        return indexShard.shardId().getIndexName();
+    }
+
+    public List<KNNIndex> warmup() throws IOException {
+        logger.info("[KNN] Warming up index: " + getIndexName());
+        Engine.Searcher searcher = indexShard.acquireSearcher("knn-warmup");
+        List<KNNIndex> indices;
+        try {
+            indices = knnIndexCache.getIndices(getHNSWPaths(searcher.getIndexReader()), getIndexName());
+            searcher.close();
+        } catch (IOException ex) {
+            searcher.close();
+            throw ex;
+        }
+        return indices;
+    }
+
+    public List<String> getHNSWPaths(IndexReader indexReader) throws IOException {
         List<String> hnswFiles = new ArrayList<>();
         for (LeafReaderContext leafReaderContext : indexReader.leaves()) {
             SegmentReader reader = (SegmentReader) FilterLeafReader.unwrap(leafReaderContext.reader());
@@ -70,25 +93,11 @@ public class KNNIndexShard {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList()));
         }
-
         return hnswFiles;
-    }
-
-    public String getIndexName() {
-        return indexShard.shardId().getIndexName();
-    }
-
-    public void warmup() throws IOException {
-        knnIndexCache.loadIndex(this);
     }
 
     private ShardPath shardPath() {
         return indexShard.shardPath();
-    }
-
-    private IndexReader getIndexReader() throws IOException {
-        Directory directory = FSDirectory.open(shardPath().resolveIndex());
-        return DirectoryReader.open(directory);
     }
 
     private String getHNSWFileExtension(SegmentInfo info) {
