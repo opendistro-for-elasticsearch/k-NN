@@ -234,7 +234,7 @@ public class KNNIndexCacheTests extends ESSingleNodeTestCase {
         assertEquals(0, KNNIndexCache.getInstance().getIndicesCacheStats().size());
     }
 
-    public void testGetIndices() throws InterruptedException, ExecutionException, IOException, KNNIndexShard.NotKNNIndexException {
+    public void testGetIndices() throws InterruptedException, ExecutionException, IOException {
         assertEquals(0, KNNIndexCache.getInstance().getIndicesCacheStats().size());
 
         IndexService indexService = createIndex(testIndexName, getKNNDefaultIndexSettings());

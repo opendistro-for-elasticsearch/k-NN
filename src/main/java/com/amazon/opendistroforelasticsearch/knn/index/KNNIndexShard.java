@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.KNN_INDEX;
-
 /**
  * KNNIndexShard wraps indexShard and adds methods to perform KNN related operations against the shard
  */
@@ -45,18 +43,7 @@ public class KNNIndexShard {
 
     private static Logger logger = LogManager.getLogger(KNNIndexShard.class);
 
-    public static class NotKNNIndexException extends Exception {
-        public NotKNNIndexException(String errorMessage) {
-            super(errorMessage + " The index does not have index.knn setting set to true.");
-        }
-    }
-
-    public KNNIndexShard(IndexShard indexShard)
-            throws NotKNNIndexException {
-        if (!"true".equals(indexShard.indexSettings().getSettings().get(KNN_INDEX))) {
-            throw new NotKNNIndexException("[KNN] Exception validating " + indexShard.shardId().getIndexName() + ".");
-        }
-
+    public KNNIndexShard(IndexShard indexShard) {
         this.indexShard = indexShard;
         this.knnIndexCache = KNNIndexCache.getInstance();
     }

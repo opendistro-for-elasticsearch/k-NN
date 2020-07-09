@@ -19,7 +19,6 @@ import com.amazon.opendistroforelasticsearch.knn.KNNSingleNodeTestCase;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.shard.IndexShard;
-import org.junit.Test;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,13 +34,7 @@ public class KNNIndexShardTests extends KNNSingleNodeTestCase {
     private final String testFieldName = "test-field";
     private final int dimensions = 2;
 
-    @Test(expected = KNNIndexShard.NotKNNIndexException.class)
-    public void testKNNIndexShard_throwNotKNNIndexException() throws KNNIndexShard.NotKNNIndexException {
-        IndexService indexService = createIndex(testIndexName);
-        new KNNIndexShard(indexService.iterator().next());
-    }
-
-    public void testGetIndexShard() throws InterruptedException, ExecutionException, IOException, KNNIndexShard.NotKNNIndexException {
+    public void testGetIndexShard() throws InterruptedException, ExecutionException, IOException {
         IndexService indexService = createKNNIndex(testIndexName);
         createKnnIndexMapping(testIndexName, testFieldName, dimensions);
         addKnnDoc(testIndexName, "1", testFieldName, new Float[] {2.5F, 3.5F});
@@ -51,7 +44,7 @@ public class KNNIndexShardTests extends KNNSingleNodeTestCase {
         assertEquals(indexShard, knnIndexShard.getIndexShard());
     }
 
-    public void testGetIndexName() throws InterruptedException, ExecutionException, IOException, KNNIndexShard.NotKNNIndexException {
+    public void testGetIndexName() throws InterruptedException, ExecutionException, IOException {
         IndexService indexService = createKNNIndex(testIndexName);
         createKnnIndexMapping(testIndexName, testFieldName, dimensions);
         addKnnDoc(testIndexName, "1", testFieldName, new Float[] {2.5F, 3.5F});
@@ -61,7 +54,7 @@ public class KNNIndexShardTests extends KNNSingleNodeTestCase {
         assertEquals(testIndexName, knnIndexShard.getIndexName());
     }
 
-    public void testWarmup_emptyIndex() throws IOException, KNNIndexShard.NotKNNIndexException {
+    public void testWarmup_emptyIndex() throws IOException {
         IndexService indexService = createKNNIndex(testIndexName);
         createKnnIndexMapping(testIndexName, testFieldName, dimensions);
 
@@ -70,8 +63,7 @@ public class KNNIndexShardTests extends KNNSingleNodeTestCase {
         assertEquals(emptyList(), knnIndexShard.warmup());
     }
 
-    public void testWarmup_shardPresentInCache() throws InterruptedException, ExecutionException, IOException,
-            KNNIndexShard.NotKNNIndexException {
+    public void testWarmup_shardPresentInCache() throws InterruptedException, ExecutionException, IOException {
         IndexService indexService = createKNNIndex(testIndexName);
         createKnnIndexMapping(testIndexName, testFieldName, dimensions);
         addKnnDoc(testIndexName, "1", testFieldName, new Float[] {2.5F, 3.5F});
@@ -85,8 +77,7 @@ public class KNNIndexShardTests extends KNNSingleNodeTestCase {
         assertEquals(1, KNNIndexCache.getInstance().getIndicesCacheStats().get(testIndexName).get(GRAPH_COUNT));
     }
 
-    public void testWarmup_shardNotPresentInCache() throws InterruptedException, ExecutionException, IOException,
-            KNNIndexShard.NotKNNIndexException {
+    public void testWarmup_shardNotPresentInCache() throws InterruptedException, ExecutionException, IOException {
         IndexService indexService = createKNNIndex(testIndexName);
         createKnnIndexMapping(testIndexName, testFieldName, dimensions);
         IndexShard indexShard;
@@ -107,8 +98,7 @@ public class KNNIndexShardTests extends KNNSingleNodeTestCase {
         assertEquals(2, KNNIndexCache.getInstance().getIndicesCacheStats().get(testIndexName).get(GRAPH_COUNT));
     }
 
-    public void testGetHNSWPaths() throws KNNIndexShard.NotKNNIndexException, IOException, ExecutionException,
-            InterruptedException {
+    public void testGetHNSWPaths() throws IOException, ExecutionException, InterruptedException {
         IndexService indexService = createKNNIndex(testIndexName);
         createKnnIndexMapping(testIndexName, testFieldName, dimensions);
         IndexShard indexShard;

@@ -15,24 +15,39 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.rest;
 
+import com.amazon.opendistroforelasticsearch.knn.common.exception.KNNInvalidIndexException;
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNWarmupAction;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNWarmupRequest;
 import com.google.common.collect.ImmutableList;
 import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.action.RestToXContentListener;
 
+import java.util.Arrays;
 import java.util.List;
+
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.KNN_INDEX;
+import static org.elasticsearch.action.support.IndicesOptions.strictExpandOpen;
 
 public class RestKNNWarmupHandler extends BaseRestHandler {
     public static String NAME = "knn_warmup_action";
 
-    public RestKNNWarmupHandler(Settings settings, RestController controller) {}
+    private IndexNameExpressionResolver indexNameExpressionResolver;
+    private ClusterService clusterService;
+
+    public RestKNNWarmupHandler(Settings settings, RestController controller, ClusterService clusterService,
+                                IndexNameExpressionResolver indexNameExpressionResolver) {
+        this.clusterService = clusterService;
+        this.indexNameExpressionResolver = indexNameExpressionResolver;
+    }
 
     @Override
     public String getName() {
@@ -53,7 +68,17 @@ public class RestKNNWarmupHandler extends BaseRestHandler {
     }
 
     private KNNWarmupRequest createKNNWarmupRequest(RestRequest request) {
-        String[] indices = Strings.splitStringByCommaToArray(request.param("index"));
-        return new KNNWarmupRequest(indices);
+        String[] indexNames = Strings.splitStringByCommaToArray(request.param("index"));
+        Index[] indices =  indexNameExpressionResolver.concreteIndices(clusterService.state(), strictExpandOpen(),
+                indexNames);
+
+        Arrays.stream(indices).forEach(index -> {
+            if (!"true".equals(clusterService.state().metadata().getIndexSafe(index).getSettings().get(KNN_INDEX))) {
+                throw new KNNInvalidIndexException(index.getName(),
+                        "Unable to create warmup index that has 'knn' setting set to false");
+            }
+        });
+
+        return new KNNWarmupRequest(indexNames);
     }
 }

@@ -107,6 +107,7 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
     public static final String KNN_BASE_URI = "/_opendistro/_knn";
 
     private KNNStats knnStats;
+    private ClusterService clusterService;
 
     @Override
     public Map<String, Mapper.TypeParser> getMappers() {
@@ -125,6 +126,7 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
                                                NodeEnvironment nodeEnvironment, NamedWriteableRegistry namedWriteableRegistry,
                                                IndexNameExpressionResolver indexNameExpressionResolver,
                                                Supplier<RepositoriesService> repositoriesServiceSupplier) {
+        this.clusterService = clusterService;
         KNNIndexCache.setResourceWatcherService(resourceWatcherService);
         KNNSettings.state().initialize(client, clusterService);
         KNNCircuitBreaker.getInstance().initialize(threadPool, clusterService, client);
@@ -146,7 +148,8 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
                                              Supplier<DiscoveryNodes> nodesInCluster) {
 
         RestKNNStatsHandler restKNNStatsHandler = new RestKNNStatsHandler(settings, restController, knnStats);
-        RestKNNWarmupHandler restKNNWarmupHandler = new RestKNNWarmupHandler(settings, restController);
+        RestKNNWarmupHandler restKNNWarmupHandler = new RestKNNWarmupHandler(settings, restController, clusterService,
+                indexNameExpressionResolver);
 
         return Arrays.asList(restKNNStatsHandler, restKNNWarmupHandler);
     }

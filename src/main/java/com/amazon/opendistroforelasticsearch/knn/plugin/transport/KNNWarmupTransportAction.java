@@ -72,13 +72,9 @@ public class KNNWarmupTransportAction extends TransportBroadcastByNodeAction<KNN
 
     @Override
     protected EmptyResult shardOperation(KNNWarmupRequest request, ShardRouting shardRouting) throws IOException {
-        try {
-            KNNIndexShard knnIndexShard = new KNNIndexShard(indicesService.indexServiceSafe(shardRouting.shardId()
-                    .getIndex()).getShard(shardRouting.shardId().id()));
-            knnIndexShard.warmup();
-        } catch (KNNIndexShard.NotKNNIndexException e) {
-            e.printStackTrace();
-        }
+        KNNIndexShard knnIndexShard = new KNNIndexShard(indicesService.indexServiceSafe(shardRouting.shardId()
+                .getIndex()).getShard(shardRouting.shardId().id()));
+        knnIndexShard.warmup();
         return EmptyResult.INSTANCE;
     }
 
