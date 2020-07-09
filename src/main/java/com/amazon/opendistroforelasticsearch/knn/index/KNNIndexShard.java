@@ -35,7 +35,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * KNNIndexShard wraps indexShard and adds methods to perform KNN related operations against the shard
+ * KNNIndexShard wraps IndexShard and adds methods to perform k-NN related operations against the shard
  */
 public class KNNIndexShard {
     private IndexShard indexShard;
@@ -43,19 +43,43 @@ public class KNNIndexShard {
 
     private static Logger logger = LogManager.getLogger(KNNIndexShard.class);
 
+    /**
+     * Constructor to generate KNNIndexShard. We do not perform validation that the Index the IndexShard is from
+     * is in fact a k-NN Index (index.knn = true). This may make sense to add later, but for now the operations for
+     * KNNIndexShards that are not from a k-NN index should be no-ops.
+     *
+     * @param indexShard IndexShard to be wrapped.
+     */
     public KNNIndexShard(IndexShard indexShard) {
         this.indexShard = indexShard;
         this.knnIndexCache = KNNIndexCache.getInstance();
     }
 
+    /**
+     * Return the underlying IndexShard
+     *
+     * @return IndexShard
+     */
     public IndexShard getIndexShard() {
         return indexShard;
     }
 
+    /**
+     * Return the name of the shards index
+     *
+     * @return Name of shard's index
+     */
     public String getIndexName() {
         return indexShard.shardId().getIndexName();
     }
 
+    /**
+     * Load all of the HNSW graphs for this shard into the cache. Note that getIndices is called to prevent loading
+     * in duplicates.
+     *
+     * @return a List of KNNIndex's from this shard that are in the cache after this operation.
+     * @throws IOException Thrown when getting the HNSW Paths to be loaded in
+     */
     public List<KNNIndex> warmup() throws IOException {
         logger.info("[KNN] Warming up index: " + getIndexName());
         Engine.Searcher searcher = indexShard.acquireSearcher("knn-warmup");
@@ -70,6 +94,13 @@ public class KNNIndexShard {
         return indices;
     }
 
+    /**
+     * For the given shard, get all of its HNSW paths
+     *
+     * @param indexReader IndexReader to read the file paths for the shard
+     * @return List of HNSW Paths
+     * @throws IOException Thrown when the SegmentReader is attempting to read the segments files
+     */
     public List<String> getHNSWPaths(IndexReader indexReader) throws IOException {
         List<String> hnswFiles = new ArrayList<>();
         for (LeafReaderContext leafReaderContext : indexReader.leaves()) {

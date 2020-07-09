@@ -37,6 +37,10 @@ import java.util.List;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.KNN_INDEX;
 import static org.elasticsearch.action.support.IndicesOptions.strictExpandOpen;
 
+/**
+ * RestHandler for k-NN index warmup API. API provides the ability for a user to load specific indices' k-NN graphs
+ * into memory.
+ */
 public class RestKNNWarmupHandler extends BaseRestHandler {
     public static String NAME = "knn_warmup_action";
 

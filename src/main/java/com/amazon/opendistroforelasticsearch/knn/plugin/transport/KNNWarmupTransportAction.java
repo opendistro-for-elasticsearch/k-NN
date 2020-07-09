@@ -37,6 +37,11 @@ import org.elasticsearch.threadpool.ThreadPool;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Transport Action for warming up k-NN indices. TransportBroadcastByNodeAction will distribute the request to
+ * all shards across the cluster for the given indices. For each shard, shardOperation will be called and the
+ * warmup will take place.
+ */
 public class KNNWarmupTransportAction extends TransportBroadcastByNodeAction<KNNWarmupRequest, KNNWarmupResponse,
         TransportBroadcastByNodeAction.EmptyResult> {
 
