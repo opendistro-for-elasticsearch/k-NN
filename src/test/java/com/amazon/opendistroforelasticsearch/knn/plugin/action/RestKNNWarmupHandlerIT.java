@@ -17,32 +17,66 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.action;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
 
+import org.elasticsearch.client.ResponseException;
+import org.elasticsearch.common.settings.Settings;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+
 /**
  * Integration tests to check the correctness of KNN Warmup API
  */
+
 public class RestKNNWarmupHandlerIT extends KNNRestTestCase {
 
-    public void testNonExistentIndex() {
+    private final String testIndexName = "test-index";
+    private final String testFieldName = "test-field";
+    private final int dimensions = 2;
 
+    @Test(expected = ResponseException.class)
+    public void testNonExistentIndex() throws IOException {
+        knnWarmup(Collections.singletonList("non-existent"));
     }
 
-    public void testNonKnnIndex() {
+    @Test(expected = ResponseException.class)
+    public void testNonKnnIndex() throws IOException {
+        createIndex("not-knn-index", Settings.EMPTY);
 
+        knnWarmup(Collections.singletonList("not-knn-index"));
     }
 
-    public void testEmptyIndex() {
+    public void testEmptyIndex() throws IOException {
+        int graphCountBefore = getTotalGraphsInCache();
+        createKnnIndex(testIndexName, getKNNDefaultIndexSettings(), createKnnIndexMapping(testFieldName, dimensions));
 
+        knnWarmup(Collections.singletonList(testIndexName));
+
+        assertEquals(graphCountBefore, getTotalGraphsInCache());
     }
 
-    public void testSingleIndex() {
+    public void testSingleIndex() throws IOException {
+        int graphCountBefore = getTotalGraphsInCache();
+        createKnnIndex(testIndexName, getKNNDefaultIndexSettings(), createKnnIndexMapping(testFieldName, dimensions));
+        addKnnDoc(testIndexName, "1", testFieldName, new Float[] {6.0f, 6.0f});
 
+        knnWarmup(Collections.singletonList(testIndexName));
+
+        assertEquals(graphCountBefore + 1, getTotalGraphsInCache());
     }
 
-    public void testMultipleIndices() {
+    public void testMultipleIndices() throws IOException {
+        int graphCountBefore = getTotalGraphsInCache();
 
-    }
+        createKnnIndex(testIndexName + "1", getKNNDefaultIndexSettings(), createKnnIndexMapping(testFieldName, dimensions));
+        addKnnDoc(testIndexName + "1", "1", testFieldName, new Float[] {6.0f, 6.0f});
 
-    public void testMultipleIndices_singleInvalidIndex() {
+        createKnnIndex(testIndexName + "2", getKNNDefaultIndexSettings(), createKnnIndexMapping(testFieldName, dimensions));
+        addKnnDoc(testIndexName + "2", "1", testFieldName, new Float[] {6.0f, 6.0f});
 
+        knnWarmup(Arrays.asList(testIndexName + "1", testIndexName + "2"));
+
+        assertEquals(graphCountBefore + 2, getTotalGraphsInCache());
     }
 }
