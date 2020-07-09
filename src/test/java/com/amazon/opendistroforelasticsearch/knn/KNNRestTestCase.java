@@ -380,6 +380,9 @@ public class KNNRestTestCase extends ESRestTestCase {
         return nodeResponses;
     }
 
+    /**
+     * Get the total number of graphs in the cache across all nodes
+     */
     @SuppressWarnings("unchecked")
     protected int getTotalGraphsInCache() throws IOException {
         Response response = getKnnStats(Collections.emptyList(), Collections.emptyList());

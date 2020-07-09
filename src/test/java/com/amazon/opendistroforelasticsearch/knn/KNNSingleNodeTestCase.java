@@ -64,16 +64,25 @@ public class KNNSingleNodeTestCase extends ESSingleNodeTestCase {
         super.tearDown();
     }
 
+    /**
+     * Create a k-NN index with default settings
+     */
     protected IndexService createKNNIndex(String indexName) {
         return createIndex(indexName, getKNNDefaultIndexSettings(), null);
     }
 
+    /**
+     * Create simple k-NN mapping
+     */
     protected void createKnnIndexMapping(String indexName, String fieldName, Integer dimensions) {
         PutMappingRequest request = new PutMappingRequest(indexName).type("_doc");
         request.source(fieldName, "type=knn_vector,dimension="+dimensions);
         ElasticsearchAssertions.assertAcked(client().admin().indices().putMapping(request).actionGet());
     }
 
+    /**
+     * Get default k-NN settings for test cases
+     */
     protected Settings getKNNDefaultIndexSettings() {
         return Settings.builder()
                 .put("number_of_shards", 1)
@@ -82,6 +91,9 @@ public class KNNSingleNodeTestCase extends ESSingleNodeTestCase {
                 .build();
     }
 
+    /**
+     * Add a k-NN doc to an index
+     */
     protected void addKnnDoc(String index, String docId, String fieldName, Object[] vector)
             throws IOException, InterruptedException, ExecutionException {
         XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
@@ -97,6 +109,9 @@ public class KNNSingleNodeTestCase extends ESSingleNodeTestCase {
         assertEquals(response.status(), RestStatus.CREATED);
     }
 
+    /**
+     * Run a search against a k-NN index
+     */
     protected void searchKNNIndex(String index, String fieldName, float[] vector, int k) {
         SearchResponse response = client().prepareSearch(index).setQuery(new KNNQueryBuilder(fieldName, vector, k))
                 .get();
