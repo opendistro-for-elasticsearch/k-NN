@@ -41,7 +41,7 @@ using similarity::KNNQueue;
 
 extern "C"
 
-const char* data_suff = ".dat";
+const char* datSuffix = ".dat";
 
 std::unordered_set<string> nonOptimizedSpace {"negdotprod"};
 
@@ -137,7 +137,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206
         if (nonOptimizedSpace.find(spaceTypeString) != nonOptimizedSpace.end()){
             string indexPathString(indexString);
             vector<string> dummy;
-            space->WriteObjectVectorBinData(dataset, dummy, indexPathString + data_suff);
+            space->WriteObjectVectorBinData(dataset, dummy, indexPathString + datSuffix);
         }
         index->SaveIndex(indexString);
         env->ReleaseStringUTFChars(indexPath, indexString);
@@ -212,7 +212,7 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v20
         if (nonOptimizedSpace.find(spaceTypeString) != nonOptimizedSpace.end()){
             vector<string> dummy;
             freeAndClearObjectVector(indexWrapper->data);
-            indexWrapper->space->ReadObjectVectorFromBinData(indexWrapper->data, dummy, indexPathString + data_suff);
+            indexWrapper->space->ReadObjectVectorFromBinData(indexWrapper->data, dummy, indexPathString + datSuffix);
         }
         indexWrapper->index->LoadIndex(indexPathString);
 
