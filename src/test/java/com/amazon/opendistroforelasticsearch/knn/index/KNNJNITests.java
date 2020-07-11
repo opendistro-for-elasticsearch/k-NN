@@ -136,7 +136,6 @@ public class KNNJNITests extends KNNTestCase {
         );
 
         assertTrue(Arrays.asList(dir.listAll()).contains("_dummy1.hnsw"));
-        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy1.hnsw.dat"));
 
         float[] queryVector = {2.0f, -2.0f};
         String[] algoQueryParams = {"efSearch=20"};
@@ -186,6 +185,7 @@ public class KNNJNITests extends KNNTestCase {
         );
 
         assertTrue(Arrays.asList(dir.listAll()).contains("_dummy1.hnsw"));
+        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy1.hnsw.dat"));
 
         float[] queryVector = {2.0f, -2.0f};
         String[] algoQueryParams = {"efSearch=20"};
