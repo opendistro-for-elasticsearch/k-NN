@@ -23,6 +23,7 @@
 #include "methodfactory.h"
 #include "spacefactory.h"
 #include "space.h"
+#include "unordered_set"
 
 using std::vector;
 
@@ -41,6 +42,8 @@ using similarity::KNNQueue;
 extern "C"
 
 const char* data_suff = ".dat";
+
+std::unordered_set<string> nonOptimizedSpace {"negdotprod"};
 
 struct IndexWrapper {
   IndexWrapper(string spaceType) {
@@ -130,9 +133,12 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206
         index->CreateIndex(AnyParams(paramsList));
         has_exception_in_stack(env);
         const char *indexString = env->GetStringUTFChars(indexPath, 0);
-        string indexPathString(indexString);
-        vector<string> dummy;
-        space->WriteObjectVectorBinData(dataset, dummy, indexPathString + data_suff);
+        // Write object vector binary data for spaces not supporting optimized index
+        if (nonOptimizedSpace.find(spaceTypeString) != nonOptimizedSpace.end()){
+            string indexPathString(indexString);
+            vector<string> dummy;
+            space->WriteObjectVectorBinData(dataset, dummy, indexPathString + data_suff);
+        }
         index->SaveIndex(indexString);
         env->ReleaseStringUTFChars(indexPath, indexString);
         has_exception_in_stack(env);
@@ -202,9 +208,12 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v20
         env->ReleaseStringUTFChars(spaceType, spaceTypeCStr);
         has_exception_in_stack(env);
         IndexWrapper *indexWrapper = new IndexWrapper(spaceTypeString);
-        vector<string> dummy;
-        freeAndClearObjectVector(indexWrapper->data);
-        indexWrapper->space->ReadObjectVectorFromBinData(indexWrapper->data, dummy, indexPathString + data_suff);
+        // Read object vector binary data for spaces not supporting optimized index
+        if (nonOptimizedSpace.find(spaceTypeString) != nonOptimizedSpace.end()){
+            vector<string> dummy;
+            freeAndClearObjectVector(indexWrapper->data);
+            indexWrapper->space->ReadObjectVectorFromBinData(indexWrapper->data, dummy, indexPathString + data_suff);
+        }
         indexWrapper->index->LoadIndex(indexPathString);
 
         // Parse and set query params
