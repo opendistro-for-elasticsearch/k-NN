@@ -123,13 +123,15 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
              * bytes and result in index corruption issues.
              */
             try (IndexInput is = state.directory.openInput(hsnwTempFileName, state.context);
-                 IndexInput datIs = state.directory.openInput(hsnwTempDatFileName, state.context);
-                 IndexOutput os = state.directory.createOutput(hnswFileName, state.context);
-                 IndexOutput datOs = state.directory.createOutput(hnswFileName + DAT_SUFFIX, state.context)) {
+                 IndexOutput os = state.directory.createOutput(hnswFileName, state.context)) {
                 os.copyBytes(is, is.length());
-                datOs.copyBytes(datIs, datIs.length());
                 CodecUtil.writeFooter(os);
-                CodecUtil.writeFooter(datOs);
+                if (SpaceTypes.getNonOptimizedValues().contains(spaceType)) {
+                    IndexInput datIs = state.directory.openInput(hsnwTempDatFileName, state.context);
+                    IndexOutput datOs = state.directory.createOutput(hnswFileName + DAT_SUFFIX, state.context);
+                    datOs.copyBytes(datIs, datIs.length());
+                    CodecUtil.writeFooter(datOs);
+                }
             } catch (Exception ex) {
                 KNNCounter.GRAPH_INDEX_ERRORS.increment();
                 throw new RuntimeException("[KNN] Adding footer to serialized graph failed: " + ex);

@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -49,5 +50,15 @@ public enum SpaceTypes {
       values.add(spaceType.getValue());
     }
     return values;
+  }
+
+  /**
+   * Get space types not supporting optimized index.
+   * https://github.com/nmslib/nmslib/blob/master/python_bindings/README.md#saving-indexes-and-data
+   *
+   * @return set of all stat names
+   */
+  public static Set<String> getNonOptimizedValues() {
+    return new HashSet<>(Arrays.asList(negdotprod.getValue()));
   }
 }
