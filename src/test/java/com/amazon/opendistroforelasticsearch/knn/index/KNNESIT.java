@@ -31,10 +31,23 @@ import static org.hamcrest.Matchers.containsString;
 
 public class KNNESIT extends KNNRestTestCase {
     /**
-     * Able to add docs to KNN index
+     * Able to add docs to KNN optimized index
      */
-    public void testAddKNNDoc() throws Exception {
+    public void testAddKNNDocOptimized() throws Exception {
         createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] vector  = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+    }
+
+    /**
+     * Able to add docs to KNN non-optimized index
+     */
+    public void testAddKNNDocNonOptimized() throws Exception {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.negdotprod.getValue())
+                .build();
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 2));
         Float[] vector  = {6.0f, 6.0f};
         addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
     }
@@ -59,10 +72,27 @@ public class KNNESIT extends KNNRestTestCase {
     }
 
     /**
-     * Able to update docs in KNN index
+     * Able to update docs in KNN optimized index
      */
-    public void testUpdateKNNDoc() throws Exception {
+    public void testUpdateKNNDocOptimized() throws Exception {
         createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] vector  = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+
+        // update
+        Float[] updatedVector  = {8.0f, 8.0f};
+        updateKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+    }
+
+    /**
+     * Able to update docs in KNN non-optimized index
+     */
+    public void testUpdateKNNDocNonOptimized() throws Exception {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.negdotprod.getValue())
+                .build();
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 2));
         Float[] vector  = {6.0f, 6.0f};
         addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
 
@@ -94,10 +124,26 @@ public class KNNESIT extends KNNRestTestCase {
     }
 
     /**
-     * Able to delete docs in KNN index
+     * Able to delete docs in KNN optimized index
      */
-    public void testDeleteKNNDoc() throws Exception {
+    public void testDeleteKNNDocOptimized() throws Exception {
         createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] vector  = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+
+        // delete knn doc
+        deleteKnnDoc(INDEX_NAME, "1");
+    }
+
+    /**
+     * Able to delete docs in KNN non-optimized index
+     */
+    public void testDeleteKNNDocNonOptimized() throws Exception {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.negdotprod.getValue())
+                .build();
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 2));
         Float[] vector  = {6.0f, 6.0f};
         addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
 
