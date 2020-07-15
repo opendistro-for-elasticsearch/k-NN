@@ -35,6 +35,8 @@ jobs:
           CXX: ${{ matrix.compiler }}
         run: |
             cd jni
+            git submodule update --init -- jni/external/nmslib
+            sed -i 's/-march=native/-march=x86-64/g' external/nmslib/similarity_search/CMakeLists.txt
             cmake .
             make package
 
