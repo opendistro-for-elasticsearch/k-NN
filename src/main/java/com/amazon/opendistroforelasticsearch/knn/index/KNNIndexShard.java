@@ -44,7 +44,7 @@ public class KNNIndexShard {
     private static Logger logger = LogManager.getLogger(KNNIndexShard.class);
 
     /**
-     * Constructor to generate KNNIndexShard. We do not perform validation that the Index the IndexShard is from
+     * Constructor to generate KNNIndexShard. We do not perform validation that the index the shard is from
      * is in fact a k-NN Index (index.knn = true). This may make sense to add later, but for now the operations for
      * KNNIndexShards that are not from a k-NN index should be no-ops.
      *
@@ -86,10 +86,8 @@ public class KNNIndexShard {
         List<KNNIndex> indices;
         try {
             indices = knnIndexCache.getIndices(getHNSWPaths(searcher.getIndexReader()), getIndexName());
+        } finally {
             searcher.close();
-        } catch (IOException ex) {
-            searcher.close();
-            throw ex;
         }
         return indices;
     }
