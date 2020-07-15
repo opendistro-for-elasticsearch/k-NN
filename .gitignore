@@ -8,7 +8,7 @@ build
 *.log
 out/
 buildSrc/es-knn-offline-repo-*
-buildSrc/libKNNIndexV1_7_3_6*
+buildSrc/libKNNIndexV2_0_6*
 oss/*
 *.iml
 jni/CMakeCache.txt
