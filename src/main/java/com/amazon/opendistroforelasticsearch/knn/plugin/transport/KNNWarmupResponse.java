@@ -23,6 +23,10 @@ import org.elasticsearch.common.xcontent.ToXContentObject;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Response returned for k-NN Warmup. Returns total number of shards Warmup was performed on, as well as
+ * the number of shards that succeeded and the number of shards that failed.
+ */
 public class KNNWarmupResponse extends BroadcastResponse implements ToXContentObject {
 
     public KNNWarmupResponse() {}

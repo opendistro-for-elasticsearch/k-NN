@@ -20,6 +20,9 @@ import org.elasticsearch.common.io.stream.StreamInput;
 
 import java.io.IOException;
 
+/**
+ * k-NN Warmup Request. This request contains a list of indices for which warmup should be performed.
+ */
 public class KNNWarmupRequest extends BroadcastRequest<KNNWarmupRequest> {
 
     public KNNWarmupRequest(StreamInput in) throws IOException {

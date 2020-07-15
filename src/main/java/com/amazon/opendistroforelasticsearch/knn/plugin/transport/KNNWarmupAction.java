@@ -18,6 +18,9 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.transport;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.common.io.stream.Writeable;
 
+/**
+ * Action associated with k-NN warmup
+ */
 public class KNNWarmupAction extends ActionType<KNNWarmupResponse> {
 
     public static final KNNWarmupAction INSTANCE = new KNNWarmupAction();
