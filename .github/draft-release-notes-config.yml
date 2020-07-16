@@ -1,12 +1,16 @@
 # The overall template of the release notes
 template: |
-  Compatible with Elasticsearch (**set version here**) and Open Distro for Elasticsearch (**set version here**).
+  Compatible with Elasticsearch (**set version here**).
   $CHANGES
+
 # Setting the formatting and sorting for the release notes body
 name-template: Version (set version here)
-change-template: '- $TITLE (PR #$NUMBER)'
+change-template: '* $TITLE (#$NUMBER)'
 sort-by: merged_at
 sort-direction: ascending
+replacers:
+  - search: '##'
+    replace: '###'
 
 # Organizing the tagged PRs into categories
 categories:
