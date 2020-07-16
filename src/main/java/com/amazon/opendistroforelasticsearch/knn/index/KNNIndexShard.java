@@ -16,7 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
-import com.amazon.opendistroforelasticsearch.knn.index.v1736.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.v206.KNNIndex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.FilterLeafReader;
