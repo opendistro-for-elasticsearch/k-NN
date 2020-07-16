@@ -408,7 +408,7 @@ GET /_opendistro/_knn/HYMrXXsBSamUkcAjhjeN0w/stats/circuit_breaker_triggered,gra
 ### Overview
 The HNSW graphs used to perform k-Approximate Nearest Neighbor Search are stored as `.hnsw` files with the other Lucene segment files. In order to perform search on these graphs, they need to be loaded into native memory. If the graphs have not yet been loaded into native memory, upon search, they will first be loaded and then searched. This can cause high latency during initial queries. To avoid this, users will often run random queries during a warmup period. After this warmup period, the graphs will be loaded into native memory and their production workloads can begin. This process is indirect and requires extra effort. 
 
-As an alternative, a user can run the warmup API on whatever indices they are interested in searching over. This API will load all the graphs for all of the shards (primaries and replicas) of all the indices specified in the request into native memory. After this process completes, a user will be able to start searching against their indices with no initial latency penalties.
+As an alternative, a user can run the warmup API on whatever indices they are interested in searching over. This API will load all the graphs for all of the shards (primaries and replicas) of all the indices specified in the request into native memory. After this process completes, a user will be able to start searching against their indices with no initial latency penalties. The warmup API is idempotent. If a segment's graphs are already loaded into memory, this operation will have no impact on them. It only loads graphs that are not currently in memory. 
 
 ### Usage
 This command will perform warmup on index1, index2, and index3:
