@@ -15,11 +15,13 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.rest;
 
-import com.amazon.opendistroforelasticsearch.knn.common.exception.KNNInvalidIndexException;
+import com.amazon.opendistroforelasticsearch.knn.common.exception.KNNInvalidIndicesException;
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNWarmupAction;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNWarmupRequest;
 import com.google.common.collect.ImmutableList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -31,6 +33,7 @@ import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.action.RestToXContentListener;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -43,6 +46,8 @@ import static org.elasticsearch.action.support.IndicesOptions.strictExpandOpen;
  */
 public class RestKNNWarmupHandler extends BaseRestHandler {
     public static String NAME = "knn_warmup_action";
+
+    private static final Logger logger = LogManager.getLogger(RestKNNWarmupHandler.class);
 
     private IndexNameExpressionResolver indexNameExpressionResolver;
     private ClusterService clusterService;
@@ -68,6 +73,8 @@ public class RestKNNWarmupHandler extends BaseRestHandler {
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) {
         KNNWarmupRequest knnWarmupRequest = createKNNWarmupRequest(request);
+        logger.info("[KNN] Warmup started for the following indices: "
+                + String.join(",", knnWarmupRequest.indices()));
         return channel -> client.execute(KNNWarmupAction.INSTANCE, knnWarmupRequest, new RestToXContentListener<>(channel));
     }
 
@@ -75,13 +82,18 @@ public class RestKNNWarmupHandler extends BaseRestHandler {
         String[] indexNames = Strings.splitStringByCommaToArray(request.param("index"));
         Index[] indices =  indexNameExpressionResolver.concreteIndices(clusterService.state(), strictExpandOpen(),
                 indexNames);
+        List<String> invalidIndexNames = new ArrayList<>();
 
         Arrays.stream(indices).forEach(index -> {
             if (!"true".equals(clusterService.state().metadata().getIndexSafe(index).getSettings().get(KNN_INDEX))) {
-                throw new KNNInvalidIndexException(index.getName(),
-                        "Unable to create warmup index that has 'knn' setting set to false");
+                invalidIndexNames.add(index.getName());
             }
         });
+
+        if (invalidIndexNames.size() != 0) {
+            throw new KNNInvalidIndicesException(invalidIndexNames,
+                    "Warm up request rejected. One or more indices have 'index.knn' set to false.");
+        }
 
         return new KNNWarmupRequest(indexNames);
     }

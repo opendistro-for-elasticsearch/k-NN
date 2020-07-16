@@ -15,26 +15,17 @@
 
 package com.amazon.opendistroforelasticsearch.knn.common.exception;
 
-public class KNNInvalidIndexException extends RuntimeException {
+import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 
-    private final String invalidIndex;
+import java.util.Arrays;
+import java.util.List;
 
-    public KNNInvalidIndexException(String invalidIndex, String message) {
-        super(message);
-        this.invalidIndex = invalidIndex;
-    }
-
-    /**
-     * Returns the Invalid Index
-     *
-     * @return invalid index name
-     */
-    public String getInvalidIndex() {
-        return this.invalidIndex;
-    }
-
-    @Override
-    public String toString() {
-        return "[KNN] " + invalidIndex + ' ' + super.toString();
+public class KNNInvalidIndicesExceptionTests extends KNNTestCase {
+    public void testConstructor() {
+        List<String> invalidIndices = Arrays.asList("invalid-index-1", "invalid-index-2");
+        String message = "test message";
+        KNNInvalidIndicesException knnInvalidIndexException = new KNNInvalidIndicesException(invalidIndices, message);
+        assertEquals(invalidIndices, knnInvalidIndexException.getInvalidIndices());
+        assertEquals(message, knnInvalidIndexException.getMessage());
     }
 }
