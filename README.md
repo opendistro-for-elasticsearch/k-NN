@@ -404,6 +404,10 @@ GET /_opendistro/_knn/HYMrXXsBSamUkcAjhjeN0w/stats/circuit_breaker_triggered,gra
 }
 ```
 
+## Contributions
+
+We appreciate and encourage contributions from the community. If you experience a bug or have a feature request, please create an issue for it. If you decide to make a contribution, please fill out the Pull Request template with as much detail as possible. Also, when creating a title for your Pull Request, please do not include a prefix such as `Bug Fix:`. Instead, please use the corresponding tag to label the purpose of the Pull Request.
+
 ## REQUEST FOR COMMENT (RFC)
 
 We'd like to get your comments! Please read the plugin RFC [document](https://github.com/opendistro-for-elasticsearch/k-NN/blob/development/RFC.md) and raise an issue to add your comments and questions.
