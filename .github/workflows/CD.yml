@@ -71,6 +71,7 @@ jobs:
         run: |
           yum update -y
           yum install -y cmake rpm-build gcc-c++ make epel-release
+          yum repolist
           yum install -y dpkg
 
       - name: Build and ship library artifacts
