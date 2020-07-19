@@ -187,7 +187,7 @@ public class KNNESIT extends KNNRestTestCase {
         searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
     }
 
-    public void testQueryIndexWithNonOptimizedSpace() throws IOException {
+    public void testQueryNonOptimizedIndex() throws IOException {
         Settings settings = Settings.builder()
                 .put(getKNNDefaultIndexSettings())
                 .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.negdotprod.getValue())
