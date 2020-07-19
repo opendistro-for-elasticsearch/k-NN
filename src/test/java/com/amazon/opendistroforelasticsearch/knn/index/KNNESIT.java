@@ -187,6 +187,26 @@ public class KNNESIT extends KNNRestTestCase {
         searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
     }
 
+    public void testQueryIndexWithNonOptimizedSpace() throws IOException {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.negdotprod.getValue())
+                .build();
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] vector = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+        vector = new Float[]{-6.0f, -6.0f};
+        addKnnDoc(INDEX_NAME, "2", FIELD_NAME, vector);
+
+        float[] queryVector = {1.0f, 1.0f}; // vector to be queried
+        int k = 2; //  nearest 1 neighbor
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        Response searchResponse = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(searchResponse.getEntity()), FIELD_NAME);
+        assertEquals(results.get(0).getDocId(), "1");
+        assertEquals(results.get(1).getDocId(), "2");
+    }
+
     public void testAddAndSearchIndexWhenCBTrips() throws Exception {
         createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
         for (int i=1; i<=4; i++) {
