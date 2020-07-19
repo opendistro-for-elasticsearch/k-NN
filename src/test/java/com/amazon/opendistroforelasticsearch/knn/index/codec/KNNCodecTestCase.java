@@ -142,9 +142,7 @@ public class  KNNCodecTestCase extends KNNTestCase {
         IndexReader reader = writer.getReader();
         writer.close();
         KNNIndexCache.setResourceWatcherService(createDisabledResourceWatcherService());
-        List<String> hnswfiles = Arrays.stream(dir.listAll())
-                .filter(x -> x.contains("hnsw") && !x.endsWith(".dat")).collect(Collectors.toList());
-        List<String> datfiles = Arrays.stream(dir.listAll()).filter(x -> x.endsWith(".dat")).collect(Collectors.toList());
+        List<String> hnswfiles = Arrays.stream(dir.listAll()).filter(x -> x.contains("hnsw") && !x.endsWith(".dat")).collect(Collectors.toList());
 
         // there should be 2 hnsw index files created. one for test_vector and one for my_vector
         assertEquals(hnswfiles.size(), 2);
