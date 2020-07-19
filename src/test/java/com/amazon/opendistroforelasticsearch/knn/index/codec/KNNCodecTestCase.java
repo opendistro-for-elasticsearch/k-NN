@@ -153,8 +153,11 @@ public class  KNNCodecTestCase extends KNNTestCase {
         IndexSearcher searcher = new IndexSearcher(reader);
         float score = searcher.search(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, "dummy"), 10).scoreDocs[0].score;
         float score1 = searcher.search(new KNNQuery("my_vector", new float[] {1.0f, 2.0f}, 1, "dummy"), 10).scoreDocs[0].score;
-        assertEquals(score, 0.1667f, 0.01f);
-        assertEquals(score1, 0.0714f, 0.01f);
+        float expScore = 0.00669f;
+        float expScore1 = 2.26e-6f;
+        float tol = 0.001f;
+        assertEquals(expScore, score, expScore * tol);
+        assertEquals(expScore1, score1, expScore1 * tol);
 
         // query to determine the hits
         assertEquals(1, searcher.count(new KNNQuery("test_vector", new float[] {1.0f, 0.0f, 0.0f}, 1, "dummy")));
