@@ -21,6 +21,9 @@ import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.Response;
+import org.elasticsearch.common.settings.Settings;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -81,6 +84,34 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
         List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
         List<String> expectedDocids = Arrays.asList("2", "4", "3");
+
+        List<String> actualDocids = new ArrayList<>();
+        for(KNNResult result : results) {
+            actualDocids.add(result.getDocId());
+        }
+
+        assertEquals(actualDocids.size(), k);
+        assertArrayEquals(actualDocids.toArray(), expectedDocids.toArray());
+    }
+
+    public void testKNNResultsWithNonOptimizedIndexAndForceMerge() throws Exception {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.negdotprod.getValue())
+                .build();
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] vector1 = {-6.0f, -6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector1);
+        Float[] vector2 = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "2", FIELD_NAME, vector2);
+        forceMergeKnnIndex(INDEX_NAME);
+
+        float[] queryVector = {1.0f, 1.0f}; // vector to be queried
+        int k = 2; //  nearest 1 neighbor
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        Response searchResponse = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(searchResponse.getEntity()), FIELD_NAME);
+        List<String> expectedDocids = Arrays.asList("2", "1");
 
         List<String> actualDocids = new ArrayList<>();
         for(KNNResult result : results) {
