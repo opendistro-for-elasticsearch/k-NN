@@ -1,0 +1,40 @@
+# The overall template of the release notes
+template: |
+  Compatible with Elasticsearch (**set version here**).
+  $CHANGES
+
+# Setting the formatting and sorting for the release notes body
+name-template: Version (set version here)
+change-template: '* $TITLE (#$NUMBER)'
+sort-by: merged_at
+sort-direction: ascending
+replacers:
+  - search: '##'
+    replace: '###'
+
+# Organizing the tagged PRs into categories
+categories:
+  - title: 'Breaking Changes'
+    labels:
+      - 'Breaking Changes'
+  - title: 'Features'
+    labels:
+      - 'Features'
+  - title: 'Enhancements'
+    labels:
+      - 'Enhancements'
+  - title: 'Bug Fixes'
+    labels:
+      - 'Bug Fixes'
+  - title: 'Infrastructure'
+    labels:
+      - 'Infrastructure'
+  - title: 'Documentation'
+    labels:
+      - 'Documentation'
+  - title: 'Maintenance'
+    labels:
+      - 'Maintenance'
+  - title: 'Refactoring'
+    labels:
+      - 'Refactoring'
