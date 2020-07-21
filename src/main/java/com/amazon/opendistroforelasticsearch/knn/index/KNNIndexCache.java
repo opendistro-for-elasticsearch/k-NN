@@ -283,17 +283,17 @@ public class KNNIndexCache implements Closeable {
     /**
      * Loads k-NN Lucene index to memory. Registers the location of the serialized graph with ResourceWatcher.
      *
-     * @param segmentPath path for serialized k-NN segment
+     * @param indexPathUrl path for serialized k-NN segment
      * @param indexName index name
      * @return KNNIndex holding the heap pointer of the loaded graph
      * @throws Exception Exception could occur when registering the index path
      * to Resource watcher or if the JNI call throws
      */
-    public KNNIndexCacheEntry loadIndex(String segmentPath, String indexName) throws Exception {
-        if(Strings.isNullOrEmpty(segmentPath))
+    public KNNIndexCacheEntry loadIndex(String indexPathUrl, String indexName) throws Exception {
+        if(Strings.isNullOrEmpty(indexPathUrl))
             throw new IllegalStateException("indexPath is null while performing load index");
-        logger.info("[KNN] Loading index: {}", segmentPath);
-        Path indexPath = Paths.get(segmentPath);
+        logger.debug("[KNN] Loading index: {}", indexPathUrl);
+        Path indexPath = Paths.get(indexPathUrl);
         FileWatcher fileWatcher = new FileWatcher(indexPath);
         fileWatcher.addListener(KNN_INDEX_FILE_DELETED_LISTENER);
 
@@ -302,14 +302,14 @@ public class KNNIndexCache implements Closeable {
         // the entry
         fileWatcher.init();
 
-        final KNNIndex knnIndex = KNNIndex.loadIndex(segmentPath, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
 
         // TODO verify that this is safe - ideally we'd explicitly ensure that the FileWatcher is only checked
         // after the guava cache has finished loading the key to avoid a race condition where the watcher
         // causes us to invalidate an entry before the key has been fully loaded.
         final WatcherHandle<FileWatcher> watcherHandle = resourceWatcherService.add(fileWatcher);
 
-        return new KNNIndexCacheEntry(knnIndex, segmentPath, indexName, watcherHandle);
+        return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
     }
 
     /**
