@@ -103,6 +103,8 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector1);
         Float[] vector2 = {6.0f, 6.0f};
         addKnnDoc(INDEX_NAME, "2", FIELD_NAME, vector2);
+        Float[] vector3 = {-3.0f, -3.0f};
+        addKnnDoc(INDEX_NAME, "3", FIELD_NAME, vector3);
         forceMergeKnnIndex(INDEX_NAME);
 
         float[] queryVector = {1.0f, 1.0f}; // vector to be queried
@@ -110,7 +112,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
         Response searchResponse = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
         List<KNNResult> results = parseSearchResponse(EntityUtils.toString(searchResponse.getEntity()), FIELD_NAME);
-        List<String> expectedDocids = Arrays.asList("2", "1");
+        List<String> expectedDocids = Arrays.asList("2", "3");
 
         List<String> actualDocids = new ArrayList<>();
         for(KNNResult result : results) {
