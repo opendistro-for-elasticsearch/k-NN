@@ -404,6 +404,35 @@ GET /_opendistro/_knn/HYMrXXsBSamUkcAjhjeN0w/stats/circuit_breaker_triggered,gra
 }
 ```
 
+## Warmup API
+### Overview
+The HNSW graphs used to perform k-Approximate Nearest Neighbor Search are stored as `.hnsw` files with the other Lucene segment files. In order to perform search on these graphs, they need to be loaded into native memory. If the graphs have not yet been loaded into native memory, upon search, they will first be loaded and then searched. This can cause high latency during initial queries. To avoid this, users will often run random queries during a warmup period. After this warmup period, the graphs will be loaded into native memory and their production workloads can begin. This process is indirect and requires extra effort. 
+
+As an alternative, a user can run the warmup API on whatever indices they are interested in searching over. This API will load all the graphs for all of the shards (primaries and replicas) of all the indices specified in the request into native memory. After this process completes, a user will be able to start searching against their indices with no initial latency penalties. The warmup API is idempotent. If a segment's graphs are already loaded into memory, this operation will have no impact on them. It only loads graphs that are not currently in memory. 
+
+### Usage
+This command will perform warmup on index1, index2, and index3:
+```
+GET /_opendistro/_knn/warmup/index1,index2,index3?pretty
+{
+  "_shards" : {
+    "total" : 6,
+    "successful" : 6,
+    "failed" : 0
+  }
+}
+```
+`total` indicates how many shards the warmup operation was performed on. `successful` indicates how many shards succeeded and `failed` indicates how many shards have failed.
+
+The call will not return until the warmup operation is complete or the request times out. If the request times out, the operation will still be going on in the cluster. To monitor this, use the Elasticsearch `_tasks` API.
+
+Following the completion of the operation, use the k-NN `_stats` API to see what has been loaded into the graph.
+
+### Best practices
+In order for the warmup API to function properly, a few best practices should be followed. First, no merge operations should be currently running on the indices that will be warmed up. The reason for this is that, during merge, new segments are created and old segments are (sometimes) deleted. The situation may arise where the warmup API loads graphs A and B into native memory, but then segment C is created from segments A and B being merged. The graphs for A and B will no longer be in memory and neither will the graph for C. Then, the initial penalty of loading graph C on the first queries will still be present.
+
+Second, it should first be confirmed that all of the graphs of interest are able to fit into native memory before running warmup. If they all cannot fit into memory, then the cache will thrash.
+
 ## Contributions
 
 We appreciate and encourage contributions from the community. If you experience a bug or have a feature request, please create an issue for it. If you decide to make a contribution, please fill out the Pull Request template with as much detail as possible. Also, when creating a title for your Pull Request, please do not include a prefix such as `Bug Fix:`. Instead, please use the corresponding tag to label the purpose of the Pull Request.
