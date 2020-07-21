@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.index.v206.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
@@ -25,6 +26,8 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.IndexService;
+import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESSingleNodeTestCase;
@@ -33,6 +36,7 @@ import org.elasticsearch.test.hamcrest.ElasticsearchAssertions;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -218,6 +222,27 @@ public class KNNIndexCacheTests extends ESSingleNodeTestCase {
         // Evict all and make sure the graph is empty
         KNNIndexCache.getInstance().evictAllGraphsFromCache();
         assertEquals(0, KNNIndexCache.getInstance().getIndicesCacheStats().size());
+    }
+
+    public void testGetIndices() throws InterruptedException, ExecutionException, IOException {
+        assertEquals(0, KNNIndexCache.getInstance().getIndicesCacheStats().size());
+
+        IndexService indexService = createIndex(testIndexName, getKNNDefaultIndexSettings());
+        createKnnIndexMapping(testIndexName, testFieldName, 2);
+
+        addKnnDoc(testIndexName, "1", testFieldName, new Float[] {1.0f, 2.0f});
+        client().admin().indices().prepareFlush(testIndexName).execute();
+        addKnnDoc(testIndexName, "2", testFieldName, new Float[] {1.0f, 2.0f});
+
+        KNNIndexShard knnIndexShard = new KNNIndexShard(indexService.iterator().next());
+        Engine.Searcher searcher = knnIndexShard.getIndexShard().acquireSearcher("test-cache");
+        List<String> segmentPaths = knnIndexShard.getHNSWPaths(searcher.getIndexReader());
+
+        List<KNNIndex> knnIndices = KNNIndexCache.getInstance().getIndices(segmentPaths, testIndexName);
+        assertEquals(2, knnIndices.size());
+        assertEquals(2, KNNIndexCache.getInstance().getIndicesCacheStats().get(testIndexName).get(GRAPH_COUNT));
+
+        searcher.close();
     }
 
     protected void createKnnIndexMapping(String indexName, String fieldName, Integer dimensions) {

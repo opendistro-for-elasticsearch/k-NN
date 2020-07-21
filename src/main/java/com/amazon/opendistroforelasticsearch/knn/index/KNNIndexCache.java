@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.io.Closeable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -156,6 +157,17 @@ public class KNNIndexCache implements Closeable {
     }
 
     /**
+     * Loads list of segments for the given index into the cache and returns list of KNNIndex's.
+     *
+     * @param segmentPaths List of segmentPaths
+     * @param indexName Name of index
+     * @return List of KNNIndex's from the segment paths
+     */
+    public List<KNNIndex> getIndices(List<String> segmentPaths, String indexName) {
+        return segmentPaths.stream().map(segmentPath -> getIndex(segmentPath, indexName)).collect(Collectors.toList());
+    }
+
+    /**
      * Returns the stats of the cache
      *
      * @return Stats of the  cache
@@ -269,9 +281,9 @@ public class KNNIndexCache implements Closeable {
     }
 
     /**
-     * Loads hnsw index to memory. Registers the location of the serialized graph with ResourceWatcher.
+     * Loads k-NN Lucene index to memory. Registers the location of the serialized graph with ResourceWatcher.
      *
-     * @param indexPathUrl path for serialized hnsw graph
+     * @param indexPathUrl path for serialized k-NN segment
      * @param indexName index name
      * @return KNNIndex holding the heap pointer of the loaded graph
      * @throws Exception Exception could occur when registering the index path
@@ -280,7 +292,7 @@ public class KNNIndexCache implements Closeable {
     public KNNIndexCacheEntry loadIndex(String indexPathUrl, String indexName) throws Exception {
         if(Strings.isNullOrEmpty(indexPathUrl))
             throw new IllegalStateException("indexPath is null while performing load index");
-        logger.debug("Loading index on cache miss .. {}", indexPathUrl);
+        logger.debug("[KNN] Loading index: {}", indexPathUrl);
         Path indexPath = Paths.get(indexPathUrl);
         FileWatcher fileWatcher = new FileWatcher(indexPath);
         fileWatcher.addListener(KNN_INDEX_FILE_DELETED_LISTENER);
