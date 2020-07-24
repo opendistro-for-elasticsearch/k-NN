@@ -22,6 +22,7 @@ import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 
 import com.amazon.opendistroforelasticsearch.knn.plugin.rest.RestKNNStatsHandler;
+import com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringScriptEngine;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStats;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsAction;
 import com.amazon.opendistroforelasticsearch.knn.plugin.transport.KNNStatsTransportAction;
@@ -50,10 +51,13 @@ import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.EnginePlugin;
 import org.elasticsearch.plugins.MapperPlugin;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.plugins.ScriptPlugin;
 import org.elasticsearch.plugins.SearchPlugin;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestHandler;
+import org.elasticsearch.script.ScriptContext;
+import org.elasticsearch.script.ScriptEngine;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.watcher.ResourceWatcherService;
@@ -99,7 +103,7 @@ import static java.util.Collections.singletonList;
  *   }
  *
  */
-public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, ActionPlugin, EnginePlugin {
+public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, ActionPlugin, EnginePlugin, ScriptPlugin {
 
     public static final String KNN_BASE_URI = "/_opendistro/_knn";
 
@@ -168,5 +172,10 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
     @Override
     public void onIndexModule(IndexModule indexModule) {
         KNNSettings.state().onIndexModule(indexModule);
+    }
+
+    @Override
+    public ScriptEngine getScriptEngine(Settings settings, Collection<ScriptContext<?>> contexts) {
+        return new KNNScoringScriptEngine();
     }
 }
