@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
+import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.common.Strings;
@@ -42,10 +43,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache.GRAPH_COUNT;
+import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames.INDICES_IN_CACHE;
 
 /**
  * Base class for integration tests for KNN plugin. Contains several methods for testing KNN ES functionality.
@@ -334,6 +339,21 @@ public class KNNRestTestCase extends ESRestTestCase {
     }
 
     /**
+     * Warmup KNN Index
+     */
+    protected Response knnWarmup(List<String> indices) throws IOException {
+
+        String indicesSuffix = "/" + String.join(",", indices);
+
+        Request request = new Request(
+                "GET",
+                KNNPlugin.KNN_BASE_URI + "/warmup" + indicesSuffix
+        );
+
+        return client().performRequest(request);
+    }
+
+    /**
      * Parse KNN Cluster stats from response
      */
     protected Map<String, Object> parseClusterStatsResponse(String responseBody) throws IOException {
@@ -358,6 +378,29 @@ public class KNNRestTestCase extends ESRestTestCase {
         ).collect(Collectors.toList());
 
         return nodeResponses;
+    }
+
+    /**
+     * Get the total number of graphs in the cache across all nodes
+     */
+    @SuppressWarnings("unchecked")
+    protected int getTotalGraphsInCache() throws IOException {
+        Response response = getKnnStats(Collections.emptyList(), Collections.emptyList());
+        String responseBody = EntityUtils.toString(response.getEntity());
+
+        List<Map<String, Object>> nodesStats = parseNodeStatsResponse(responseBody);
+
+        logger.info("[KNN] Node stats:  " + nodesStats);
+
+        return nodesStats.stream()
+                .filter(nodeStats -> nodeStats.get(INDICES_IN_CACHE.getName()) != null)
+                .map(nodeStats -> nodeStats.get(INDICES_IN_CACHE.getName()))
+                .mapToInt(nodeIndicesStats ->
+                        ((Map<String, Map<String, Object>>) nodeIndicesStats).values().stream()
+                                .mapToInt(nodeIndexStats -> (int) nodeIndexStats.get(GRAPH_COUNT))
+                                .sum()
+                )
+                .sum();
     }
 
     /**
