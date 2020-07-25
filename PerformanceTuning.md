@@ -1,17 +1,18 @@
 #KNN Performance Tuning
 
 
-In this section we provide recommendations for performance tuning to improve indexing/search performance with the k-NN plugin.  On a high level k-NN works on following principles
+In this document we provide recommendations for performance tuning to improve indexing/search performance with the k-NN plugin.  From a high level k-NN works on following principles:
 
 * Graphs are created per (Lucene) segment
-* Queries execute on segments sequentially inside the shard (same as any other Elasticsearch query). 
-* Each graph in the segment returns ‘k’ neighbors and the size results with the highest score is returned by the coordinating node. Note that size can be greater or smaller than k.
+* Queries execute on segments sequentially inside the shard (same as any other Elasticsearch query) 
+* Each graph in the segment returns *<=k* neighbors. 
+* Coordinator node picks up final *size* number of neighbors from the neighbors returned by each shard
 
 To improve performance it is necessary to keep the number of segments under control. Ideally having 1 segment per shard will give the optimal performance with respect to search latency. We can achieve more parallelism by having more shards per index. We can control the number of segments either during indexing by asking Elasticsearch to slow down the segment creation by disabling the refresh interval or choosing larger refresh interval, increasing the flush threshold OR force-merging to 1 segment after all the indexing finishes and before searches.
 
 ##Indexing Performance Tuning
 
-Following steps could help improve indexing performance especially when you plan to index large number of vectors at once. 
+The following steps could help improve indexing performance especially when you plan to index large number of vectors at once. 
 
 * Disable refresh interval  (Default = 1 sec)
  
@@ -24,20 +25,18 @@ Following steps could help improve indexing performance especially when you plan
             }
         }
   ```
-* Disable flush
- ```
-    Increase the "index.translog.flush_threshold_size" to some bigger value lets say "10gb", default is 512MB
- ```
-* No Replicas (No Elasticsearch replica shard)
+
+* Disable Replicas (No Elasticsearch replica shard)
  ```
     Having replication set to 0, will avoid duplicate construction of graphs in 
     both primary and replicas. When we enable replicas after the indexing, the 
-    serialized graphs are directly copied.
+    serialized graphs are directly copied. 
  ```
+More details [here](https://www.elastic.co/guide/en/elasticsearch/reference/master/tune-for-indexing-speed.html#_disable_replicas_for_initial_loads)
     
 * Increase number of indexing threads
   ```
-    If the hardware we choose have multiple cores, we could allow multiple threads 
+    If the hardware we choose has multiple cores, we could allow multiple threads 
     in graph construction and there by speed up the indexing process. You could determine
     the number of threads to be alloted by using the following setting   
     https://github.com/opendistro-for-elasticsearch/k-NN#knnalgo_paramindex_thread_qty.
@@ -57,11 +56,14 @@ Following steps could help improve indexing performance especially when you plan
     
 * Call refresh 
 
- Might not needed but to ensure the buffer is cleared and all segments are up. 
+ Calling refresh ensure the buffer is cleared and all segments are created so that documents are available for search. 
  ```
   POST /twitter/_refresh
 ```
 * Add replicas (replica shards)
+ 
+ This will make replica shards come up with the already serialized graphs created on the primary shards during indexing. This way 
+ we avoid duplicate graph construction.
 
 * We can now enable replicas to copy the serialized graphs
 
