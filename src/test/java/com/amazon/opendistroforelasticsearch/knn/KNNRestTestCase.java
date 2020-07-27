@@ -429,7 +429,7 @@ public class KNNRestTestCase extends ESRestTestCase {
      * clear the cache.
      */
     protected void clearCache() throws Exception {
-        updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, 1);
+        updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, "1m");
         updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, null);
     }
 }
