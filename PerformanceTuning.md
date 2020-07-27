@@ -8,8 +8,6 @@ In this document we provide recommendations for performance tuning to improve in
 * Each graph in the segment returns *<=k* neighbors. 
 * Coordinator node picks up final *size* number of neighbors from the neighbors returned by each shard
 
-To improve performance it is necessary to keep the number of segments under control. Ideally having 1 segment per shard will give the optimal performance with respect to search latency. We can achieve more parallelism by having more shards per index. We can control the number of segments either during indexing by asking Elasticsearch to slow down the segment creation by disabling the refresh interval or choosing larger refresh interval, increasing the flush threshold OR force-merging to 1 segment after all the indexing finishes and before searches.
-
 ##Indexing Performance Tuning
 
 The following steps could help improve indexing performance especially when you plan to index large number of vectors at once. 
@@ -30,7 +28,9 @@ The following steps could help improve indexing performance especially when you 
  ```
     Having replication set to 0, will avoid duplicate construction of graphs in 
     both primary and replicas. When we enable replicas after the indexing, the 
-    serialized graphs are directly copied. 
+    serialized graphs are directly copied. Having no replicas means that losing 
+    a node(s) may incur data loss, so it is important that the data lives elsewhere 
+    so that this initial load can be retried in case of an issue.
  ```
 More details [here](https://www.elastic.co/guide/en/elasticsearch/reference/master/tune-for-indexing-speed.html#_disable_replicas_for_initial_loads)
     
@@ -81,6 +81,11 @@ Please refer following doc (https://www.elastic.co/guide/en/elasticsearch/refere
 
 ##Search Performance Tuning
 
+To improve Search performance it is necessary to keep the number of segments under control. Lucene's IndexSearcher will search over all of the segments in a shard to find the 'size' best results. But, because the complexity of search for the HNSW algorithm is logarithmic with respect to the number of vectors, searching over 5 graphs with a 100 vectors each and then taking the top size results from ```5*k``` results will take longer than searching over 1 graph with 500 vectors and then taking the top size results from k results. 
+Ideally having 1 segment per shard will give the optimal performance with respect to search latency. We could configure index to have multiple shards to aviod having giant shards and achieve more parallelism.
+
+We can control the number of segments either during indexing by asking Elasticsearch to slow down the segment creation by disabling the refresh interval or choosing larger refresh interval.
+
 ### Warm up
 
 The graphs are constructed during indexing, but they are loaded into memory during the first search. The way search works in Lucene is that each segment is searched sequentially (so, for k-NN, each segment returns up to k nearest neighbors of the query point) and the results are aggregated together and ranked based on the score of each result (higher score --> better result). 
@@ -122,9 +127,12 @@ please refer this [page.](https://discuss.elastic.co/t/what-does-it-mean-to-stor
 ```
 ##Improving Recall 
 
-Recall could depend on multiple factors like number of dimensions, segments(searching over large number of small segments and aggregating the results leads better recall than searching over small number of large segments and aggregating results. The larger the graph the more chances of losing recall if sticking to smaller algorithm parameters. Choosing larger values for algo params should help solve this issue), number of vectors, etc.  Recall can be configured by adjusting the algorithm parameters of hnsw algorithm exposed through index settings. Algorithm params that control the recall are *m, ef_construction, ef_search*. For more details on influence of algorithm parameters on the indexing, search recall, please refer this  doc (https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md).  Increasing these values could help recall(better search results) but at the cost of higher memory utilization and increased indexing time. Our default values work on a broader set of use cases from our experiments but we encourage users to run their own experiments on their data sets and choose the appropriate values. You could refer to these settings in this section (https://github.com/opendistro-for-elasticsearch/k-NN#index-level-settings). We will add details on our experiments shortly here.
+Recall could depend on multiple factors like number of vectors, number of dimensions, segments etc. Searching over large number of small segments and aggregating the results leads better recall than searching over small number of large segments and aggregating results. The larger the graph the more chances of losing recall if sticking to smaller algorithm parameters. 
+Choosing larger values for algorithm params should help solve this issue but at the cost of search latency and indexing time. That being said, it is important to understand your system's requirements for latency and accuracy, and then to choose the number of segments you want your index to have based on experimentation.
 
-Memory Estimation
+Recall can be configured by adjusting the algorithm parameters of hnsw algorithm exposed through index settings. Algorithm params that control the recall are *m, ef_construction, ef_search*. For more details on influence of algorithm parameters on the indexing, search recall, please refer this  doc (https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md).  Increasing these values could help recall(better search results) but at the cost of higher memory utilization and increased indexing time. Our default values work on a broader set of use cases from our experiments but we encourage users to run their own experiments on their data sets and choose the appropriate values. You could refer to these settings in this section (https://github.com/opendistro-for-elasticsearch/k-NN#index-level-settings). We will add details on our experiments shortly here.
+
+##Memory Estimation
 
 AWS Elasticsearch Service clusters allocate 50% of available RAM in the Instance capped around 32GB (because of JVM GC performance limit). Graphs part of k-NN are loaded outside the Elasticsearch process JVM. We have circuit breakers to limit graph usage to 50% of the left over RAM space for the graphs.
 
