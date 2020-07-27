@@ -30,8 +30,8 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.rest.ESRestTestCase;
-import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.MalformedObjectNameException;
@@ -98,7 +98,7 @@ public class KNNRestTestCase extends ESRestTestCase {
         }
     }
 
-    @After
+    @Before
     public void cleanUpCache() throws Exception {
         clearCache();
     }
