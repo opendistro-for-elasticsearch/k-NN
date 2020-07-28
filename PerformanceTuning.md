@@ -11,7 +11,7 @@ In this document we provide recommendations for performance tuning to improve in
 
 The following steps could help improve indexing performance especially when you plan to index large number of vectors at once. 
 
-1 Disable refresh interval  (Default = 1 sec)
+1\. Disable refresh interval  (Default = 1 sec)
  
  Disable refresh interval or set a long duration for refresh interval to avoid creating multiple smaller segments
   ```  
@@ -22,7 +22,7 @@ The following steps could help improve indexing performance especially when you 
             }
         }
   ```
-2 Disable Replicas (No Elasticsearch replica shard)
+2\. Disable Replicas (No Elasticsearch replica shard)
  ```
     Having replication set to 0, will avoid duplicate construction of graphs in 
     both primary and replicas. When we enable replicas after the indexing, the 
@@ -32,7 +32,7 @@ The following steps could help improve indexing performance especially when you 
  ```
 More details [here](https://www.elastic.co/guide/en/elasticsearch/reference/master/tune-for-indexing-speed.html#_disable_replicas_for_initial_loads)
     
-3 Increase number of indexing threads
+3\. Increase number of indexing threads
   ```
     If the hardware we choose has multiple cores, we could allow multiple threads 
     in graph construction and there by speed up the indexing process. You could determine
@@ -43,27 +43,27 @@ More details [here](https://www.elastic.co/guide/en/elasticsearch/reference/mast
     construction is costly, having multiple threads can put additional load on CPU. 
   ```
     
-4 Index all docs (Perform bulk indexing)
+4\. Index all docs (Perform bulk indexing)
 
-5 Forcemerge 
+5\. Forcemerge 
   
  Forcemerge is a costly operation and could take a while depending on number of segments and size of the segments.
  To ensure force merge is completed, we could keep calling forcemerge with 5 minute interval till you get 200 response.
     
     curl -X POST "localhost:9200/myindex/_forcemerge?max_num_segments=1&pretty"
     
-6 Call refresh 
+6\. Call refresh 
 
  Calling refresh ensure the buffer is cleared and all segments are created so that documents are available for search. 
  ```
   POST /twitter/_refresh
 ```
-7 Enable replicas 
+7\. Enable replicas 
  
  This will make replica shards come up with the already serialized graphs created on the primary shards during indexing. This way 
  we avoid duplicate graph construction.
 
-8  Enable refresh interval
+8\.  Enable refresh interval
  ```
       PUT /<index_name>/_settings
         {
@@ -91,6 +91,7 @@ Once a graph is loaded(graphs are loaded outside Elasticsearch JVM), we cache th
 
 In order to avoid this latency penalty during your first queries, a user should use the warmup API on the indices they want to search. The API looks like this:
 
+```
 GET /_opendistro/_knn/warmup/index1,index2,index3?pretty
 {
   "_shards" : {
@@ -99,7 +100,7 @@ GET /_opendistro/_knn/warmup/index1,index2,index3?pretty
     "failed" : 0
   }
 }
-
+```
 The API loads all of the graphs for all of the shards (primaries and replicas) for the specified indices into the cache. Thus, there will be no penalty to load graphs during initial searches. *Note — * this API only loads the segments of the indices it sees into the cache. If a merge or refresh operation finishes after this API is ran or if new documents are added, this API will need to be re-ran to load those graphs into memory.
 
 ### Avoid reading stored fields
