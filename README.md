@@ -4,7 +4,7 @@ Open Distro for Elasticsearch enables you to run nearest neighbor search on bill
 
 ## Documentation
 
-To learn more, please see our [documentation](https://opendistro.github.io/for-elasticsearch-docs/).
+To learn more, please see our [documentation](https://opendistro.github.io/for-elasticsearch-docs/docs/knn).
 
 ## Setup
 
