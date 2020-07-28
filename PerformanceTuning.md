@@ -77,6 +77,7 @@ Please refer following doc (https://www.elastic.co/guide/en/elasticsearch/refere
 
 ## Search Performance Tuning
 
+### Fewer Segments
 To improve Search performance it is necessary to keep the number of segments under control. Lucene's IndexSearcher will search over all of the segments in a shard to find the 'size' best results. But, because the complexity of search for the HNSW algorithm is logarithmic with respect to the number of vectors, searching over 5 graphs with a 100 vectors each and then taking the top size results from ```5*k``` results will take longer than searching over 1 graph with 500 vectors and then taking the top size results from k results. 
 Ideally having 1 segment per shard will give the optimal performance with respect to search latency. We could configure index to have multiple shards to aviod having giant shards and achieve more parallelism.
 
