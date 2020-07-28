@@ -16,6 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
+import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Request;
@@ -30,6 +31,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.junit.AfterClass;
+import org.junit.Before;
 
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.MalformedObjectNameException;
@@ -94,6 +96,11 @@ public class KNNRestTestCase extends ESRestTestCase {
         } catch (Exception ex) {
             throw new RuntimeException("Failed to dump coverage: " + ex);
         }
+    }
+
+    @Before
+    public void cleanUpCache() throws Exception {
+        clearCache();
     }
 
     /**
@@ -412,5 +419,17 @@ public class KNNRestTestCase extends ESRestTestCase {
                 (Map<String, Object>) ((Map<String, Object>) getIndexSettings(indexName).get(indexName))
                         .get("settings");
         return (String)settings.get(settingName);
+    }
+
+    /**
+     * Clear cache
+     *
+     * This function is a temporary workaround. Right now, we do not have a way of clearing the cache except by deleting
+     * an index or changing k-NN settings. That being said, this function bounces a random k-NN setting in order to
+     * clear the cache.
+     */
+    protected void clearCache() throws Exception {
+        updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, "1m");
+        updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, null);
     }
 }
