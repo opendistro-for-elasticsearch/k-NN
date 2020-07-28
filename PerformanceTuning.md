@@ -1,5 +1,4 @@
-#KNN Performance Tuning
-
+# KNN Performance Tuning
 
 In this document we provide recommendations for performance tuning to improve indexing/search performance with the k-NN plugin.  From a high level k-NN works on following principles:
 
@@ -8,11 +7,11 @@ In this document we provide recommendations for performance tuning to improve in
 * Each graph in the segment returns *<=k* neighbors. 
 * Coordinator node picks up final *size* number of neighbors from the neighbors returned by each shard
 
-##Indexing Performance Tuning
+## Indexing Performance Tuning
 
 The following steps could help improve indexing performance especially when you plan to index large number of vectors at once. 
 
-* Disable refresh interval  (Default = 1 sec)
+1 Disable refresh interval  (Default = 1 sec)
  
  Disable refresh interval or set a long duration for refresh interval to avoid creating multiple smaller segments
   ```  
@@ -23,8 +22,7 @@ The following steps could help improve indexing performance especially when you 
             }
         }
   ```
-
-* Disable Replicas (No Elasticsearch replica shard)
+2 Disable Replicas (No Elasticsearch replica shard)
  ```
     Having replication set to 0, will avoid duplicate construction of graphs in 
     both primary and replicas. When we enable replicas after the indexing, the 
@@ -34,7 +32,7 @@ The following steps could help improve indexing performance especially when you 
  ```
 More details [here](https://www.elastic.co/guide/en/elasticsearch/reference/master/tune-for-indexing-speed.html#_disable_replicas_for_initial_loads)
     
-* Increase number of indexing threads
+3 Increase number of indexing threads
   ```
     If the hardware we choose has multiple cores, we could allow multiple threads 
     in graph construction and there by speed up the indexing process. You could determine
@@ -45,29 +43,27 @@ More details [here](https://www.elastic.co/guide/en/elasticsearch/reference/mast
     construction is costly, having multiple threads can put additional load on CPU. 
   ```
     
-* Index all docs (Perform bulk indexing)
+4 Index all docs (Perform bulk indexing)
 
-* Forcemerge 
+5 Forcemerge 
   
  Forcemerge is a costly operation and could take a while depending on number of segments and size of the segments.
  To ensure force merge is completed, we could keep calling forcemerge with 5 minute interval till you get 200 response.
     
     curl -X POST "localhost:9200/myindex/_forcemerge?max_num_segments=1&pretty"
     
-* Call refresh 
+6 Call refresh 
 
  Calling refresh ensure the buffer is cleared and all segments are created so that documents are available for search. 
  ```
   POST /twitter/_refresh
 ```
-* Add replicas (replica shards)
+7 Enable replicas 
  
  This will make replica shards come up with the already serialized graphs created on the primary shards during indexing. This way 
  we avoid duplicate graph construction.
 
-* We can now enable replicas to copy the serialized graphs
-
-*  Enable refresh interval
+8  Enable refresh interval
  ```
       PUT /<index_name>/_settings
         {
@@ -79,7 +75,7 @@ More details [here](https://www.elastic.co/guide/en/elasticsearch/reference/mast
 
 Please refer following doc (https://www.elastic.co/guide/en/elasticsearch/reference/master/tune-for-indexing-speed.html) for more details on improving indexing performance in general.
 
-##Search Performance Tuning
+## Search Performance Tuning
 
 To improve Search performance it is necessary to keep the number of segments under control. Lucene's IndexSearcher will search over all of the segments in a shard to find the 'size' best results. But, because the complexity of search for the HNSW algorithm is logarithmic with respect to the number of vectors, searching over 5 graphs with a 100 vectors each and then taking the top size results from ```5*k``` results will take longer than searching over 1 graph with 500 vectors and then taking the top size results from k results. 
 Ideally having 1 segment per shard will give the optimal performance with respect to search latency. We could configure index to have multiple shards to aviod having giant shards and achieve more parallelism.
@@ -88,7 +84,7 @@ We can control the number of segments either during indexing by asking Elasticse
 
 ### Warm up
 
-The graphs are constructed during indexing, but they are loaded into memory during the first search. The way search works in Lucene is that each segment is searched sequentially (so, for k-NN, each segment returns up to k nearest neighbors of the query point) and the results are aggregated together and ranked based on the score of each result (higher score --> better result). 
+The graphs are constructed during indexing, but they are loaded into memory during the first search. The way search works in Lucene is that each segment is searched sequentially (so, for k-NN, each segment returns up to k nearest neighbors of the query point) and the top ```size``` number of results based on the score would be returned from all of the results returned by segements at a shard level(higher score --> better result). 
 
 Once a graph is loaded(graphs are loaded outside Elasticsearch JVM), we cache the graphs in memory. So the initial queries would be expensive in the order of few seconds and subsequent queries should be faster in the order of milliseconds(assuming knn circuit breaker is not hit).
 
@@ -125,14 +121,14 @@ please refer this [page.](https://discuss.elastic.co/t/what-does-it-mean-to-stor
  }
 }
 ```
-##Improving Recall 
+## Improving Recall 
 
 Recall could depend on multiple factors like number of vectors, number of dimensions, segments etc. Searching over large number of small segments and aggregating the results leads better recall than searching over small number of large segments and aggregating results. The larger the graph the more chances of losing recall if sticking to smaller algorithm parameters. 
 Choosing larger values for algorithm params should help solve this issue but at the cost of search latency and indexing time. That being said, it is important to understand your system's requirements for latency and accuracy, and then to choose the number of segments you want your index to have based on experimentation.
 
 Recall can be configured by adjusting the algorithm parameters of hnsw algorithm exposed through index settings. Algorithm params that control the recall are *m, ef_construction, ef_search*. For more details on influence of algorithm parameters on the indexing, search recall, please refer this  doc (https://github.com/nmslib/hnswlib/blob/master/ALGO_PARAMS.md).  Increasing these values could help recall(better search results) but at the cost of higher memory utilization and increased indexing time. Our default values work on a broader set of use cases from our experiments but we encourage users to run their own experiments on their data sets and choose the appropriate values. You could refer to these settings in this section (https://github.com/opendistro-for-elasticsearch/k-NN#index-level-settings). We will add details on our experiments shortly here.
 
-##Memory Estimation
+## Memory Estimation
 
 AWS Elasticsearch Service clusters allocate 50% of available RAM in the Instance capped around 32GB (because of JVM GC performance limit). Graphs part of k-NN are loaded outside the Elasticsearch process JVM. We have circuit breakers to limit graph usage to 50% of the left over RAM space for the graphs.
 
@@ -147,7 +143,7 @@ AWS Elasticsearch Service clusters allocate 50% of available RAM in the Instance
     * M = 16 (default setting of HNSW)
         * Memory required for !M vectors = 1.1*(4*256 + 8*16) *1M Bytes =~ 1.26GB 
 
-##Monitoring 
+## Monitoring 
 
 The KNN Stats API provides information about the current status of the KNN Plugin. The plugin keeps track of both cluster level and node level stats. Cluster level stats have a single value for the entire cluster. Node level stats have a single value for each node in the cluster. A user can filter their query by nodeID and statName in the following way:
  ```
