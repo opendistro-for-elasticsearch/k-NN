@@ -282,7 +282,7 @@ PUT /_cluster/settings
         "knn.plugin.enabled" : true,
         "knn.algo_param.index_thread_qty" : 1,
         "knn.cache.item.expiry.enabled": true,
-        "knn.cache.item.expiry.minutes": 15,
+        "knn.cache.item.expiry.minutes": "15m",
         "knn.memory.circuit_breaker.enabled" : true,
         "knn.memory.circuit_breaker.limit" : "55%",
         "knn.circuit_breaker.unset.percentage": 23
