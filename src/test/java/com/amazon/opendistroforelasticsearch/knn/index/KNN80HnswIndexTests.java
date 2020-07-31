@@ -32,15 +32,14 @@ import org.apache.lucene.store.ChecksumIndexInput;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.watcher.ResourceWatcherService;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@ESIntegTestCase.ClusterScope(scope=ESIntegTestCase.Scope.SUITE, numDataNodes=1)
-public class KNN80HnswIndexIT extends ESIntegTestCase {
+public class KNN80HnswIndexTests extends ESTestCase {
 
     public void testFooter() throws Exception {
         Directory dir = newFSDirectory(createTempDir());
