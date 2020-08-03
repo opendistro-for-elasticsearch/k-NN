@@ -1,6 +1,6 @@
 [![Test Workflow](https://github.com/opendistro-for-elasticsearch/k-NN/workflows/Test%20Workflow/badge.svg)](https://github.com/opendistro-for-elasticsearch/k-NN/actions)
 [![codecov](https://codecov.io/gh/opendistro-for-elasticsearch/k-NN/branch/master/graph/badge.svg)](https://codecov.io/gh/opendistro-for-elasticsearch/k-NN)
-[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://opendistro.github.io/for-elasticsearch-docs/docs/k-NN/api/)
+[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://opendistro.github.io/for-elasticsearch-docs/docs/knn/)
 [![Chat](https://img.shields.io/badge/chat-on%20forums-blue)](https://discuss.opendistrocommunity.dev/c/k-NN/)
 ![PRs welcome!](https://img.shields.io/badge/PRs-welcome!-success)
 
