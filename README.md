@@ -1,3 +1,9 @@
+[![Testing Workflow](https://github.com/opendistro-for-elasticsearch/k-NN/workflows/Testing%20Workflow/badge.svg)](https://github.com/opendistro-for-elasticsearch/k-NN/actions)
+[![codecov](https://codecov.io/gh/opendistro-for-elasticsearch/k-NN/branch/master/graph/badge.svg)](https://codecov.io/gh/opendistro-for-elasticsearch/k-NN)
+[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://opendistro.github.io/for-elasticsearch-docs/docs/knn/)
+[![Chat](https://img.shields.io/badge/chat-on%20forums-blue)](https://discuss.opendistrocommunity.dev/c/k-NN/)
+![PRs welcome!](https://img.shields.io/badge/PRs-welcome!-success)
+
 # Open Distro for Elasticsearch KNN
 
 Open Distro for Elasticsearch enables you to run nearest neighbor search on billions of documents across thousands of dimensions with the same ease as running any regular Elasticsearch query. You can use aggregations and filter clauses to further refine your similarity search operations. K-NN similarity search power use cases such as product recommendations, fraud detection, image and video search, related document search, and more.

@@ -1,9 +1,14 @@
 name: Testing Workflow
-# This workflow is triggered on pull requests to development branch
+# This workflow is triggered on pull requests and pushes to the master and opendistro release branches
 on:
   pull_request:
     branches:
       - master
+      - opendistro-*
+  push:
+    branches:
+      - master
+      - opendistro-*
 jobs:
   build:
     strategy:
@@ -24,3 +29,8 @@ jobs:
           java-version: ${{ matrix.java }}
       - name: Build with Gradle
         run: ./gradlew build
+      # This step uses the codecov-action Github action: https://github.com/codecov/codecov-action
+      - name: Upload Coverage Report
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
