@@ -439,6 +439,17 @@ In order for the warmup API to function properly, a few best practices should be
 
 Second, it should first be confirmed that all of the graphs of interest are able to fit into native memory before running warmup. If they all cannot fit into memory, then the cache will thrash.
 
+## Scoring
+During k-NN search, for each graph, NMSLIB will return up to `k` results. These results contain both the [document ID and the NMSLIB score](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/src/main/java/com/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult.java#L21). 
+
+The score NMSLIB assigns to a result is related to the space type that is selected. For example, for cosine similarity, NMSLIB will return [`1 - normScalarProduct`](https://github.com/nmslib/nmslib/blob/master/similarity_search/src/method/hnsw_distfunc_opt.cc#L372). For euclidean distance, in almost all cases, it will return the euclidean distance between [the result and the query vector](https://github.com/nmslib/nmslib/blob/master/similarity_search/src/method/hnsw_distfunc_opt.cc#L131). However, when the dimension of the vector is divisible by 16 (i.e. `dimension % 16 == 0`), the score returned will actually be the [square of the euclidean distance](https://github.com/nmslib/nmslib/blob/master/similarity_search/src/method/hnsw_distfunc_opt.cc#L50).
+
+From the k-NN and NMSLIB perspective, a lower score equates to a closer and better result. This is the opposite of how Elasticsearch scores results, where a greater score equates to a better result. In order to convert from the NMSLIB score to the Elasticsearch score, we perform [the following conversion](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/src/main/java/com/amazon/opendistroforelasticsearch/knn/index/KNNWeight.java#L113):
+```
+Elasticsearch score = 1/(1 + NMSLIB score)
+```
+This makes it so that the closer the result is to the query, the greater its Elasticsearch score will be.
+
 ## Contributions
 
 We appreciate and encourage contributions from the community. If you experience a bug or have a feature request, please create an issue for it. If you decide to make a contribution, please fill out the Pull Request template with as much detail as possible. Also, when creating a title for your Pull Request, please do not include a prefix such as `Bug Fix:`. Instead, please use the corresponding tag to label the purpose of the Pull Request.
