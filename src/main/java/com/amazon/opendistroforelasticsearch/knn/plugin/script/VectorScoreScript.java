@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 public class VectorScoreScript extends ScoreScript {
@@ -75,7 +73,8 @@ public class VectorScoreScript extends ScoreScript {
     }
 
     @SuppressWarnings("unchecked")
-    public VectorScoreScript(Map<String, Object> params, String field, String similaritySpace, SearchLookup lookup, LeafReaderContext leafContext) {
+    public VectorScoreScript(Map<String, Object> params, String field, String similaritySpace,
+                             SearchLookup lookup, LeafReaderContext leafContext) {
         super(params, lookup, leafContext);
         // get query inputVector - convert to primitive
         final Object vector = params.get("vector");
