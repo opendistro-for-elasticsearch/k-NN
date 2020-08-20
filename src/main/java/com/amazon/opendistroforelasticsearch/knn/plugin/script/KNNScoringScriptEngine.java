@@ -10,7 +10,7 @@ import java.util.Set;
 public class KNNScoringScriptEngine implements ScriptEngine {
 
     public static final String NAME = "knn";
-    private static final String SCRIPT_SOURCE = "binary_vector_score";
+    private static final String SCRIPT_SOURCE = "knn_score";
 
     @Override
     public String getType() {
@@ -22,15 +22,12 @@ public class KNNScoringScriptEngine implements ScriptEngine {
         if (context.equals(ScoreScript.CONTEXT) == false) {
             throw new IllegalArgumentException(getType() + " KNN Vector scoring scripts cannot be used for context [" + context.name + "]");
         }
-
         // we use the script "source" as the script identifier
         if (!SCRIPT_SOURCE.equals(code)) {
             throw new IllegalArgumentException("Unknown script name " + code);
         }
-
         ScoreScript.Factory factory = VectorScoreScript.VectorScoreScriptFactory::new;
         return context.factoryClazz.cast(factory);
-//        return null;
     }
 
     @Override

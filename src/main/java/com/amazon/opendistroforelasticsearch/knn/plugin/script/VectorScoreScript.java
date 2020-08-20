@@ -1,5 +1,6 @@
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.util.BytesRef;
@@ -17,13 +18,17 @@ import java.util.Map;
 
 public class VectorScoreScript extends ScoreScript {
 
-    private BinaryDocValues binaryEmbeddingReader;
-
-    private final String field;
-    private final boolean cosine;
-
+    private BinaryDocValues binaryDocValuesReader;
     private final float[] inputVector;
-    private final float magnitude;
+    private final String similaritySpace;
+
+    public float l2Squared(float[] queryVector, float[] inputVector) {
+        long squaredDistance = 0;
+        for (int i = 0; i < inputVector.length; i++) {
+            squaredDistance += Math.pow(queryVector[i]-inputVector[i], 2);
+        }
+        return squaredDistance;
+    }
 
     /**
      * This function called for each doc in the segment. We evaluate the score of the vector in the doc
@@ -34,69 +39,47 @@ public class VectorScoreScript extends ScoreScript {
      */
     @Override
     public double execute(ScoreScript.ExplanationHolder explanationHolder) {
+        float score = Float.MIN_VALUE;
         try {
             float[] doc_vector;
-            BytesRef bytesref = binaryEmbeddingReader.binaryValue();
+            BytesRef bytesref = binaryDocValuesReader.binaryValue();
+            // If there is no vector for the corresponding doc then it should be not considered for nearest
+            // neighbors.
+            if (bytesref == null) {
+                return Float.MIN_VALUE;
+            }
             try (ByteArrayInputStream byteStream = new ByteArrayInputStream(bytesref.bytes, bytesref.offset, bytesref.length);
                  ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
                 doc_vector = (float[]) objectStream.readObject();
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
-
-//            float score = 0;
-//            if (cosine) {
-//                float docVectorNorm = 0.0f;
-//                for (int i = 0; i < inputVector.length; i++) {
-//                    float v = Float.intBitsToFloat(input.readInt());
-//                    docVectorNorm += v * v;  // inputVector norm
-//                    score += v * inputVector[i];  // dot product
-//                }
-//
-//                if (docVectorNorm == 0 || magnitude == 0) {
-//                    return 0f;
-//                } else { // Convert cosine similarity range from (-1 to 1) to (0 to 1)
-//                    return (1.0f + score / (Math.sqrt(docVectorNorm) * magnitude)) / 2.0f;
-//                }
-//            } else {
-//                for (int i = 0; i < inputVector.length; i++) {
-//                    float v = Float.intBitsToFloat(input.readInt());
-//                    score += v * inputVector[i];  // dot product
-//                }
-//
-//                return Math.exp(score); // Convert dot-proudct range from (-INF to +INF) to (0 to +INF)
-//            }
+            if (KNNConstants.L2.equalsIgnoreCase(similaritySpace)) {
+                score = l2Squared(this.inputVector, doc_vector);
+                score = 1/(1 + score);
+            }
+            // Other spaces will be followed up in next pr
         } catch (IOException e) {
             throw new UncheckedIOException(e); // again - Failing in order not to hide potential bugs
         }
-        return 1.0;
+        return score;
     }
 
     @Override
     public void setDocument(int docId) {
         try {
-            this.binaryEmbeddingReader.advanceExact(docId);
+            this.binaryDocValuesReader.advanceExact(docId);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
     @SuppressWarnings("unchecked")
-    public VectorScoreScript(Map<String, Object> params, SearchLookup lookup, LeafReaderContext leafContext) {
+    public VectorScoreScript(Map<String, Object> params, String field, String similaritySpace, SearchLookup lookup, LeafReaderContext leafContext) {
         super(params, lookup, leafContext);
-
-        final Object cosineBool = params.get("cosine");
-        this.cosine = cosineBool != null ?
-                (boolean)cosineBool :
-                true;
-
-        final Object field = params.get("field");
-        if (field == null)
-            throw new IllegalArgumentException("binary_vector_score script requires field input");
-        this.field = field.toString();
-
         // get query inputVector - convert to primitive
         final Object vector = params.get("vector");
+        this.similaritySpace = similaritySpace;
         if(vector != null) {
             final ArrayList<Double> tmp = (ArrayList<Double>) vector;
             inputVector = new float[tmp.size()];
@@ -107,37 +90,33 @@ public class VectorScoreScript extends ScoreScript {
             inputVector = null;
         }
 
-        if (this.cosine) {
-            // calc magnitude
-            float queryVectorNorm = 0.0f;
-            // compute query inputVector norm once
-            for (float v: this.inputVector) {
-                queryVectorNorm += v * v;
-            }
-            this.magnitude = (float) Math.sqrt(queryVectorNorm);
-        } else {
-            this.magnitude = 0.0f;
-        }
-
         try {
-            this.binaryEmbeddingReader = leafContext.reader().getBinaryDocValues(this.field);
-            if(this.binaryEmbeddingReader == null) {
+            this.binaryDocValuesReader = leafContext.reader().getBinaryDocValues(field);
+            if(this.binaryDocValuesReader == null) {
                 throw new IllegalStateException();
             }
         } catch (Exception e) {
-            throw new IllegalStateException("binaryEmbeddingReader can't be null, is '" + this.field +
-                    "' the right binary vector field name, if so, is it defined as a binary type in the index mapping?");
+            throw new IllegalStateException("Binary Doc values not enabled for the field " + field
+                    + " Please ensure the field type is knn_vector in mappings for this field");
         }
-
     }
 
     public static class VectorScoreScriptFactory implements ScoreScript.LeafFactory {
         private final Map<String, Object> params;
         private final SearchLookup lookup;
+        private final String similaritySpace;
+        private final String field;
 
         public VectorScoreScriptFactory(Map<String, Object> params, SearchLookup lookup) {
             this.params = params;
             this.lookup = lookup;
+            final Object field = params.get("field");
+            if (field == null)
+                throw new IllegalArgumentException("Missing parameter [field]");
+            this.field = field.toString();
+
+            final Object space = params.get("space");
+            this.similaritySpace = space != null? (String)space: KNNConstants.L2;
         }
 
         public boolean needs_score() {
@@ -146,7 +125,21 @@ public class VectorScoreScript extends ScoreScript {
 
         @Override // called number of segments times
         public ScoreScript newInstance(LeafReaderContext ctx) throws IOException {
-            return new VectorScoreScript(this.params, this.lookup, ctx);
+            if (ctx.reader().getBinaryDocValues("field") == null) {
+                /*
+                 * the field and/or term don't exist in this segment,
+                 * so always return 0
+                 */
+                return new ScoreScript(params, lookup, ctx) {
+                    @Override
+                    public double execute(
+                            ExplanationHolder explanation
+                    ) {
+                        return 0.0d;
+                    }
+                };
+            }
+            return new VectorScoreScript(this.params, this.field, this.similaritySpace, this.lookup, ctx);
         }
     }
 }
