@@ -14,6 +14,10 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * Vector score script used for adjusting the score based on similarity space
+ * on a per document basis.
+ */
 public class VectorScoreScript extends ScoreScript {
 
     private BinaryDocValues binaryDocValuesReader;

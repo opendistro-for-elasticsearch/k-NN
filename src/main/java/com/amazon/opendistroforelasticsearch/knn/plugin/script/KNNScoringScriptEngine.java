@@ -7,6 +7,9 @@ import org.elasticsearch.script.ScriptEngine;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * KNN Custom scoring Engine implementation.
+ */
 public class KNNScoringScriptEngine implements ScriptEngine {
 
     public static final String NAME = "knn";
