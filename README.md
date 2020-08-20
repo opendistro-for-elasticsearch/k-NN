@@ -1,10 +1,16 @@
+[![Testing Workflow](https://github.com/opendistro-for-elasticsearch/k-NN/workflows/Testing%20Workflow/badge.svg)](https://github.com/opendistro-for-elasticsearch/k-NN/actions)
+[![codecov](https://codecov.io/gh/opendistro-for-elasticsearch/k-NN/branch/master/graph/badge.svg)](https://codecov.io/gh/opendistro-for-elasticsearch/k-NN)
+[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://opendistro.github.io/for-elasticsearch-docs/docs/knn/)
+[![Chat](https://img.shields.io/badge/chat-on%20forums-blue)](https://discuss.opendistrocommunity.dev/c/k-NN/)
+![PRs welcome!](https://img.shields.io/badge/PRs-welcome!-success)
+
 # Open Distro for Elasticsearch KNN
 
 Open Distro for Elasticsearch enables you to run nearest neighbor search on billions of documents across thousands of dimensions with the same ease as running any regular Elasticsearch query. You can use aggregations and filter clauses to further refine your similarity search operations. K-NN similarity search power use cases such as product recommendations, fraud detection, image and video search, related document search, and more.
 
 ## Documentation
 
-To learn more, please see our [documentation](https://opendistro.github.io/for-elasticsearch-docs/).
+To learn more, please see our [documentation](https://opendistro.github.io/for-elasticsearch-docs/docs/knn).
 
 ## Setup
 
@@ -282,7 +288,7 @@ PUT /_cluster/settings
         "knn.plugin.enabled" : true,
         "knn.algo_param.index_thread_qty" : 1,
         "knn.cache.item.expiry.enabled": true,
-        "knn.cache.item.expiry.minutes": 15,
+        "knn.cache.item.expiry.minutes": "15m",
         "knn.memory.circuit_breaker.enabled" : true,
         "knn.memory.circuit_breaker.limit" : "55%",
         "knn.circuit_breaker.unset.percentage": 23
@@ -432,6 +438,17 @@ Following the completion of the operation, use the k-NN `_stats` API to see what
 In order for the warmup API to function properly, a few best practices should be followed. First, no merge operations should be currently running on the indices that will be warmed up. The reason for this is that, during merge, new segments are created and old segments are (sometimes) deleted. The situation may arise where the warmup API loads graphs A and B into native memory, but then segment C is created from segments A and B being merged. The graphs for A and B will no longer be in memory and neither will the graph for C. Then, the initial penalty of loading graph C on the first queries will still be present.
 
 Second, it should first be confirmed that all of the graphs of interest are able to fit into native memory before running warmup. If they all cannot fit into memory, then the cache will thrash.
+
+## Scoring
+During k-NN search, for each graph, NMSLIB will return up to `k` results. These results contain both the [document ID and the NMSLIB score](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/src/main/java/com/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult.java#L21). 
+
+The score NMSLIB assigns to a result is related to the space type that is selected. For example, for cosine similarity, NMSLIB will return [`1 - normScalarProduct`](https://github.com/nmslib/nmslib/blob/master/similarity_search/src/method/hnsw_distfunc_opt.cc#L372). For euclidean distance, in almost all cases, it will return the euclidean distance between [the result and the query vector](https://github.com/nmslib/nmslib/blob/master/similarity_search/src/method/hnsw_distfunc_opt.cc#L131). However, when the dimension of the vector is divisible by 16 (i.e. `dimension % 16 == 0`), the score returned will actually be the [square of the euclidean distance](https://github.com/nmslib/nmslib/blob/master/similarity_search/src/method/hnsw_distfunc_opt.cc#L50).
+
+From the k-NN and NMSLIB perspective, a lower score equates to a closer and better result. This is the opposite of how Elasticsearch scores results, where a greater score equates to a better result. In order to convert from the NMSLIB score to the Elasticsearch score, we perform [the following conversion](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/src/main/java/com/amazon/opendistroforelasticsearch/knn/index/KNNWeight.java#L113):
+```
+Elasticsearch score = 1/(1 + NMSLIB score)
+```
+This makes it so that the closer the result is to the query, the greater its Elasticsearch score will be.
 
 ## Contributions
 

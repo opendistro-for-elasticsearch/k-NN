@@ -70,9 +70,13 @@ jobs:
       - name: Install dependencies
         run: |
           yum update -y
-          yum install -y cmake rpm-build gcc-c++ make epel-release
+          yum install -y cmake rpm-build gcc-c++ make epel-release unzip
           yum repolist
           yum install -y dpkg
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          aws --version
 
       - name: Build and ship library artifacts
         env:
