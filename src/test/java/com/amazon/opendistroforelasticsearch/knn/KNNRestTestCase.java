@@ -16,7 +16,9 @@
 package com.amazon.opendistroforelasticsearch.knn;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
+import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
+import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.common.Strings;
@@ -29,6 +31,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.junit.AfterClass;
+import org.junit.Before;
 
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.MalformedObjectNameException;
@@ -42,10 +45,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache.GRAPH_COUNT;
+import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames.INDICES_IN_CACHE;
 
 /**
  * Base class for integration tests for KNN plugin. Contains several methods for testing KNN ES functionality.
@@ -89,6 +96,11 @@ public class KNNRestTestCase extends ESRestTestCase {
         } catch (Exception ex) {
             throw new RuntimeException("Failed to dump coverage: " + ex);
         }
+    }
+
+    @Before
+    public void cleanUpCache() throws Exception {
+        clearCache();
     }
 
     /**
@@ -334,6 +346,21 @@ public class KNNRestTestCase extends ESRestTestCase {
     }
 
     /**
+     * Warmup KNN Index
+     */
+    protected Response knnWarmup(List<String> indices) throws IOException {
+
+        String indicesSuffix = "/" + String.join(",", indices);
+
+        Request request = new Request(
+                "GET",
+                KNNPlugin.KNN_BASE_URI + "/warmup" + indicesSuffix
+        );
+
+        return client().performRequest(request);
+    }
+
+    /**
      * Parse KNN Cluster stats from response
      */
     protected Map<String, Object> parseClusterStatsResponse(String responseBody) throws IOException {
@@ -361,6 +388,29 @@ public class KNNRestTestCase extends ESRestTestCase {
     }
 
     /**
+     * Get the total number of graphs in the cache across all nodes
+     */
+    @SuppressWarnings("unchecked")
+    protected int getTotalGraphsInCache() throws IOException {
+        Response response = getKnnStats(Collections.emptyList(), Collections.emptyList());
+        String responseBody = EntityUtils.toString(response.getEntity());
+
+        List<Map<String, Object>> nodesStats = parseNodeStatsResponse(responseBody);
+
+        logger.info("[KNN] Node stats:  " + nodesStats);
+
+        return nodesStats.stream()
+                .filter(nodeStats -> nodeStats.get(INDICES_IN_CACHE.getName()) != null)
+                .map(nodeStats -> nodeStats.get(INDICES_IN_CACHE.getName()))
+                .mapToInt(nodeIndicesStats ->
+                        ((Map<String, Map<String, Object>>) nodeIndicesStats).values().stream()
+                                .mapToInt(nodeIndexStats -> (int) nodeIndexStats.get(GRAPH_COUNT))
+                                .sum()
+                )
+                .sum();
+    }
+
+    /**
      * Get specific Index setting value from response
      */
     protected String getIndexSettingByName(String indexName, String settingName) throws IOException {
@@ -369,5 +419,17 @@ public class KNNRestTestCase extends ESRestTestCase {
                 (Map<String, Object>) ((Map<String, Object>) getIndexSettings(indexName).get(indexName))
                         .get("settings");
         return (String)settings.get(settingName);
+    }
+
+    /**
+     * Clear cache
+     *
+     * This function is a temporary workaround. Right now, we do not have a way of clearing the cache except by deleting
+     * an index or changing k-NN settings. That being said, this function bounces a random k-NN setting in order to
+     * clear the cache.
+     */
+    protected void clearCache() throws Exception {
+        updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, "1m");
+        updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, null);
     }
 }

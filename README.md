@@ -1,10 +1,16 @@
+[![Testing Workflow](https://github.com/opendistro-for-elasticsearch/k-NN/workflows/Testing%20Workflow/badge.svg)](https://github.com/opendistro-for-elasticsearch/k-NN/actions)
+[![codecov](https://codecov.io/gh/opendistro-for-elasticsearch/k-NN/branch/master/graph/badge.svg)](https://codecov.io/gh/opendistro-for-elasticsearch/k-NN)
+[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://opendistro.github.io/for-elasticsearch-docs/docs/knn/)
+[![Chat](https://img.shields.io/badge/chat-on%20forums-blue)](https://discuss.opendistrocommunity.dev/c/k-NN/)
+![PRs welcome!](https://img.shields.io/badge/PRs-welcome!-success)
+
 # Open Distro for Elasticsearch KNN
 
 Open Distro for Elasticsearch enables you to run nearest neighbor search on billions of documents across thousands of dimensions with the same ease as running any regular Elasticsearch query. You can use aggregations and filter clauses to further refine your similarity search operations. K-NN similarity search power use cases such as product recommendations, fraud detection, image and video search, related document search, and more.
 
 ## Documentation
 
-To learn more, please see our [documentation](https://opendistro.github.io/for-elasticsearch-docs/).
+To learn more, please see our [documentation](https://opendistro.github.io/for-elasticsearch-docs/docs/knn).
 
 ## Setup
 
@@ -33,7 +39,7 @@ make
 The library will be placed in the `jni/release` directory.
 
 ## JNI Library Artifacts
-We build and distribute binary library artifacts with Opendistro for Elasticsearch. We build the library binary, RPM and DEB in [this GitHub action](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/.github/workflows/CD.yml). We use Ubuntu 16.04 with g++ 5.4.0 to build the library. Additionally, in order to provide as much general compatibility as possible, we compile the library without optimized instruction sets enabled. For users that want to get the most out of the library, they should follow [this section](##Build JNI Library RPM/DEB) and build the library from source in their production environment, so that if their environment has optimized instruction sets, they take advantage of them.
+We build and distribute binary library artifacts with Opendistro for Elasticsearch. We build the library binary, RPM and DEB in [this GitHub action](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/.github/workflows/CD.yml). We use Centos 7 with g++ 4.8.5 to build the DEB, RPM and ZIP. Additionally, in order to provide as much general compatibility as possible, we compile the library without optimized instruction sets enabled. For users that want to get the most out of the library, they should follow [this section](##Build JNI Library RPM/DEB) and build the library from source in their production environment, so that if their environment has optimized instruction sets, they take advantage of them.
 
 ## Build JNI Library RPM/DEB
 
@@ -282,7 +288,7 @@ PUT /_cluster/settings
         "knn.plugin.enabled" : true,
         "knn.algo_param.index_thread_qty" : 1,
         "knn.cache.item.expiry.enabled": true,
-        "knn.cache.item.expiry.minutes": 15,
+        "knn.cache.item.expiry.minutes": "15m",
         "knn.memory.circuit_breaker.enabled" : true,
         "knn.memory.circuit_breaker.limit" : "55%",
         "knn.circuit_breaker.unset.percentage": 23
@@ -403,6 +409,46 @@ GET /_opendistro/_knn/HYMrXXsBSamUkcAjhjeN0w/stats/circuit_breaker_triggered,gra
     }
 }
 ```
+
+## Warmup API
+### Overview
+The HNSW graphs used to perform k-Approximate Nearest Neighbor Search are stored as `.hnsw` files with the other Lucene segment files. In order to perform search on these graphs, they need to be loaded into native memory. If the graphs have not yet been loaded into native memory, upon search, they will first be loaded and then searched. This can cause high latency during initial queries. To avoid this, users will often run random queries during a warmup period. After this warmup period, the graphs will be loaded into native memory and their production workloads can begin. This process is indirect and requires extra effort. 
+
+As an alternative, a user can run the warmup API on whatever indices they are interested in searching over. This API will load all the graphs for all of the shards (primaries and replicas) of all the indices specified in the request into native memory. After this process completes, a user will be able to start searching against their indices with no initial latency penalties. The warmup API is idempotent. If a segment's graphs are already loaded into memory, this operation will have no impact on them. It only loads graphs that are not currently in memory. 
+
+### Usage
+This command will perform warmup on index1, index2, and index3:
+```
+GET /_opendistro/_knn/warmup/index1,index2,index3?pretty
+{
+  "_shards" : {
+    "total" : 6,
+    "successful" : 6,
+    "failed" : 0
+  }
+}
+```
+`total` indicates how many shards the warmup operation was performed on. `successful` indicates how many shards succeeded and `failed` indicates how many shards have failed.
+
+The call will not return until the warmup operation is complete or the request times out. If the request times out, the operation will still be going on in the cluster. To monitor this, use the Elasticsearch `_tasks` API.
+
+Following the completion of the operation, use the k-NN `_stats` API to see what has been loaded into the graph.
+
+### Best practices
+In order for the warmup API to function properly, a few best practices should be followed. First, no merge operations should be currently running on the indices that will be warmed up. The reason for this is that, during merge, new segments are created and old segments are (sometimes) deleted. The situation may arise where the warmup API loads graphs A and B into native memory, but then segment C is created from segments A and B being merged. The graphs for A and B will no longer be in memory and neither will the graph for C. Then, the initial penalty of loading graph C on the first queries will still be present.
+
+Second, it should first be confirmed that all of the graphs of interest are able to fit into native memory before running warmup. If they all cannot fit into memory, then the cache will thrash.
+
+## Scoring
+During k-NN search, for each graph, NMSLIB will return up to `k` results. These results contain both the [document ID and the NMSLIB score](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/src/main/java/com/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult.java#L21). 
+
+The score NMSLIB assigns to a result is related to the space type that is selected. For example, for cosine similarity, NMSLIB will return [`1 - normScalarProduct`](https://github.com/nmslib/nmslib/blob/master/similarity_search/src/method/hnsw_distfunc_opt.cc#L372). For euclidean distance, in almost all cases, it will return the euclidean distance between [the result and the query vector](https://github.com/nmslib/nmslib/blob/master/similarity_search/src/method/hnsw_distfunc_opt.cc#L131). However, when the dimension of the vector is divisible by 16 (i.e. `dimension % 16 == 0`), the score returned will actually be the [square of the euclidean distance](https://github.com/nmslib/nmslib/blob/master/similarity_search/src/method/hnsw_distfunc_opt.cc#L50).
+
+From the k-NN and NMSLIB perspective, a lower score equates to a closer and better result. This is the opposite of how Elasticsearch scores results, where a greater score equates to a better result. In order to convert from the NMSLIB score to the Elasticsearch score, we perform [the following conversion](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/src/main/java/com/amazon/opendistroforelasticsearch/knn/index/KNNWeight.java#L113):
+```
+Elasticsearch score = 1/(1 + NMSLIB score)
+```
+This makes it so that the closer the result is to the query, the greater its Elasticsearch score will be.
 
 ## Contributions
 
