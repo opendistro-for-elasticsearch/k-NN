@@ -113,6 +113,8 @@ public class VectorScoreScript extends ScoreScript {
         public VectorScoreScriptFactory(Map<String, Object> params, SearchLookup lookup) {
             this.params = params;
             this.lookup = lookup;
+
+            params.containsKey("");
             final Object field = params.get("field");
             if (field == null)
                 throw new IllegalArgumentException("Missing parameter [field]");
@@ -120,6 +122,10 @@ public class VectorScoreScript extends ScoreScript {
 
             final Object space = params.get("space");
             this.similaritySpace = space != null? (String)space: KNNConstants.L2;
+
+            if (params.get("") ) {
+
+            }
         }
 
         public boolean needs_score() {
