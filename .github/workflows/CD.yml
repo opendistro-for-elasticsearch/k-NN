@@ -75,7 +75,7 @@ jobs:
           yum install -y dpkg
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
           unzip awscliv2.zip
-          sudo ./aws/install
+          ./aws/install
           aws --version
 
       - name: Build and ship library artifacts
