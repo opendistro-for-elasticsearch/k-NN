@@ -13,17 +13,17 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN84Codec;
+package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN86Codec;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecTestCase;
 
-public class  KNN84CodecTests extends KNNCodecTestCase {
+public class  KNN86CodecTests extends KNNCodecTestCase {
 
     public void testFooter() throws Exception {
-        testFooter(new KNN84Codec());
+        testFooter(new KNN86Codec());
     }
 
     public void testMultiFieldsKnnIndex() throws Exception {
-        testMultiFieldsKnnIndex(new KNN84Codec());
+        testMultiFieldsKnnIndex(new KNN86Codec());
     }
 }
