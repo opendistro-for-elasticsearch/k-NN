@@ -15,7 +15,7 @@
 
 buildscript {
     ext {
-        es_version = System.getProperty("es.version", "7.8.0")
+        es_version = System.getProperty("es.version", "7.9.0")
         es_group = "org.elasticsearch"
         distribution = 'oss-zip'
     }
@@ -57,7 +57,7 @@ if (!usingRemoteCluster) {
 }
 
 ext {
-    opendistroVersion = '1.9.0'
+    opendistroVersion = '1.10.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.TXT')
@@ -102,7 +102,7 @@ task release(type: Copy, group: 'build') {
 //****************************************************************************/
 dependencies {
     compileOnly "org.elasticsearch:elasticsearch:${es_version}"
-    compileOnly group: 'com.google.errorprone', name: 'error_prone_annotations', version:'2.4.0'
+    //compileOnly group: 'com.google.errorprone', name: 'error_prone_annotations', version:'2.4.0'
     compile group: 'com.google.guava', name: 'failureaccess', version:'1.0.1'
     compile group: 'com.google.guava', name: 'guava', version:'29.0-jre'
     testImplementation "org.elasticsearch.test:framework:${es_version}"
