@@ -11,17 +11,16 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
 import java.util.Map;
 
 /**
  * Vector score script used for adjusting the score based on similarity space
  * on a per document basis.
  */
-public class VectorScoreScript extends ScoreScript {
+public class KNNVectorScoreScript extends ScoreScript {
 
     private BinaryDocValues binaryDocValuesReader;
-    private final float[] inputVector;
+    private final float[] queryVector;
     private final String similaritySpace;
 
     public float l2Squared(float[] queryVector, float[] inputVector) {
@@ -57,10 +56,13 @@ public class VectorScoreScript extends ScoreScript {
                 throw new RuntimeException(e);
             }
             if (KNNConstants.L2.equalsIgnoreCase(similaritySpace)) {
-                score = l2Squared(this.inputVector, doc_vector);
+                score = KNNScoringUtil.l2Squared(this.queryVector, doc_vector);
                 score = 1/(1 + score);
+            } else if (KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace)) {
+                // Scores cannot be negative so add +1 to the cosine score
+                score = 1 + KNNScoringUtil.cosinesimil(this.queryVector, doc_vector);
             }
-            // Other spaces will be followed up in next pr
+
         } catch (IOException e) {
             throw new UncheckedIOException(e); // again - Failing in order not to hide potential bugs
         }
@@ -77,22 +79,13 @@ public class VectorScoreScript extends ScoreScript {
     }
 
     @SuppressWarnings("unchecked")
-    public VectorScoreScript(Map<String, Object> params, String field, String similaritySpace,
+    public KNNVectorScoreScript(Map<String, Object> params, String field, float[] queryVector, String similaritySpace,
                              SearchLookup lookup, LeafReaderContext leafContext) {
         super(params, lookup, leafContext);
-        // get query inputVector - convert to primitive
+        // get query vector - convert to primitive
         final Object vector = params.get("vector");
         this.similaritySpace = similaritySpace;
-        if(vector != null) {
-            final ArrayList<Double> tmp = (ArrayList<Double>) vector;
-            inputVector = new float[tmp.size()];
-            for (int i = 0; i < inputVector.length; i++) {
-                inputVector[i] = tmp.get(i).floatValue();
-            }
-        } else {
-            inputVector = null;
-        }
-
+        this.queryVector = queryVector;
         try {
             this.binaryDocValuesReader = leafContext.reader().getBinaryDocValues(field);
             if(this.binaryDocValuesReader == null) {
@@ -109,22 +102,36 @@ public class VectorScoreScript extends ScoreScript {
         private final SearchLookup lookup;
         private final String similaritySpace;
         private final String field;
+        private final float[] qVector;
 
         public VectorScoreScriptFactory(Map<String, Object> params, SearchLookup lookup) {
             this.params = params;
             this.lookup = lookup;
+            validateParams(params);
 
-            params.containsKey("");
+            // initialize
+            this.field = params.get("field").toString();
+            final Object space = params.get("space");
+            this.similaritySpace = space != null? (String)space: KNNConstants.L2;
+            this.qVector = KNNScoringUtil.convertVectorToPrimitive(params.get("vector"));
+            // TODO optimize
+            if (KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace)) {
+                // calculate the magnitude
+            }
+            // convert qvector to primitive
+
+        }
+
+        private void validateParams(Map<String, Object> params) {
+            // query vector field
             final Object field = params.get("field");
             if (field == null)
                 throw new IllegalArgumentException("Missing parameter [field]");
-            this.field = field.toString();
 
-            final Object space = params.get("space");
-            this.similaritySpace = space != null? (String)space: KNNConstants.L2;
-
-            if (params.get("") ) {
-
+            // query vector
+            final Object qVector = params.get("vector");
+            if (qVector == null) {
+                throw new IllegalArgumentException("Missing query vector parameter [vector]");
             }
         }
 
@@ -134,7 +141,7 @@ public class VectorScoreScript extends ScoreScript {
 
         @Override // called number of segments times
         public ScoreScript newInstance(LeafReaderContext ctx) throws IOException {
-            if (ctx.reader().getBinaryDocValues("field") == null) {
+            if (ctx.reader().getBinaryDocValues(this.field) == null) {
                 /*
                  * the field and/or term don't exist in this segment,
                  * so always return 0
@@ -148,8 +155,7 @@ public class VectorScoreScript extends ScoreScript {
                     }
                 };
             }
-            return new VectorScoreScript(this.params, this.field, this.similaritySpace, this.lookup, ctx);
+            return new KNNVectorScoreScript(this.params, this.field, this.qVector, this.similaritySpace, this.lookup, ctx);
         }
     }
 }
-

@@ -29,7 +29,7 @@ public class KNNScoringScriptEngine implements ScriptEngine {
         if (!SCRIPT_SOURCE.equals(code)) {
             throw new IllegalArgumentException("Unknown script name " + code);
         }
-        ScoreScript.Factory factory = VectorScoreScript.VectorScoreScriptFactory::new;
+        ScoreScript.Factory factory = KNNVectorScoreScript.VectorScoreScriptFactory::new;
         return context.factoryClazz.cast(factory);
     }
 
