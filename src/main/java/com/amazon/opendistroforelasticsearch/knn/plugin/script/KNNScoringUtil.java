@@ -5,9 +5,10 @@ import java.util.ArrayList;
 public class KNNScoringUtil {
 
     public static float l2Squared(float[] queryVector, float[] inputVector) {
-        long squaredDistance = 0;
+        float squaredDistance = 0;
         for (int i = 0; i < inputVector.length; i++) {
-            squaredDistance += Math.pow(queryVector[i]-inputVector[i], 2);
+            float diff = queryVector[i]-inputVector[i];
+            squaredDistance += diff * diff;
         }
         return squaredDistance;
     }
