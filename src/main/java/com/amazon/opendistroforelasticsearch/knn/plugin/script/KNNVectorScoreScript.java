@@ -22,6 +22,7 @@ public class KNNVectorScoreScript extends ScoreScript {
     private BinaryDocValues binaryDocValuesReader;
     private final float[] queryVector;
     private final String similaritySpace;
+    private double queryVectorSquaredMagnitude = -1;
 
     public float l2Squared(float[] queryVector, float[] inputVector) {
         long squaredDistance = 0;
@@ -60,7 +61,7 @@ public class KNNVectorScoreScript extends ScoreScript {
                 score = 1/(1 + score);
             } else if (KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace)) {
                 // Scores cannot be negative so add +1 to the cosine score
-                score = 1 + KNNScoringUtil.cosinesimil(this.queryVector, doc_vector);
+                score = 1 + KNNScoringUtil.cosinesimilOptimized(this.queryVector, doc_vector, this.queryVectorSquaredMagnitude);
             }
 
         } catch (IOException e) {
@@ -79,13 +80,14 @@ public class KNNVectorScoreScript extends ScoreScript {
     }
 
     @SuppressWarnings("unchecked")
-    public KNNVectorScoreScript(Map<String, Object> params, String field, float[] queryVector, String similaritySpace,
-                             SearchLookup lookup, LeafReaderContext leafContext) {
+    public KNNVectorScoreScript(Map<String, Object> params, String field, float[] queryVector, double queryVectorSquaredMagnitude,
+                                String similaritySpace, SearchLookup lookup, LeafReaderContext leafContext) {
         super(params, lookup, leafContext);
         // get query vector - convert to primitive
         final Object vector = params.get("vector");
         this.similaritySpace = similaritySpace;
         this.queryVector = queryVector;
+        this.queryVectorSquaredMagnitude = queryVectorSquaredMagnitude;
         try {
             this.binaryDocValuesReader = leafContext.reader().getBinaryDocValues(field);
             if(this.binaryDocValuesReader == null) {
@@ -103,6 +105,7 @@ public class KNNVectorScoreScript extends ScoreScript {
         private final String similaritySpace;
         private final String field;
         private final float[] qVector;
+        private double qVectorSquaredMagnitude; // Used for cosine optimization
 
         public VectorScoreScriptFactory(Map<String, Object> params, SearchLookup lookup) {
             this.params = params;
@@ -114,9 +117,10 @@ public class KNNVectorScoreScript extends ScoreScript {
             final Object space = params.get("space");
             this.similaritySpace = space != null? (String)space: KNNConstants.L2;
             this.qVector = KNNScoringUtil.convertVectorToPrimitive(params.get("vector"));
-            // TODO optimize
+            // Optimization for cosinesimil
             if (KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace)) {
                 // calculate the magnitude
+                qVectorSquaredMagnitude = KNNScoringUtil.getVectorMagnitudeSquared(qVector);
             }
             // convert qvector to primitive
 
@@ -155,7 +159,8 @@ public class KNNVectorScoreScript extends ScoreScript {
                     }
                 };
             }
-            return new KNNVectorScoreScript(this.params, this.field, this.qVector, this.similaritySpace, this.lookup, ctx);
+            return new KNNVectorScoreScript(this.params, this.field, this.qVector, this.qVectorSquaredMagnitude,
+                    this.similaritySpace, this.lookup, ctx);
         }
     }
 }
