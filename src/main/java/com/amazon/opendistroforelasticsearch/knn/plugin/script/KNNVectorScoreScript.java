@@ -24,14 +24,6 @@ public class KNNVectorScoreScript extends ScoreScript {
     private final String similaritySpace;
     private double queryVectorSquaredMagnitude = -1;
 
-    public float l2Squared(float[] queryVector, float[] inputVector) {
-        long squaredDistance = 0;
-        for (int i = 0; i < inputVector.length; i++) {
-            squaredDistance += Math.pow(queryVector[i]-inputVector[i], 2);
-        }
-        return squaredDistance;
-    }
-
     /**
      * This function called for each doc in the segment. We evaluate the score of the vector in the doc
      *
@@ -56,6 +48,12 @@ public class KNNVectorScoreScript extends ScoreScript {
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
+
+            if(doc_vector.length != queryVector.length) {
+                throw new IllegalStateException("[KNN] query vector and field vector dimensions mismatch. " +
+                        "query vector: " + queryVector.length + ", stored vector: " + doc_vector.length);
+            }
+
             if (KNNConstants.L2.equalsIgnoreCase(similaritySpace)) {
                 score = KNNScoringUtil.l2Squared(this.queryVector, doc_vector);
                 score = 1/(1 + score);

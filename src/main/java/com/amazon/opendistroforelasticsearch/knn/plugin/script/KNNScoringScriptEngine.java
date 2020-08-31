@@ -22,7 +22,7 @@ public class KNNScoringScriptEngine implements ScriptEngine {
 
     @Override
     public <FactoryType> FactoryType compile(String name, String code, ScriptContext<FactoryType> context, Map<String, String> params) {
-        if (context.equals(ScoreScript.CONTEXT) == false) {
+        if (ScoreScript.CONTEXT.equals(context) == false) {
             throw new IllegalArgumentException(getType() + " KNN Vector scoring scripts cannot be used for context [" + context.name + "]");
         }
         // we use the script "source" as the script identifier

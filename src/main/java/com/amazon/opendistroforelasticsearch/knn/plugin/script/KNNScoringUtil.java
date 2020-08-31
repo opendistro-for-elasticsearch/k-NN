@@ -1,8 +1,12 @@
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.ArrayList;
 
 public class KNNScoringUtil {
+    private static Logger logger = LogManager.getLogger(KNNScoringUtil.class);
 
     public static float l2Squared(float[] queryVector, float[] inputVector) {
         float squaredDistance = 0;
@@ -23,14 +27,15 @@ public class KNNScoringUtil {
             dotProduct += queryVector[i] * inputVector[i];
             normInputVector += inputVector[i] * inputVector[i];
         }
-        // Divide by zero check
         double normalizedProduct = normQueryVector * normInputVector;
-        if (normalizedProduct == 0 ) {
+        try {
+            return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
+        } catch(ArithmeticException ex) {
+            logger.debug("Possibly Division by Zero Exception. Returning min score to put this result to end. " +
+                    "Current normalized product " + normalizedProduct);
             return Float.MIN_VALUE;
         }
-        return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
     }
-
 
     public static float cosinesimil(float[] queryVector, float[] inputVector) {
         double dotProduct = 0.0f;
@@ -69,6 +74,6 @@ public class KNNScoringUtil {
         for (int i = 0; i < inputVector.length; i++) {
             normInputVector += inputVector[i] * inputVector[i];
         }
-        return (float) normInputVector;
+        return normInputVector;
     }
 }
