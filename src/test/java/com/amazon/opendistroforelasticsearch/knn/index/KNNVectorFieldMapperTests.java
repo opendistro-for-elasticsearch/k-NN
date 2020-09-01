@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 
 public class KNNVectorFieldMapperTests extends KNNTestCase {
 
-    public void testBuildKNNIndexSettings_emptyIndexSettings() {
+    public void testBuildKNNIndexSettings_emptySettings_checkDefaultsSet() {
         String indexName = "test-index";
         String fieldName = "test-fieldname";
 
