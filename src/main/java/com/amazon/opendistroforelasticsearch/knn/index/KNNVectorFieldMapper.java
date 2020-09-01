@@ -17,6 +17,8 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.index.DocValuesType;
 import org.apache.lucene.index.IndexOptions;
@@ -46,10 +48,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M_SETTING;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_SPACE_TYPE;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_SPACE_TYPE;
+
 /**
  * Field Mapper for KNN vector type.
  */
 public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMapperParser {
+
+    private static Logger logger = LogManager.getLogger(KNNVectorFieldMapper.class);
+
     public static final String CONTENT_TYPE = "knn_vector";
     public static final String KNN_FIELD = "knn_field";
 
@@ -140,12 +150,7 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
         public Mapper.Builder<?, ?> parse(String name, Map<String, Object> node, ParserContext parserContext)
                 throws MapperParsingException {
             Builder builder = new KNNVectorFieldMapper.Builder(name);
-            builder.spaceTypeParam(KNNConstants.SPACE_TYPE, parserContext.mapperService().getIndexSettings().getValue(
-                KNNSettings.INDEX_KNN_SPACE_TYPE));
-            builder.algoParams(KNNConstants.HNSW_ALGO_M, parserContext.mapperService().getIndexSettings().getValue(
-                    KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING));
-            builder.algoParams(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, parserContext.mapperService().getIndexSettings()
-                    .getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING));
+            builder = buildKNNIndexSettings(builder, parserContext);
 
             /**
              * If dimension not provided. Throw Exception
@@ -188,6 +193,41 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
                     iterator.remove();
                 }
             }
+            return builder;
+        }
+
+        Builder buildKNNIndexSettings(Builder builder, ParserContext parserContext) {
+            try {
+                builder.spaceTypeParam(KNNConstants.SPACE_TYPE, parserContext.mapperService().getIndexSettings().getValue(
+                        INDEX_KNN_SPACE_TYPE));
+            } catch(IllegalArgumentException ex) {
+                logger.debug("[KNN] The setting \"" + KNNConstants.SPACE_TYPE + "\" was not set for the index. " +
+                        "Likely caused by recent version upgrade. Setting the setting to the default value="
+                        + INDEX_KNN_DEFAULT_SPACE_TYPE);
+                builder.spaceTypeParam(KNNConstants.SPACE_TYPE, INDEX_KNN_DEFAULT_SPACE_TYPE);
+            }
+
+            try {
+                builder.algoParams(KNNConstants.HNSW_ALGO_M, parserContext.mapperService().getIndexSettings().getValue(
+                        KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING));
+            } catch(IllegalArgumentException ex) {
+                logger.debug("[KNN] The setting \"" + KNNConstants.HNSW_ALGO_M + "\" was not set for the index. " +
+                        "Likely caused by recent version upgrade. Setting the setting to the default value="
+                        + INDEX_KNN_DEFAULT_ALGO_PARAM_M_SETTING);
+                builder.algoParams(KNNConstants.HNSW_ALGO_M, INDEX_KNN_DEFAULT_ALGO_PARAM_M_SETTING);
+            }
+
+            try {
+                builder.algoParams(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, parserContext.mapperService().getIndexSettings()
+                        .getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING));
+            } catch(IllegalArgumentException ex) {
+                logger.debug("[KNN] The setting \"" + KNNConstants.HNSW_ALGO_EF_CONSTRUCTION + "\" was not set for" +
+                        " the index. Likely caused by recent version upgrade. Setting the setting to the default value="
+                        + INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION_SETTING);
+                builder.algoParams(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION,
+                        INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION_SETTING);
+            }
+
             return builder;
         }
     }
