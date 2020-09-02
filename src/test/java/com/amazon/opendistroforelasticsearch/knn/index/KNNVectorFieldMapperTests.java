@@ -22,8 +22,8 @@ import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperService;
 
-import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
-import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M_SETTING;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_SPACE_TYPE;
 
 import static org.elasticsearch.Version.V_7_1_0;
@@ -61,10 +61,10 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
                 INDEX_KNN_DEFAULT_SPACE_TYPE);
 
         assertEquals(KNNVectorFieldMapper.Defaults.FIELD_TYPE.getAttributes().get(KNNConstants.HNSW_ALGO_M),
-                String.valueOf(INDEX_KNN_DEFAULT_ALGO_PARAM_M_SETTING));
+                String.valueOf(INDEX_KNN_DEFAULT_ALGO_PARAM_M));
 
         assertEquals(KNNVectorFieldMapper.Defaults.FIELD_TYPE.getAttributes().get(
                 KNNConstants.HNSW_ALGO_EF_CONSTRUCTION), String.valueOf(
-                        INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION_SETTING));
+                        INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION));
     }
 }
