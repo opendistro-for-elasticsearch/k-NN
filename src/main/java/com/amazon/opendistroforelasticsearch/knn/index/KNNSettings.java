@@ -80,11 +80,21 @@ public class KNNSettings {
     public static final String KNN_INDEX = "index.knn";
 
     /**
+     * Default setting values
+     */
+    public static final String INDEX_KNN_DEFAULT_SPACE_TYPE = "l2";
+    public static final Integer INDEX_KNN_DEFAULT_ALGO_PARAM_M = 16;
+    public static final Integer INDEX_KNN_DEFAULT_ALGO_PARAM_EF_SEARCH = 512;
+    public static final Integer INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION = 512;
+    public static final Integer KNN_DEFAULT_ALGO_PARAM_INDEX_THREAD_QTY = 1;
+    public static final Integer KNN_DEFAULT_CIRCUIT_BREAKER_UNSET_PERCENTAGE = 75;
+
+    /**
      * Settings Definition
      */
 
     public static final Setting<String> INDEX_KNN_SPACE_TYPE = Setting.simpleString(KNN_SPACE_TYPE,
-        "l2",
+            INDEX_KNN_DEFAULT_SPACE_TYPE,
         new SpaceTypeValidator(),
         IndexScope);
 
@@ -95,7 +105,7 @@ public class KNNSettings {
      * The parameter also determines the algorithm's memory consumption, which is roughly M * 8-10 bytes per stored element.
      */
     public static final Setting<Integer> INDEX_KNN_ALGO_PARAM_M_SETTING =  Setting.intSetting(KNN_ALGO_PARAM_M,
-            16,
+            INDEX_KNN_DEFAULT_ALGO_PARAM_M,
             2,
             IndexScope);
 
@@ -105,7 +115,7 @@ public class KNNSettings {
      *  The value ef can be anything between k and the size of the dataset.
      */
     public static final Setting<Integer> INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING =  Setting.intSetting(KNN_ALGO_PARAM_EF_SEARCH,
-            512,
+            INDEX_KNN_DEFAULT_ALGO_PARAM_EF_SEARCH,
             2,
             IndexScope);
 
@@ -114,7 +124,7 @@ public class KNNSettings {
      * Bigger ef_construction leads to longer construction(more indexing time), but better index quality.
      */
     public static final Setting<Integer> INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING =  Setting.intSetting(KNN_ALGO_PARAM_EF_CONSTRUCTION,
-            512,
+            INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION,
             2,
             IndexScope);
 
@@ -132,7 +142,7 @@ public class KNNSettings {
      * configure number of threads for graph construction.
      */
     public static final Setting<Integer> KNN_ALGO_PARAM_INDEX_THREAD_QTY_SETTING =  Setting.intSetting(KNN_ALGO_PARAM_INDEX_THREAD_QTY,
-            1,
+            KNN_DEFAULT_ALGO_PARAM_INDEX_THREAD_QTY,
             1,
             INDEX_THREAD_QTY_MAX,
             NodeScope,
@@ -145,7 +155,7 @@ public class KNNSettings {
 
     public static final Setting<Double> KNN_CIRCUIT_BREAKER_UNSET_PERCENTAGE_SETTING =  Setting.doubleSetting(
             KNN_CIRCUIT_BREAKER_UNSET_PERCENTAGE,
-            75,
+            KNN_DEFAULT_CIRCUIT_BREAKER_UNSET_PERCENTAGE,
             0,
             100,
             NodeScope,
