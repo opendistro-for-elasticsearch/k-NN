@@ -27,6 +27,9 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.IndexService;
+import org.elasticsearch.index.query.MatchAllQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.functionscore.ScriptScoreQueryBuilder;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESSingleNodeTestCase;
@@ -116,5 +119,11 @@ public class KNNSingleNodeTestCase extends ESSingleNodeTestCase {
         SearchResponse response = client().prepareSearch(index).setQuery(new KNNQueryBuilder(fieldName, vector, k))
                 .get();
         assertEquals(response.status(), RestStatus.OK);
+
+
+        QueryBuilder qb = new MatchAllQueryBuilder();
+
+        ScriptScoreQueryBuilder sc = new ScriptScoreQueryBuilder(qb, null);
+
     }
 }
