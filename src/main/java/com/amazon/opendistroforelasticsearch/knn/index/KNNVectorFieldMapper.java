@@ -48,8 +48,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
-import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M_SETTING;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_SPACE_TYPE;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_SPACE_TYPE;
 
@@ -217,8 +217,8 @@ public class KNNVectorFieldMapper extends FieldMapper {
             } catch(IllegalArgumentException ex) {
                 logger.debug("[KNN] The setting \"" + KNNConstants.HNSW_ALGO_M + "\" was not set for the index. " +
                         "Likely caused by recent version upgrade. Setting the setting to the default value="
-                        + INDEX_KNN_DEFAULT_ALGO_PARAM_M_SETTING);
-                builder.algoParams(KNNConstants.HNSW_ALGO_M, INDEX_KNN_DEFAULT_ALGO_PARAM_M_SETTING);
+                        + INDEX_KNN_DEFAULT_ALGO_PARAM_M);
+                builder.algoParams(KNNConstants.HNSW_ALGO_M, INDEX_KNN_DEFAULT_ALGO_PARAM_M);
             }
 
             try {
@@ -227,9 +227,9 @@ public class KNNVectorFieldMapper extends FieldMapper {
             } catch(IllegalArgumentException ex) {
                 logger.debug("[KNN] The setting \"" + KNNConstants.HNSW_ALGO_EF_CONSTRUCTION + "\" was not set for" +
                         " the index. Likely caused by recent version upgrade. Setting the setting to the default value="
-                        + INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION_SETTING);
+                        + INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION);
                 builder.algoParams(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION,
-                        INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION_SETTING);
+                        INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION);
             }
 
             return builder;
