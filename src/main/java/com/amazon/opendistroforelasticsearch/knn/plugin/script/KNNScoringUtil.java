@@ -17,17 +17,14 @@ public class KNNScoringUtil {
         return squaredDistance;
     }
 
-    public static float cosinesimilOptimized(float[] queryVector, float[] inputVector, double normQueryVector) {
-        double dotProduct = 0.0f;
-        double normInputVector = 0.0f;
-        if (normQueryVector == -1) {
-            throw new IllegalStateException("Normalized query vector cannot be negative");
-        }
+    public static float cosinesimilOptimized(float[] queryVector, float[] inputVector, float normQueryVector) {
+        float dotProduct = 0.0f;
+        float normInputVector = 0.0f;
         for (int i = 0; i < queryVector.length; i++) {
             dotProduct += queryVector[i] * inputVector[i];
             normInputVector += inputVector[i] * inputVector[i];
         }
-        double normalizedProduct = normQueryVector * normInputVector;
+        float normalizedProduct = normQueryVector * normInputVector;
         try {
             return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
         } catch(ArithmeticException ex) {
@@ -66,11 +63,11 @@ public class KNNScoringUtil {
         return primitiveVector;
     }
 
-    public static double getVectorMagnitudeSquared(float[] inputVector) {
+    public static float getVectorMagnitudeSquared(float[] inputVector) {
         if (null == inputVector) {
             throw new IllegalStateException("vector magnitude cannot be evaluated as it is null");
         }
-        double normInputVector = 0.0f;
+        float normInputVector = 0.0f;
         for (int i = 0; i < inputVector.length; i++) {
             normInputVector += inputVector[i] * inputVector[i];
         }

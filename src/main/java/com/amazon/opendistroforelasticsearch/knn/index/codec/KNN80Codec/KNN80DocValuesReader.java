@@ -19,6 +19,7 @@ import com.amazon.opendistroforelasticsearch.knn.index.codec.BinaryDocValuesSub;
 import org.apache.lucene.codecs.DocValuesProducer;
 import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.DocIDMerger;
+import org.apache.lucene.index.DocValuesType;
 import org.apache.lucene.index.EmptyDocValuesProducer;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.MergeState;
@@ -44,7 +45,12 @@ class KNN80DocValuesReader extends EmptyDocValuesProducer {
             for (int i = 0; i < this.mergeState.docValuesProducers.length; i++) {
                 DocValuesProducer docValuesProducer = mergeState.docValuesProducers[i];
                 if (docValuesProducer != null) {
-                    BinaryDocValues values = docValuesProducer.getBinary(field);
+                    BinaryDocValues values = null;
+                    FieldInfo readerFieldInfo = mergeState.fieldInfos[i].fieldInfo(field.name);
+                    if (readerFieldInfo != null && readerFieldInfo.getDocValuesType() == DocValuesType.BINARY) {
+                         values = docValuesProducer.getBinary(field);
+                    }
+//                    BinaryDocValues values = docValuesProducer.getBinary(field);
                     if (values != null) {
                         subs.add(new BinaryDocValuesSub(mergeState.docMaps[i], values));
                     }

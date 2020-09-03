@@ -22,7 +22,7 @@ public class KNNVectorScoreScript extends ScoreScript {
     private BinaryDocValues binaryDocValuesReader;
     private final float[] queryVector;
     private final String similaritySpace;
-    private double queryVectorSquaredMagnitude = -1;
+    private float queryVectorSquaredMagnitude = -1;
 
     /**
      * This function called for each doc in the segment. We evaluate the score of the vector in the doc
@@ -63,7 +63,7 @@ public class KNNVectorScoreScript extends ScoreScript {
             }
 
         } catch (IOException e) {
-            throw new UncheckedIOException(e); // again - Failing in order not to hide potential bugs
+            throw new UncheckedIOException(e);
         }
         return score;
     }
@@ -78,7 +78,7 @@ public class KNNVectorScoreScript extends ScoreScript {
     }
 
     @SuppressWarnings("unchecked")
-    public KNNVectorScoreScript(Map<String, Object> params, String field, float[] queryVector, double queryVectorSquaredMagnitude,
+    public KNNVectorScoreScript(Map<String, Object> params, String field, float[] queryVector, float queryVectorSquaredMagnitude,
                                 String similaritySpace, SearchLookup lookup, LeafReaderContext leafContext) {
         super(params, lookup, leafContext);
         // get query vector - convert to primitive
@@ -103,7 +103,7 @@ public class KNNVectorScoreScript extends ScoreScript {
         private final String similaritySpace;
         private final String field;
         private final float[] qVector;
-        private double qVectorSquaredMagnitude; // Used for cosine optimization
+        private float qVectorSquaredMagnitude; // Used for cosine optimization
 
         public VectorScoreScriptFactory(Map<String, Object> params, SearchLookup lookup) {
             this.params = params;
@@ -120,8 +120,6 @@ public class KNNVectorScoreScript extends ScoreScript {
                 // calculate the magnitude
                 qVectorSquaredMagnitude = KNNScoringUtil.getVectorMagnitudeSquared(qVector);
             }
-            // convert qvector to primitive
-
         }
 
         private void validateParams(Map<String, Object> params) {
