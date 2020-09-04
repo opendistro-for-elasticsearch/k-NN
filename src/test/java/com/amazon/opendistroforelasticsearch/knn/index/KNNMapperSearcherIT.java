@@ -67,6 +67,29 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         }
     }
 
+    public void testKNNResultsUpdateDocAndForceMerge() throws Exception {
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        addDocWithNumericField(INDEX_NAME, "1", "abc", 100 );
+        addTestData();
+        forceMergeKnnIndex(INDEX_NAME);
+
+        /**
+         * Query params
+         */
+        float[] queryVector = {1.0f, 1.0f}; // vector to be queried
+        int k = 1; //  nearest 1 neighbor
+
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+
+        Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+
+        assertEquals(k, results.size());
+        for(KNNResult result : results) {
+            assertEquals("2", result.getDocId());
+        }
+    }
+
     public void testKNNResultsWithoutForceMerge() throws Exception {
         createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
         addTestData();
