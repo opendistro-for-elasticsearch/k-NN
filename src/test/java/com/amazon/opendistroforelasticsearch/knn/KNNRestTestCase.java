@@ -251,10 +251,36 @@ public class KNNRestTestCase extends ESRestTestCase {
         XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
                 .field(fieldName, vector)
                 .endObject();
+        request.setJsonEntity(Strings.toString(builder));
+        Response response = client().performRequest(request);
+
+        request = new Request(
+                "POST",
+                "/" + index + "/_refresh"
+        );
+        response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+    }
+
+    /**
+     * Add a single numeric field Doc to an index
+     */
+    protected void addDocWithNumericField(String index, String docId, String fieldName, int value) throws IOException {
+        Request request = new Request(
+                "POST",
+                "/" + index + "/_doc/" + docId + "?refresh=true"
+        );
+
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+                .field(fieldName, value)
+                .endObject();
 
         request.setJsonEntity(Strings.toString(builder));
 
         Response response = client().performRequest(request);
+
+
         assertEquals(request.getEndpoint() + ": failed", RestStatus.CREATED,
                 RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
