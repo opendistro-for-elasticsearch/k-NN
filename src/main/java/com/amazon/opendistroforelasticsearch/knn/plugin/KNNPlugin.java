@@ -182,6 +182,33 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
         KNNSettings.state().onIndexModule(indexModule);
     }
 
+    /**
+     * Sample knn custom script
+     *
+     * {
+     *   "query": {
+     *     "script_score": {
+     *       "query": {
+     *         "match_all": {
+     *           "boost": 1
+     *         }
+     *       },
+     *       "script": {
+     *         "source": "knn_score",
+     *         "lang": "knn",
+     *         "params": {
+     *           "field": "my_dense_vector",
+     *           "vector": [
+     *             1,
+     *             1
+     *           ]
+     *         }
+     *       }
+     *     }
+     *   }
+     * }
+     *
+     */
     @Override
     public ScriptEngine getScriptEngine(Settings settings, Collection<ScriptContext<?>> contexts) {
         return new KNNScoringScriptEngine();

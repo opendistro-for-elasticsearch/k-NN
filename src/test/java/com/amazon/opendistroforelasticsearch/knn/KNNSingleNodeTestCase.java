@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
+import com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringScriptEngine;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -32,12 +33,15 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.functionscore.ScriptScoreQueryBuilder;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.script.Script;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.elasticsearch.test.hamcrest.ElasticsearchAssertions;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class KNNSingleNodeTestCase extends ESSingleNodeTestCase {
@@ -119,11 +123,5 @@ public class KNNSingleNodeTestCase extends ESSingleNodeTestCase {
         SearchResponse response = client().prepareSearch(index).setQuery(new KNNQueryBuilder(fieldName, vector, k))
                 .get();
         assertEquals(response.status(), RestStatus.OK);
-
-
-        QueryBuilder qb = new MatchAllQueryBuilder();
-
-        ScriptScoreQueryBuilder sc = new ScriptScoreQueryBuilder(qb, null);
-
     }
 }

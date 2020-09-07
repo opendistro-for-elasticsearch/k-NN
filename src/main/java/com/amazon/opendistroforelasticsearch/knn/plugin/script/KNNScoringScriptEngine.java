@@ -13,7 +13,7 @@ import java.util.Set;
 public class KNNScoringScriptEngine implements ScriptEngine {
 
     public static final String NAME = "knn";
-    private static final String SCRIPT_SOURCE = "knn_score";
+    public static final String SCRIPT_SOURCE = "knn_score";
 
     @Override
     public String getType() {

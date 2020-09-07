@@ -16,6 +16,7 @@ import java.util.Map;
 /**
  * Vector score script used for adjusting the score based on similarity space
  * on a per document basis.
+ *
  */
 public class KNNVectorScoreScript extends ScoreScript {
 
@@ -61,7 +62,6 @@ public class KNNVectorScoreScript extends ScoreScript {
                 // Scores cannot be negative so add +1 to the cosine score
                 score = 1 + KNNScoringUtil.cosinesimilOptimized(this.queryVector, doc_vector, this.queryVectorSquaredMagnitude);
             }
-
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
