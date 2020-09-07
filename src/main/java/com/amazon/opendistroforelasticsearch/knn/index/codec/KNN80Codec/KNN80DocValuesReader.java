@@ -45,12 +45,7 @@ class KNN80DocValuesReader extends EmptyDocValuesProducer {
             for (int i = 0; i < this.mergeState.docValuesProducers.length; i++) {
                 DocValuesProducer docValuesProducer = mergeState.docValuesProducers[i];
                 if (docValuesProducer != null) {
-                    BinaryDocValues values = null;
-                    FieldInfo readerFieldInfo = mergeState.fieldInfos[i].fieldInfo(field.name);
-                    if (readerFieldInfo != null && readerFieldInfo.getDocValuesType() == DocValuesType.BINARY) {
-                         values = docValuesProducer.getBinary(field);
-                    }
-//                    BinaryDocValues values = docValuesProducer.getBinary(field);
+                    BinaryDocValues values = docValuesProducer.getBinary(field);
                     if (values != null) {
                         subs.add(new BinaryDocValuesSub(mergeState.docMaps[i], values));
                     }

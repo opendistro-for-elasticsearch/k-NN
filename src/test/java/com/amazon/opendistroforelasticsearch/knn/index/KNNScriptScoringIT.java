@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class KNNScriptScoringIT extends KNNRestTestCase {
 
-    public void testKNNScriptScore() throws Exception {
+    public void testKNNL2ScriptScore() throws Exception {
         /*
          * Create knn index and populate data
          */
@@ -72,8 +72,6 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         builder.endObject();
         builder.endObject();
         builder.endObject();
-//        String x = Strings.toString(builder);
-
         request = new Request(
                 "POST",
                 "/" + INDEX_NAME + "/_search"
