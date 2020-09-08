@@ -57,7 +57,7 @@ if (!usingRemoteCluster) {
 }
 
 ext {
-    opendistroVersion = '1.10.0'
+    opendistroVersion = '1.10.1'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.TXT')
@@ -66,7 +66,7 @@ ext {
 
 allprojects {
     group = 'com.amazon.opendistroforelasticsearch'
-    version = "${opendistroVersion}.1"
+    version = "${opendistroVersion}.0"
 
     apply from: 'build-tools/repositories.gradle'
     plugins.withId('java') {
