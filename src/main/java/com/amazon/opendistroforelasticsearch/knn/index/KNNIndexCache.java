@@ -25,6 +25,7 @@ import com.google.common.cache.RemovalNotification;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.watcher.FileChangesListener;
 import org.elasticsearch.watcher.FileWatcher;
 import org.elasticsearch.watcher.ResourceWatcherService;
@@ -99,7 +100,8 @@ public class KNNIndexCache implements Closeable {
             /**
              * If the hnsw index is not accessed for knn.cache.item.expiry.minutes, it would be garbage collected.
              */
-            long expiryTime = KNNSettings.state().getSettingValue(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES);
+            long expiryTime = ((TimeValue) KNNSettings.state()
+                    .getSettingValue(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES)).getMinutes();
             cacheBuilder.expireAfterAccess(expiryTime, TimeUnit.MINUTES);
         }
 
