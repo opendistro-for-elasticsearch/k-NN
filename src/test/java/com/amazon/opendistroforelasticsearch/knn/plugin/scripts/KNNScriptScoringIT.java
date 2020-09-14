@@ -1,4 +1,4 @@
-package com.amazon.opendistroforelasticsearch.knn.index;
+package com.amazon.opendistroforelasticsearch.knn.plugin.scripts;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;

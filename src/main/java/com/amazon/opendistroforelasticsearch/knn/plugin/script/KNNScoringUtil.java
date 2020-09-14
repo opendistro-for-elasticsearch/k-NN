@@ -43,7 +43,7 @@ public class KNNScoringUtil {
             normQueryVector += queryVector[i] * queryVector[i];
             normInputVector += inputVector[i] * inputVector[i];
         }
-        double normalizedProduct = normQueryVector * normInputVector;
+        float normalizedProduct = normQueryVector * normInputVector;
         if (normalizedProduct == 0 ) {
             return Float.MIN_VALUE;
         }
