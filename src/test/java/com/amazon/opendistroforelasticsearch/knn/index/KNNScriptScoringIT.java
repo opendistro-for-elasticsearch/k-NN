@@ -1,6 +1,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringScriptEngine;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
@@ -60,6 +61,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         float[] queryVector = {1.0f, 1.0f};
         params.put("field", "my_dense_vector");
         params.put("vector", queryVector);
+        params.put("space", KNNConstants.L2);
         Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, KNNScoringScriptEngine.NAME, KNNScoringScriptEngine.SCRIPT_SOURCE, params);
         ScriptScoreQueryBuilder sc = new ScriptScoreQueryBuilder(qb, script);
 

@@ -79,41 +79,34 @@ public class KNNVectorScoreScript extends ScoreScript {
 
     @SuppressWarnings("unchecked")
     public KNNVectorScoreScript(Map<String, Object> params, String field, float[] queryVector, float queryVectorSquaredMagnitude,
-                                String similaritySpace, SearchLookup lookup, LeafReaderContext leafContext) {
+                                String similaritySpace, SearchLookup lookup, LeafReaderContext leafContext) throws IOException {
         super(params, lookup, leafContext);
         // get query vector - convert to primitive
         final Object vector = params.get("vector");
         this.similaritySpace = similaritySpace;
         this.queryVector = queryVector;
         this.queryVectorSquaredMagnitude = queryVectorSquaredMagnitude;
-        try {
-            this.binaryDocValuesReader = leafContext.reader().getBinaryDocValues(field);
-            if(this.binaryDocValuesReader == null) {
-                throw new IllegalStateException();
-            }
-        } catch (Exception e) {
+        this.binaryDocValuesReader = leafContext.reader().getBinaryDocValues(field);
+        if(this.binaryDocValuesReader == null) {
             throw new IllegalStateException("Binary Doc values not enabled for the field " + field
-                    + " Please ensure the field type is knn_vector in mappings for this field");
+                                                        + " Please ensure the field type is knn_vector in mappings for this field");
         }
     }
 
     public static class VectorScoreScriptFactory implements ScoreScript.LeafFactory {
         private final Map<String, Object> params;
         private final SearchLookup lookup;
-        private final String similaritySpace;
-        private final String field;
+        private String similaritySpace;
+        private String field;
         private final float[] qVector;
         private float qVectorSquaredMagnitude; // Used for cosine optimization
 
         public VectorScoreScriptFactory(Map<String, Object> params, SearchLookup lookup) {
             this.params = params;
             this.lookup = lookup;
-            validateParams(params);
+            validateAndInitParams(params);
 
             // initialize
-            this.field = params.get("field").toString();
-            final Object space = params.get("space");
-            this.similaritySpace = space != null? (String)space: KNNConstants.L2;
             this.qVector = KNNScoringUtil.convertVectorToPrimitive(params.get("vector"));
             // Optimization for cosinesimil
             if (KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace)) {
@@ -122,16 +115,27 @@ public class KNNVectorScoreScript extends ScoreScript {
             }
         }
 
-        private void validateParams(Map<String, Object> params) {
+        private void validateAndInitParams(Map<String, Object> params) {
             // query vector field
             final Object field = params.get("field");
             if (field == null)
                 throw new IllegalArgumentException("Missing parameter [field]");
+            this.field = field.toString();
 
             // query vector
             final Object qVector = params.get("vector");
             if (qVector == null) {
                 throw new IllegalArgumentException("Missing query vector parameter [vector]");
+            }
+
+            // validate space
+            final Object space = params.get("space");
+            if (space == null) {
+                throw new IllegalArgumentException("Missing parameter [space]");
+            }
+            this.similaritySpace = (String)space;
+            if (!KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace) && !KNNConstants.L2.equalsIgnoreCase(similaritySpace)) {
+                throw new IllegalArgumentException("Invalid space type. Please refer to the available space types.");
             }
         }
 

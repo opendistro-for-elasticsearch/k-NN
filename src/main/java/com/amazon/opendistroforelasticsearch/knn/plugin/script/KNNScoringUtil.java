@@ -35,9 +35,9 @@ public class KNNScoringUtil {
     }
 
     public static float cosinesimil(float[] queryVector, float[] inputVector) {
-        double dotProduct = 0.0f;
-        double normQueryVector = 0.0f;
-        double normInputVector = 0.0f;
+        float dotProduct = 0.0f;
+        float normQueryVector = 0.0f;
+        float normInputVector = 0.0f;
         for (int i = 0; i < queryVector.length; i++) {
             dotProduct += queryVector[i] * inputVector[i];
             normQueryVector += queryVector[i] * queryVector[i];
