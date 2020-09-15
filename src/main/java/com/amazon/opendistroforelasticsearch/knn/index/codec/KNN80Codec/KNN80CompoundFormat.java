@@ -19,6 +19,7 @@ import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.codecs.Codec;
+import org.apache.lucene.codecs.CompoundDirectory;
 import org.apache.lucene.codecs.CompoundFormat;
 import org.apache.lucene.index.SegmentInfo;
 import org.apache.lucene.store.Directory;
@@ -40,7 +41,7 @@ public class KNN80CompoundFormat extends CompoundFormat {
     }
 
     @Override
-    public Directory getCompoundReader(Directory dir, SegmentInfo si, IOContext context) throws IOException {
+    public CompoundDirectory getCompoundReader(Directory dir, SegmentInfo si, IOContext context) throws IOException {
         return Codec.getDefault().compoundFormat().getCompoundReader(dir, si, context);
     }
 

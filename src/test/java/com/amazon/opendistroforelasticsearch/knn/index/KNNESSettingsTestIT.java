@@ -79,6 +79,26 @@ public class KNNESSettingsTestIT extends KNNRestTestCase {
         searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
     }
 
+    public void testItemRemovedFromCache_expiration() throws Exception {
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_ENABLED, true);
+        updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, "1m");
+
+        Float[] vector = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+
+        float[] qvector = {1.0f, 2.0f};
+        Response response = searchKNNIndex(INDEX_NAME, new KNNQueryBuilder(FIELD_NAME, qvector, 1), 1);
+        assertEquals("knn query failed", RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+        assertEquals(1, getTotalGraphsInCache());
+
+        Thread.sleep(65 * 1000);
+
+        assertEquals(0, getTotalGraphsInCache());
+
+        updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_ENABLED, false);
+    }
+
     public void testCreateIndexWithInvalidSpaceType() throws IOException {
         String invalidSpaceType = "bar";
         Settings invalidSettings = Settings.builder()
