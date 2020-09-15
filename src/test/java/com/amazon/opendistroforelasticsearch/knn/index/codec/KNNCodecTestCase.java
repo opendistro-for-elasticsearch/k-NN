@@ -21,7 +21,7 @@ import com.amazon.opendistroforelasticsearch.knn.index.KNNQuery;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import com.amazon.opendistroforelasticsearch.knn.index.VectorField;
-import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec.KNN80Codec;
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN86Codec.KNN86Codec;
 import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.document.Document;
@@ -132,7 +132,7 @@ public class  KNNCodecTestCase extends KNNTestCase {
          */
         IndexWriterConfig iwc1 = newIndexWriterConfig();
         iwc1.setMergeScheduler(new SerialMergeScheduler());
-        iwc1.setCodec(new KNN80Codec());
+        iwc1.setCodec(new KNN86Codec());
         writer = new RandomIndexWriter(random(), dir, iwc1);
         float[] array1 = {6.0f, 14.0f};
         VectorField vectorField1 = new VectorField("my_vector", array1, KNNVectorFieldMapper.Defaults.FIELD_TYPE);

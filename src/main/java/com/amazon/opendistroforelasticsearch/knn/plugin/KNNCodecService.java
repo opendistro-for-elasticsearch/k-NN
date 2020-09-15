@@ -19,7 +19,7 @@ package com.amazon.opendistroforelasticsearch.knn.plugin;
 import org.apache.lucene.codecs.Codec;
 import org.elasticsearch.index.codec.CodecService;
 
-import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN84Codec.KNN84Codec.KNN_84;
+import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN86Codec.KNN86Codec.KNN_86;
 
 /**
  * KNNCodecService to inject the right KNNCodec version
@@ -39,7 +39,7 @@ class KNNCodecService extends CodecService {
      */
     @Override
     public Codec codec(String name) {
-        Codec codec = Codec.forName(KNN_84);
+        Codec codec = Codec.forName(KNN_86);
         if (codec == null) {
             throw new IllegalArgumentException("failed to find codec [" + name + "]");
         }
