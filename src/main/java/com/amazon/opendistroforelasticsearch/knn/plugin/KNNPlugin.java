@@ -198,6 +198,7 @@ public class KNNPlugin extends Plugin implements MapperPlugin, SearchPlugin, Act
      *         "lang": "knn",
      *         "params": {
      *           "field": "my_dense_vector",
+     *           "space": "L2"
      *           "vector": [
      *             1,
      *             1
