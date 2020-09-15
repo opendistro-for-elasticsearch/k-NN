@@ -21,4 +21,6 @@ public class KNNConstants {
     public static final String HNSW_ALGO_EF_CONSTRUCTION = "efConstruction";
     public static final String HNSW_ALGO_EF_SEARCH = "efSearch";
     public static final String HNSW_ALGO_INDEX_THREAD_QTY = "indexThreadQty";
+    public static final String L2 = "l2";
+    public static final String COSINESIMIL = "cosinesimil";
 }
