@@ -28,6 +28,7 @@ import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.ExistsQueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.junit.AfterClass;
@@ -136,6 +137,32 @@ public class KNNRestTestCase extends ESRestTestCase {
         request.addParameter("size", Integer.toString(resultSize));
         request.addParameter("explain", Boolean.toString(true));
         request.addParameter("search_type", "query_then_fetch");
+        request.setJsonEntity(Strings.toString(builder));
+
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        return response;
+    }
+
+    /**
+     * Run exists search
+     */
+    protected Response searchExists(String index, ExistsQueryBuilder existsQueryBuilder, int resultSize) throws
+            IOException {
+
+        Request request = new Request(
+                "POST",
+                "/" + index + "/_search"
+        );
+
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject().startObject("query");
+        builder = XContentFactory.jsonBuilder().startObject();
+        builder.field("query", existsQueryBuilder);
+        builder.endObject();
+
+        request.addParameter("size", Integer.toString(resultSize));
         request.setJsonEntity(Strings.toString(builder));
 
         Response response = client().performRequest(request);
@@ -411,6 +438,19 @@ public class KNNRestTestCase extends ESRestTestCase {
         ).collect(Collectors.toList());
 
         return nodeResponses;
+    }
+
+    /**
+     * Get the total hits from search response
+     */
+    @SuppressWarnings("unchecked")
+    protected int parseTotalSearchHits(String searchResponseBody) throws IOException {
+        Map<String, Object> responseMap = (Map<String, Object>)createParser(
+                XContentType.JSON.xContent(),
+                searchResponseBody
+        ).map().get("hits");
+
+        return (int) ((Map<String, Object>)responseMap.get("total")).get("value");
     }
 
     /**

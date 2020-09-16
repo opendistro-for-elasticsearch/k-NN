@@ -18,11 +18,15 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
 import com.amazon.opendistroforelasticsearch.knn.KNNResult;
 import org.apache.http.util.EntityUtils;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.ExistsQueryBuilder;
+import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
 import java.util.List;
@@ -324,5 +328,37 @@ public class KNNESIT extends KNNRestTestCase {
         Exception ex = expectThrows(ResponseException.class, () -> createKnnIndex(INDEX_NAME, settings,
                 createKnnIndexMapping(FIELD_NAME, 2)));
         assertThat(ex.getMessage(), containsString("Failed to parse value [-1] for setting [index.knn.algo_param.ef_search]"));
+    }
+
+    public void testExistsQuery() throws IOException {
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+
+        // Create document that does not have k-NN vector field
+        Request request = new Request(
+                "POST",
+                "/" + INDEX_NAME + "/_doc/1?refresh=true"
+        );
+
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+                .field("non-knn-field", "test")
+                .endObject();
+        request.setJsonEntity(Strings.toString(builder));
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.CREATED,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        ExistsQueryBuilder existsQueryBuilder = new ExistsQueryBuilder(FIELD_NAME);
+        response = searchExists(INDEX_NAME, existsQueryBuilder, 10);
+
+        // Confirm no documents exist
+        assertEquals(0, parseTotalSearchHits(EntityUtils.toString(response.getEntity())));
+
+        // Create document with k-NN field
+        Float[] vector = {6.0f, 7.0f};
+        addKnnDoc(INDEX_NAME, "2", FIELD_NAME, vector);
+        response = searchExists(INDEX_NAME, existsQueryBuilder, 10);
+
+        // Confirm exists works for one document
+        assertEquals(1, parseTotalSearchHits(EntityUtils.toString(response.getEntity())));
     }
 }

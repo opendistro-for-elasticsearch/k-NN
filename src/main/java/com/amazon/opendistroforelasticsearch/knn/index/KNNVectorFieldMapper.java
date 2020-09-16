@@ -24,6 +24,7 @@ import org.apache.lucene.document.StoredField;
 import org.apache.lucene.index.DocValuesType;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.DocValuesFieldExistsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.elasticsearch.common.Explicit;
@@ -271,7 +272,11 @@ public class KNNVectorFieldMapper extends FieldMapper {
 
         @Override
         public Query existsQuery(QueryShardContext context) {
-            return new TermQuery(new Term(FieldNamesFieldMapper.NAME, name()));
+            if (hasDocValues()) {
+                return new DocValuesFieldExistsQuery(name());
+            } else {
+                return new TermQuery(new Term(FieldNamesFieldMapper.NAME, name()));
+            }
         }
 
         @Override
