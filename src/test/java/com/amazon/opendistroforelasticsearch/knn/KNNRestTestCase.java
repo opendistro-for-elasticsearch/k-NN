@@ -241,6 +241,25 @@ public class KNNRestTestCase extends ESRestTestCase {
     }
 
     /**
+     * Utility to create a Knn Index Mapping with multiple k-NN fields
+     */
+    protected String createKnnIndexMapping(List<String> fieldNames, List<Integer> dimensions) throws IOException {
+        assertNotEquals(0, fieldNames.size());
+        assertEquals(fieldNames.size(), dimensions.size());
+
+        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject().startObject("properties");
+        for (int i = 0; i < fieldNames.size(); i++) {
+            xContentBuilder.startObject(fieldNames.get(i))
+                    .field("type", "knn_vector")
+                    .field("dimension", dimensions.get(i).toString())
+                    .endObject();
+        }
+        xContentBuilder.endObject().endObject();
+
+        return Strings.toString(xContentBuilder);
+    }
+
+    /**
      * Force merge KNN index segments
      */
     protected void forceMergeKnnIndex(String index) throws Exception {
@@ -287,6 +306,27 @@ public class KNNRestTestCase extends ESRestTestCase {
         );
         response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+    }
+
+    /**
+     * Add a single KNN Doc to an index with multiple fields
+     */
+    protected void addKnnDoc(String index, String docId, List<String> fieldNames, List<Object[]> vectors) throws IOException {
+        Request request = new Request(
+                "POST",
+                "/" + index + "/_doc/" + docId + "?refresh=true"
+        );
+
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
+        for (int i = 0; i < fieldNames.size(); i++) {
+            builder.field(fieldNames.get(i), vectors.get(i));
+        }
+        builder.endObject();
+
+        request.setJsonEntity(Strings.toString(builder));
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.CREATED,
                 RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
 
