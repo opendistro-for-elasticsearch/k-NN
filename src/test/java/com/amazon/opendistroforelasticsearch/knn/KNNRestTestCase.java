@@ -28,6 +28,7 @@ import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.ExistsQueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.junit.AfterClass;
@@ -146,6 +147,32 @@ public class KNNRestTestCase extends ESRestTestCase {
     }
 
     /**
+     * Run exists search
+     */
+    protected Response searchExists(String index, ExistsQueryBuilder existsQueryBuilder, int resultSize) throws
+            IOException {
+
+        Request request = new Request(
+                "POST",
+                "/" + index + "/_search"
+        );
+
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject().startObject("query");
+        builder = XContentFactory.jsonBuilder().startObject();
+        builder.field("query", existsQueryBuilder);
+        builder.endObject();
+
+        request.addParameter("size", Integer.toString(resultSize));
+        request.setJsonEntity(Strings.toString(builder));
+
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        return response;
+    }
+
+    /**
      * Parse the response of KNN search into a List of KNNResults
      */
     protected List<KNNResult> parseSearchResponse(String responseBody, String fieldName) throws IOException {
@@ -214,6 +241,25 @@ public class KNNRestTestCase extends ESRestTestCase {
     }
 
     /**
+     * Utility to create a Knn Index Mapping with multiple k-NN fields
+     */
+    protected String createKnnIndexMapping(List<String> fieldNames, List<Integer> dimensions) throws IOException {
+        assertNotEquals(0, fieldNames.size());
+        assertEquals(fieldNames.size(), dimensions.size());
+
+        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject().startObject("properties");
+        for (int i = 0; i < fieldNames.size(); i++) {
+            xContentBuilder.startObject(fieldNames.get(i))
+                    .field("type", "knn_vector")
+                    .field("dimension", dimensions.get(i).toString())
+                    .endObject();
+        }
+        xContentBuilder.endObject().endObject();
+
+        return Strings.toString(xContentBuilder);
+    }
+
+    /**
      * Force merge KNN index segments
      */
     protected void forceMergeKnnIndex(String index) throws Exception {
@@ -260,6 +306,27 @@ public class KNNRestTestCase extends ESRestTestCase {
         );
         response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+    }
+
+    /**
+     * Add a single KNN Doc to an index with multiple fields
+     */
+    protected void addKnnDoc(String index, String docId, List<String> fieldNames, List<Object[]> vectors) throws IOException {
+        Request request = new Request(
+                "POST",
+                "/" + index + "/_doc/" + docId + "?refresh=true"
+        );
+
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
+        for (int i = 0; i < fieldNames.size(); i++) {
+            builder.field(fieldNames.get(i), vectors.get(i));
+        }
+        builder.endObject();
+
+        request.setJsonEntity(Strings.toString(builder));
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.CREATED,
                 RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
 
@@ -411,6 +478,19 @@ public class KNNRestTestCase extends ESRestTestCase {
         ).collect(Collectors.toList());
 
         return nodeResponses;
+    }
+
+    /**
+     * Get the total hits from search response
+     */
+    @SuppressWarnings("unchecked")
+    protected int parseTotalSearchHits(String searchResponseBody) throws IOException {
+        Map<String, Object> responseMap = (Map<String, Object>)createParser(
+                XContentType.JSON.xContent(),
+                searchResponseBody
+        ).map().get("hits");
+
+        return (int) ((Map<String, Object>)responseMap.get("total")).get("value");
     }
 
     /**
