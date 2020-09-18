@@ -18,6 +18,7 @@ package com.amazon.opendistroforelasticsearch.knn;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
+import com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringScriptEngine;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
@@ -28,7 +29,10 @@ import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.functionscore.ScriptScoreQueryBuilder;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.script.Script;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -457,5 +461,25 @@ public class KNNRestTestCase extends ESRestTestCase {
     protected void clearCache() throws Exception {
         updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, "1m");
         updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, null);
+    }
+
+    protected Request constructKNNScriptQueryRequest(String indexName, QueryBuilder qb,
+                                                     Map<String, Object> params, float[] queryVector) throws Exception {
+        Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, KNNScoringScriptEngine.NAME, KNNScoringScriptEngine.SCRIPT_SOURCE, params);
+        ScriptScoreQueryBuilder sc = new ScriptScoreQueryBuilder(qb, script);
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject().startObject("query");
+        builder.startObject("script_score");
+        builder.field("query");
+        sc.query().toXContent(builder, ToXContent.EMPTY_PARAMS);
+        builder.field("script", script);
+        builder.endObject();
+        builder.endObject();
+        builder.endObject();
+        Request request = new Request(
+                "POST",
+                "/" + indexName + "/_search"
+        );
+        request.setJsonEntity(Strings.toString(builder));
+        return request;
     }
 }

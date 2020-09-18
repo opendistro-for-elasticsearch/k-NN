@@ -25,13 +25,11 @@ public class KNNScoringUtil {
             normInputVector += inputVector[i] * inputVector[i];
         }
         float normalizedProduct = normQueryVector * normInputVector;
-        try {
-            return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
-        } catch(ArithmeticException ex) {
-            logger.debug("Possibly Division by Zero Exception. Returning min score to put this result to end. " +
-                    "Current normalized product " + normalizedProduct);
+        if (normalizedProduct == 0) {
+            logger.debug("Invalid vectors for cosine. Returning minimum score to put this result to end");
             return Float.MIN_VALUE;
         }
+        return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
     }
 
     public static float cosinesimil(float[] queryVector, float[] inputVector) {
@@ -45,6 +43,7 @@ public class KNNScoringUtil {
         }
         float normalizedProduct = normQueryVector * normInputVector;
         if (normalizedProduct == 0 ) {
+            logger.debug("Invalid vectors for cosine. Returning minimum score to put this result to end");
             return Float.MIN_VALUE;
         }
         return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
