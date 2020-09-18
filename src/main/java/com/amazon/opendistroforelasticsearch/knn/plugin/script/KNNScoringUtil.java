@@ -8,6 +8,14 @@ import java.util.ArrayList;
 public class KNNScoringUtil {
     private static Logger logger = LogManager.getLogger(KNNScoringUtil.class);
 
+    /**
+     * This method calculates L2 squared distance between query vector
+     * and input vector
+     *
+     * @param queryVector query vector
+     * @param inputVector input vector
+     * @return L2 score
+     */
     public static float l2Squared(float[] queryVector, float[] inputVector) {
         float squaredDistance = 0;
         for (int i = 0; i < inputVector.length; i++) {
@@ -17,6 +25,15 @@ public class KNNScoringUtil {
         return squaredDistance;
     }
 
+    /**
+     * This method can be used script to avoid repeated calculation of normalization
+     * for query vector for each filtered documents
+     *
+     * @param queryVector query vector
+     * @param inputVector input vector
+     * @param normQueryVector normalized query vector value.
+     * @return cosine score
+     */
     public static float cosinesimilOptimized(float[] queryVector, float[] inputVector, float normQueryVector) {
         float dotProduct = 0.0f;
         float normInputVector = 0.0f;
@@ -32,6 +49,13 @@ public class KNNScoringUtil {
         return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
     }
 
+    /**
+     * This method calculates cosine similarity
+     *
+     * @param queryVector query vector
+     * @param inputVector input vector
+     * @return cosine score
+     */
     public static float cosinesimil(float[] queryVector, float[] inputVector) {
         float dotProduct = 0.0f;
         float normQueryVector = 0.0f;
@@ -49,10 +73,16 @@ public class KNNScoringUtil {
         return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
     }
 
+    /**
+     * Converts Object vector to primitive float[]
+     *
+     * @param vector input vector
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public static float[] convertVectorToPrimitive(Object vector) {
         float[] primitiveVector = null;
-        if(vector != null) {
+        if (vector != null) {
             final ArrayList<Double> tmp = (ArrayList<Double>) vector;
             primitiveVector = new float[tmp.size()];
             for (int i = 0; i < primitiveVector.length; i++) {
@@ -62,6 +92,12 @@ public class KNNScoringUtil {
         return primitiveVector;
     }
 
+    /**
+     * Calculates the magnitude of given vector
+     *
+     * @param inputVector input vector
+     * @return Magnitude of vector
+     */
     public static float getVectorMagnitudeSquared(float[] inputVector) {
         if (null == inputVector) {
             throw new IllegalStateException("vector magnitude cannot be evaluated as it is null");

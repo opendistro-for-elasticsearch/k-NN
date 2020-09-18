@@ -261,13 +261,4 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
                 containsString("query vector and field vector dimensions mismatch"));
     }
-
-    public void testNonExistentFieldInScriptQuery() {
-
-    }
-
-    public void testDocWithNoVectorForScoring() {
-
-    }
-
 }
