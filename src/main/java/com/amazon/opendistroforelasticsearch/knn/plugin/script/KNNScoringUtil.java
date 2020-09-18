@@ -77,7 +77,7 @@ public class KNNScoringUtil {
      * Converts Object vector to primitive float[]
      *
      * @param vector input vector
-     * @return
+     * @return Float array representing the vector
      */
     @SuppressWarnings("unchecked")
     public static float[] convertVectorToPrimitive(Object vector) {
