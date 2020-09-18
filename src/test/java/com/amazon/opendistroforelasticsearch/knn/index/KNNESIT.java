@@ -18,13 +18,18 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
 import com.amazon.opendistroforelasticsearch.knn.KNNResult;
 import org.apache.http.util.EntityUtils;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.ExistsQueryBuilder;
+import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
@@ -324,5 +329,46 @@ public class KNNESIT extends KNNRestTestCase {
         Exception ex = expectThrows(ResponseException.class, () -> createKnnIndex(INDEX_NAME, settings,
                 createKnnIndexMapping(FIELD_NAME, 2)));
         assertThat(ex.getMessage(), containsString("Failed to parse value [-1] for setting [index.knn.algo_param.ef_search]"));
+    }
+
+    public void testExistsQuery() throws IOException {
+        String field1 = "field1";
+        String field2 = "field2";
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(Arrays.asList(field1, field2), Arrays.asList(2, 2)));
+
+        Float[] vector = {6.0f, 7.0f};
+        addKnnDoc(INDEX_NAME, "1", Arrays.asList(field1, field2), Arrays.asList(vector, vector));
+
+        addKnnDoc(INDEX_NAME, "2", field1, vector);
+        addKnnDoc(INDEX_NAME, "3", field1, vector);
+        addKnnDoc(INDEX_NAME, "4", field1, vector);
+
+        addKnnDoc(INDEX_NAME, "5", field2, vector);
+        addKnnDoc(INDEX_NAME, "6", field2, vector);
+
+
+        // Create document that does not have k-NN vector field
+        Request request = new Request(
+                "POST",
+                "/" + INDEX_NAME + "/_doc/7?refresh=true"
+        );
+
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+                .field("non-knn-field", "test")
+                .endObject();
+        request.setJsonEntity(Strings.toString(builder));
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.CREATED,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        ExistsQueryBuilder existsQueryBuilder = new ExistsQueryBuilder(field1);
+        response = searchExists(INDEX_NAME, existsQueryBuilder, 10);
+
+        assertEquals(4, parseTotalSearchHits(EntityUtils.toString(response.getEntity())));
+
+        existsQueryBuilder = new ExistsQueryBuilder(field2);
+        response = searchExists(INDEX_NAME, existsQueryBuilder, 10);
+
+        assertEquals(3, parseTotalSearchHits(EntityUtils.toString(response.getEntity())));
     }
 }
