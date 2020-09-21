@@ -282,7 +282,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         float[] queryVector = {2.0f, 2.0f};  // query dimension and field dimension mismatch
         params.put("field", FIELD_NAME);
         params.put("vector", queryVector);
-        params.put("space", KNNConstants.L2);
+        params.put("space_type", KNNConstants.L2);
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
