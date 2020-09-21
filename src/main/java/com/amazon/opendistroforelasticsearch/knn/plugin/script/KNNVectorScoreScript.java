@@ -107,6 +107,8 @@ public class KNNVectorScoreScript extends ScoreScript {
         private float qVectorSquaredMagnitude; // Used for cosine optimization
 
         public VectorScoreScriptFactory(Map<String, Object> params, SearchLookup lookup) {
+            KNNCounter.SCRIPT_QUERY_REQUESTS.increment();
+
             this.params = params;
             this.lookup = lookup;
             validateAndInitParams(params);
@@ -114,12 +116,9 @@ public class KNNVectorScoreScript extends ScoreScript {
             // initialize
             this.qVector = KNNScoringUtil.convertVectorToPrimitive(params.get("vector"));
             // Optimization for cosinesimil
-            if (KNNConstants.L2.equalsIgnoreCase(similaritySpace)) {
-                KNNCounter.SCRIPT_L2_QUERY_REQUESTS.increment();
-            } else if (KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace)) {
+            if (KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace)) {
                 // calculate the magnitude
                 qVectorSquaredMagnitude = KNNScoringUtil.getVectorMagnitudeSquared(qVector);
-                KNNCounter.SCRIPT_COSINE_QUERY_REQUESTS.increment();
             }
         }
 

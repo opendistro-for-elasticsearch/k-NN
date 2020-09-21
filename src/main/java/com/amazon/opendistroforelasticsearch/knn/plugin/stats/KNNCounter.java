@@ -28,8 +28,7 @@ public enum KNNCounter {
     KNN_QUERY_REQUESTS("knn_query_requests"),
     SCRIPT_COMPILATIONS("script_compilations"),
     SCRIPT_COMPILATION_ERRORS("script_compilation_errors"),
-    SCRIPT_L2_QUERY_REQUESTS("script_l2_query_requests"),
-    SCRIPT_COSINE_QUERY_REQUESTS("script_cosine_query_requests"),
+    SCRIPT_QUERY_REQUESTS("script_query_requests"),
     SCRIPT_QUERY_ERRORS("script_query_errors");
 
     private String name;

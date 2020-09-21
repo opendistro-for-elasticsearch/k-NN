@@ -63,10 +63,8 @@ public class KNNStatsConfig {
                     new KNNCounterSupplier(KNNCounter.SCRIPT_COMPILATIONS)))
             .put(StatNames.SCRIPT_COMPILATION_ERRORS.getName(), new KNNStat<>(false,
                     new KNNCounterSupplier(KNNCounter.SCRIPT_COMPILATION_ERRORS)))
-            .put(StatNames.SCRIPT_L2_QUERY_REQUESTS.getName(), new KNNStat<>(false,
-                    new KNNCounterSupplier(KNNCounter.SCRIPT_L2_QUERY_REQUESTS)))
-            .put(StatNames.SCRIPT_COSINE_QUERY_REQUESTS.getName(), new KNNStat<>(false,
-                    new KNNCounterSupplier(KNNCounter.SCRIPT_COSINE_QUERY_REQUESTS)))
+            .put(StatNames.SCRIPT_QUERY_REQUESTS.getName(), new KNNStat<>(false,
+                    new KNNCounterSupplier(KNNCounter.SCRIPT_QUERY_REQUESTS)))
             .put(StatNames.SCRIPT_QUERY_ERRORS.getName(), new KNNStat<>(false,
                     new KNNCounterSupplier(KNNCounter.SCRIPT_QUERY_ERRORS)))
             .build();
