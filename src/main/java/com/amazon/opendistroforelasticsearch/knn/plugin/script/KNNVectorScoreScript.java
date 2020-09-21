@@ -25,6 +25,7 @@ public class KNNVectorScoreScript extends ScoreScript {
     private final float[] queryVector;
     private final String similaritySpace;
     private float queryVectorSquaredMagnitude = -1;
+    private boolean vectorExist = true;
 
     /**
      * This function called for each doc in the segment. We evaluate the score of the vector in the doc
@@ -35,11 +36,16 @@ public class KNNVectorScoreScript extends ScoreScript {
      */
     @Override
     public double execute(ScoreScript.ExplanationHolder explanationHolder) {
+        // If this document does not contain the vector, push it to end of the results.
+        if (!vectorExist) {
+            return Float.MIN_VALUE;
+        }
+
         float score = Float.MIN_VALUE;
         try {
             float[] doc_vector;
             BytesRef bytesref = binaryDocValuesReader.binaryValue();
-            // If there is no vector for the corresponding doc then it should be not considered for nearest
+            // If there is no vector for the corresponding doc then it should not be considered for nearest
             // neighbors.
             if (bytesref == null) {
                 return Float.MIN_VALUE;
@@ -75,7 +81,7 @@ public class KNNVectorScoreScript extends ScoreScript {
     @Override
     public void setDocument(int docId) {
         try {
-            this.binaryDocValuesReader.advanceExact(docId);
+            this.vectorExist = this.binaryDocValuesReader.advanceExact(docId);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -140,10 +146,10 @@ public class KNNVectorScoreScript extends ScoreScript {
             }
 
             // validate space
-            final Object space = params.get("space");
+            final Object space = params.get("space_type");
             if (space == null) {
                 KNNCounter.SCRIPT_QUERY_ERRORS.increment();
-                throw new IllegalArgumentException("Missing parameter [space]");
+                throw new IllegalArgumentException("Missing parameter [space_type]");
             }
             this.similaritySpace = (String)space;
             if (!KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace) && !KNNConstants.L2.equalsIgnoreCase(similaritySpace)) {
