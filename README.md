@@ -359,10 +359,10 @@ The number of times the knn script is compiled. This value should only be 0 or 1
 The number of errors during script compilation.
 
 #### script_query_requests
-The number of query requests that use the k-NN score script.
+The number of query requests that use the k-NN score script. One query request corresponds to one query for a given shard.
 
 #### script_query_errors
-The number of errors that have occurred during use of the k-NN score script.
+The number of errors that have occurred during use of the k-NN score script. One error corresponds to one error for a given a shard.
 
 #### Examples
 ```
