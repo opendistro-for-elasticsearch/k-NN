@@ -12,6 +12,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.functionscore.ScriptScoreQueryBuilder;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsString;
 
@@ -260,5 +262,50 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         ResponseException ex = expectThrows(ResponseException.class,  () -> client().performRequest(request));
         assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
                 containsString("query vector and field vector dimensions mismatch"));
+    }
+
+    @SuppressWarnings("unchecked")
+    public void testKNNScoreforNonVectorDocument() throws Exception {
+        /*
+         * Create knn index and populate data
+         */
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] f1  = {1.0f, 1.0f};
+        addDocWithNumericField(INDEX_NAME, "0", "price", 10);
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, f1);
+        forceMergeKnnIndex(INDEX_NAME);
+        /**
+         * Construct Search Request
+         */
+        QueryBuilder qb = new MatchAllQueryBuilder();
+        Map<String, Object> params = new HashMap<>();
+        float[] queryVector = {2.0f, 2.0f};  // query dimension and field dimension mismatch
+        params.put("field", FIELD_NAME);
+        params.put("vector", queryVector);
+        params.put("space", KNNConstants.L2);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        String responseBody = EntityUtils.toString(response.getEntity());
+        List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
+                responseBody).map().get("hits")).get("hits");
+
+        List<String>  docIds = hits.stream().map(hit -> {
+            String id = ((String)((Map<String, Object>)hit).get("_id"));
+            return id;
+        }).collect(Collectors.toList());
+        //assert document order
+        assertEquals("1", docIds.get(0));
+        assertEquals("0", docIds.get(1));
+
+        List<Double>  scores = hits.stream().map(hit -> {
+            Double score = ((Double)((Map<String, Object>)hit).get("_score"));
+            return score;
+        }).collect(Collectors.toList());
+        //assert scores
+        assertEquals(0.33333, scores.get(0), 0.001);
+        assertEquals(Float.MIN_VALUE, scores.get(1), 0.001);
     }
 }
