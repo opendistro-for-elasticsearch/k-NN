@@ -135,9 +135,9 @@ public class KNNVectorScoreScript extends ScoreScript {
             }
 
             // validate space
-            final Object space = params.get("space");
+            final Object space = params.get("space_type");
             if (space == null) {
-                throw new IllegalArgumentException("Missing parameter [space]");
+                throw new IllegalArgumentException("Missing parameter [space_type]");
             }
             this.similaritySpace = (String)space;
             if (!KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace) && !KNNConstants.L2.equalsIgnoreCase(similaritySpace)) {

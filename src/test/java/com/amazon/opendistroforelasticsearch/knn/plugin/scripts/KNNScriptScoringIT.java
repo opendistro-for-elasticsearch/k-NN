@@ -62,7 +62,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         float[] queryVector = {1.0f, 1.0f};
         params.put("field", FIELD_NAME);
         params.put("vector", queryVector);
-        params.put("space", KNNConstants.L2);
+        params.put("space_type", KNNConstants.L2);
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
@@ -108,7 +108,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
          *   params": {
          *       "field": "my_dense_vector",
          *       "vector": [2.0, 2.0],
-         *       "space": "L2"
+         *       "space_type": "L2"
          *      }
          *
          *
@@ -116,7 +116,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         float[] queryVector = {2.0f, -2.0f};
         params.put("field", FIELD_NAME);
         params.put("vector", queryVector);
-        params.put("space", KNNConstants.COSINESIMIL);
+        params.put("space_type", KNNConstants.COSINESIMIL);
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
@@ -153,13 +153,13 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
          *   params": {
          *       "field": "my_dense_vector",
          *       "vector": [2.0, 2.0],
-         *       "space": "cosinesimil"
+         *       "space_type": "cosinesimil"
          *      }
          */
         float[] queryVector = {2.0f, -2.0f};
         params.put("field", FIELD_NAME);
         params.put("vector", queryVector);
-        params.put("space", KNNConstants.COSINESIMIL);
+        params.put("space_type", KNNConstants.COSINESIMIL);
         Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, KNNScoringScriptEngine.NAME, "Dummy_source", params);
         ScriptScoreQueryBuilder sc = new ScriptScoreQueryBuilder(qb, script);
 
@@ -198,7 +198,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         float[] queryVector = {2.0f, -2.0f};
         params.put("field", FIELD_NAME);
         params.put("vector", queryVector);
-        params.put("space", INVALID_SPACE);
+        params.put("space_type", INVALID_SPACE);
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
         ResponseException ex = expectThrows(ResponseException.class,  () -> client().performRequest(request));
         assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
@@ -218,7 +218,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         Map<String, Object> params = new HashMap<>();
         float[] queryVector = {2.0f, -2.0f};
         params.put("vector", queryVector);
-        params.put("space", KNNConstants.COSINESIMIL);
+        params.put("space_type", KNNConstants.COSINESIMIL);
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
         ResponseException ex = expectThrows(ResponseException.class,  () -> client().performRequest(request));
         assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
@@ -234,11 +234,11 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
 
         // Remove space parameter
         params.put("vector", queryVector);
-        params.remove("space");
+        params.remove("space_type");
         Request space_request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
         ex = expectThrows(ResponseException.class,  () -> client().performRequest(space_request));
         assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
-                containsString("Missing parameter [space]"));
+                containsString("Missing parameter [space_type]"));
     }
 
     public void testUnequalDimensions() throws Exception {
@@ -257,7 +257,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         float[] queryVector = {2.0f, -2.0f, -2.0f};  // query dimension and field dimension mismatch
         params.put("field", FIELD_NAME);
         params.put("vector", queryVector);
-        params.put("space", KNNConstants.COSINESIMIL);
+        params.put("space_type", KNNConstants.COSINESIMIL);
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
         ResponseException ex = expectThrows(ResponseException.class,  () -> client().performRequest(request));
         assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
