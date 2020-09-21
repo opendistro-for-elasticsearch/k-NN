@@ -17,21 +17,27 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.action;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStats;
 
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.index.query.MatchAllQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.rest.RestStatus;
 import org.junit.rules.DisableOnDebug;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -162,6 +168,62 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         String responseBody = EntityUtils.toString(response.getEntity());
         List<Map<String, Object>> nodeStats = parseNodeStatsResponse(responseBody);
         assertEquals(0, nodeStats.size());
+    }
+
+    /**
+     *  Test checks that script stats are properly updated
+     */
+    public void testScriptStats() throws Exception {
+        // Get initial stats
+        Response response = getKnnStats(Collections.emptyList(), Arrays.asList(
+                StatNames.SCRIPT_QUERY_REQUESTS.getName(),
+                StatNames.SCRIPT_QUERY_ERRORS.getName())
+        );
+        List<Map<String, Object>> nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
+        int initialScriptQueryRequests = (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_REQUESTS.getName()));
+        int initialScriptQueryErrors = (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_ERRORS.getName()));
+
+        // Create an index with a single vector
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] vector = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+
+        // Check l2 query and script compilation stats
+        QueryBuilder qb = new MatchAllQueryBuilder();
+        Map<String, Object> params = new HashMap<>();
+        float[] queryVector = {1.0f, 1.0f};
+        params.put("field", FIELD_NAME);
+        params.put("vector", queryVector);
+        params.put("space", KNNConstants.L2);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        response = getKnnStats(Collections.emptyList(), Arrays.asList(
+                StatNames.SCRIPT_COMPILATIONS.getName(),
+                StatNames.SCRIPT_QUERY_REQUESTS.getName())
+        );
+        nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
+        assertEquals(1, (int)(nodeStats.get(0).get(StatNames.SCRIPT_COMPILATIONS.getName())));
+        assertEquals(initialScriptQueryRequests + 1,
+                (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_REQUESTS.getName())));
+
+        // Check query error stats
+        params = new HashMap<>();
+        params.put("field", FIELD_NAME);
+        params.put("vector", queryVector);
+        params.put("space", "invalid_space");
+        request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Request finalRequest = request;
+        expectThrows(ResponseException.class, () -> client().performRequest(finalRequest));
+
+        response = getKnnStats(Collections.emptyList(), Collections.singletonList(
+                StatNames.SCRIPT_QUERY_ERRORS.getName())
+        );
+        nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
+        assertEquals(initialScriptQueryErrors + 1,
+                (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_ERRORS.getName())));
     }
 
     // Useful settings when debugging to prevent timeouts
