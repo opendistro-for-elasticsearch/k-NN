@@ -171,9 +171,9 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
     }
 
     /**
-     *  Test checks that script stats are properly updated
+     *  Test checks that script stats are properly updated for single shard
      */
-    public void testScriptStats() throws Exception {
+    public void testScriptStats_singleShard() throws Exception {
         // Get initial stats
         Response response = getKnnStats(Collections.emptyList(), Arrays.asList(
                 StatNames.SCRIPT_QUERY_REQUESTS.getName(),
@@ -194,7 +194,7 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         float[] queryVector = {1.0f, 1.0f};
         params.put("field", FIELD_NAME);
         params.put("vector", queryVector);
-        params.put("space", KNNConstants.L2);
+        params.put("space_type", KNNConstants.L2);
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
         response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
@@ -213,7 +213,7 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         params = new HashMap<>();
         params.put("field", FIELD_NAME);
         params.put("vector", queryVector);
-        params.put("space", "invalid_space");
+        params.put("space_type", "invalid_space");
         request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
         Request finalRequest = request;
         expectThrows(ResponseException.class, () -> client().performRequest(finalRequest));
@@ -223,6 +223,71 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         );
         nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
         assertEquals(initialScriptQueryErrors + 1,
+                (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_ERRORS.getName())));
+    }
+
+    /**
+     *  Test checks that script stats are properly updated for multiple shards
+     */
+    public void testScriptStats_multipleShards() throws Exception {
+        // Get initial stats
+        Response response = getKnnStats(Collections.emptyList(), Arrays.asList(
+                StatNames.SCRIPT_QUERY_REQUESTS.getName(),
+                StatNames.SCRIPT_QUERY_ERRORS.getName())
+        );
+        List<Map<String, Object>> nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
+        int initialScriptQueryRequests = (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_REQUESTS.getName()));
+        int initialScriptQueryErrors = (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_ERRORS.getName()));
+
+        // Create an index with a single vector
+        createKnnIndex(INDEX_NAME, Settings.builder()
+                        .put("number_of_shards", 2)
+                        .put("number_of_replicas", 0)
+                        .put("index.knn", true)
+                        .build(),
+                createKnnIndexMapping(FIELD_NAME, 2));
+
+        Float[] vector = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, vector);
+        addKnnDoc(INDEX_NAME, "2", FIELD_NAME, vector);
+        addKnnDoc(INDEX_NAME, "3", FIELD_NAME, vector);
+        addKnnDoc(INDEX_NAME, "4", FIELD_NAME, vector);
+
+        // Check l2 query and script compilation stats
+        QueryBuilder qb = new MatchAllQueryBuilder();
+        Map<String, Object> params = new HashMap<>();
+        float[] queryVector = {1.0f, 1.0f};
+        params.put("field", FIELD_NAME);
+        params.put("vector", queryVector);
+        params.put("space_type", KNNConstants.L2);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        response = getKnnStats(Collections.emptyList(), Arrays.asList(
+                StatNames.SCRIPT_COMPILATIONS.getName(),
+                StatNames.SCRIPT_QUERY_REQUESTS.getName())
+        );
+        nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
+        assertEquals(1, (int)(nodeStats.get(0).get(StatNames.SCRIPT_COMPILATIONS.getName())));
+        assertEquals(initialScriptQueryRequests + 2,
+                (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_REQUESTS.getName())));
+
+        // Check query error stats
+        params = new HashMap<>();
+        params.put("field", FIELD_NAME);
+        params.put("vector", queryVector);
+        params.put("space_type", "invalid_space");
+        request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Request finalRequest = request;
+        expectThrows(ResponseException.class, () -> client().performRequest(finalRequest));
+
+        response = getKnnStats(Collections.emptyList(), Collections.singletonList(
+                StatNames.SCRIPT_QUERY_ERRORS.getName())
+        );
+        nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
+        assertEquals(initialScriptQueryErrors + 2,
                 (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_ERRORS.getName())));
     }
 
