@@ -1,6 +1,7 @@
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.util.BytesRef;
@@ -53,10 +54,12 @@ public class KNNVectorScoreScript extends ScoreScript {
                  ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
                 doc_vector = (float[]) objectStream.readObject();
             } catch (ClassNotFoundException e) {
+                KNNCounter.SCRIPT_QUERY_ERRORS.increment();
                 throw new RuntimeException(e);
             }
 
             if(doc_vector.length != queryVector.length) {
+                KNNCounter.SCRIPT_QUERY_ERRORS.increment();
                 throw new IllegalStateException("[KNN] query vector and field vector dimensions mismatch. " +
                         "query vector: " + queryVector.length + ", stored vector: " + doc_vector.length);
             }
@@ -69,6 +72,7 @@ public class KNNVectorScoreScript extends ScoreScript {
                 score = 1 + KNNScoringUtil.cosinesimilOptimized(this.queryVector, doc_vector, this.queryVectorSquaredMagnitude);
             }
         } catch (IOException e) {
+            KNNCounter.SCRIPT_QUERY_ERRORS.increment();
             throw new UncheckedIOException(e);
         }
         return score;
@@ -94,6 +98,7 @@ public class KNNVectorScoreScript extends ScoreScript {
         this.queryVectorSquaredMagnitude = queryVectorSquaredMagnitude;
         this.binaryDocValuesReader = leafContext.reader().getBinaryDocValues(field);
         if(this.binaryDocValuesReader == null) {
+            KNNCounter.SCRIPT_QUERY_ERRORS.increment();
             throw new IllegalStateException("Binary Doc values not enabled for the field " + field
                                                         + " Please ensure the field type is knn_vector in mappings for this field");
         }
@@ -108,6 +113,8 @@ public class KNNVectorScoreScript extends ScoreScript {
         private float qVectorSquaredMagnitude; // Used for cosine optimization
 
         public VectorScoreScriptFactory(Map<String, Object> params, SearchLookup lookup) {
+            KNNCounter.SCRIPT_QUERY_REQUESTS.increment();
+
             this.params = params;
             this.lookup = lookup;
             validateAndInitParams(params);
@@ -124,23 +131,29 @@ public class KNNVectorScoreScript extends ScoreScript {
         private void validateAndInitParams(Map<String, Object> params) {
             // query vector field
             final Object field = params.get("field");
-            if (field == null)
+            if (field == null) {
+                KNNCounter.SCRIPT_QUERY_ERRORS.increment();
                 throw new IllegalArgumentException("Missing parameter [field]");
+            }
+
             this.field = field.toString();
 
             // query vector
             final Object qVector = params.get("vector");
             if (qVector == null) {
+                KNNCounter.SCRIPT_QUERY_ERRORS.increment();
                 throw new IllegalArgumentException("Missing query vector parameter [vector]");
             }
 
             // validate space
             final Object space = params.get("space_type");
             if (space == null) {
+                KNNCounter.SCRIPT_QUERY_ERRORS.increment();
                 throw new IllegalArgumentException("Missing parameter [space_type]");
             }
             this.similaritySpace = (String)space;
             if (!KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace) && !KNNConstants.L2.equalsIgnoreCase(similaritySpace)) {
+                KNNCounter.SCRIPT_QUERY_ERRORS.increment();
                 throw new IllegalArgumentException("Invalid space type. Please refer to the available space types.");
             }
         }

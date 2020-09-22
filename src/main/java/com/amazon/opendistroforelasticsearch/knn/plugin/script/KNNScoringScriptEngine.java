@@ -1,5 +1,6 @@
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.elasticsearch.script.ScoreScript;
 import org.elasticsearch.script.ScriptContext;
 import org.elasticsearch.script.ScriptEngine;
@@ -22,11 +23,14 @@ public class KNNScoringScriptEngine implements ScriptEngine {
 
     @Override
     public <FactoryType> FactoryType compile(String name, String code, ScriptContext<FactoryType> context, Map<String, String> params) {
+        KNNCounter.SCRIPT_COMPILATIONS.increment();
         if (!ScoreScript.CONTEXT.equals(context)) {
+            KNNCounter.SCRIPT_COMPILATION_ERRORS.increment();
             throw new IllegalArgumentException(getType() + " KNN Vector scoring scripts cannot be used for context [" + context.name + "]");
         }
         // we use the script "source" as the script identifier
         if (!SCRIPT_SOURCE.equals(code)) {
+            KNNCounter.SCRIPT_COMPILATION_ERRORS.increment();
             throw new IllegalArgumentException("Unknown script name " + code);
         }
         ScoreScript.Factory factory = KNNVectorScoreScript.VectorScoreScriptFactory::new;
