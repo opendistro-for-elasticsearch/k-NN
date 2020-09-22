@@ -174,12 +174,16 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
      *  Test checks that script stats are properly updated for single shard
      */
     public void testScriptStats_singleShard() throws Exception {
+        clearScriptCache();
+
         // Get initial stats
         Response response = getKnnStats(Collections.emptyList(), Arrays.asList(
+                StatNames.SCRIPT_COMPILATIONS.getName(),
                 StatNames.SCRIPT_QUERY_REQUESTS.getName(),
                 StatNames.SCRIPT_QUERY_ERRORS.getName())
         );
         List<Map<String, Object>> nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
+        int initialScriptCompilations = (int)(nodeStats.get(0).get(StatNames.SCRIPT_COMPILATIONS.getName()));
         int initialScriptQueryRequests = (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_REQUESTS.getName()));
         int initialScriptQueryErrors = (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_ERRORS.getName()));
 
@@ -205,7 +209,7 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
                 StatNames.SCRIPT_QUERY_REQUESTS.getName())
         );
         nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
-        assertEquals(1, (int)(nodeStats.get(0).get(StatNames.SCRIPT_COMPILATIONS.getName())));
+        assertEquals((int) (nodeStats.get(0).get(StatNames.SCRIPT_COMPILATIONS.getName())), initialScriptCompilations + 1);
         assertEquals(initialScriptQueryRequests + 1,
                 (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_REQUESTS.getName())));
 
@@ -230,12 +234,16 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
      *  Test checks that script stats are properly updated for multiple shards
      */
     public void testScriptStats_multipleShards() throws Exception {
+        clearScriptCache();
+
         // Get initial stats
         Response response = getKnnStats(Collections.emptyList(), Arrays.asList(
+                StatNames.SCRIPT_COMPILATIONS.getName(),
                 StatNames.SCRIPT_QUERY_REQUESTS.getName(),
                 StatNames.SCRIPT_QUERY_ERRORS.getName())
         );
         List<Map<String, Object>> nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
+        int initialScriptCompilations = (int)(nodeStats.get(0).get(StatNames.SCRIPT_COMPILATIONS.getName()));
         int initialScriptQueryRequests = (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_REQUESTS.getName()));
         int initialScriptQueryErrors = (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_ERRORS.getName()));
 
@@ -270,7 +278,7 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
                 StatNames.SCRIPT_QUERY_REQUESTS.getName())
         );
         nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
-        assertEquals(1, (int)(nodeStats.get(0).get(StatNames.SCRIPT_COMPILATIONS.getName())));
+        assertEquals((int) (nodeStats.get(0).get(StatNames.SCRIPT_COMPILATIONS.getName())), initialScriptCompilations + 1);
         assertEquals(initialScriptQueryRequests + 2,
                 (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_REQUESTS.getName())));
 
