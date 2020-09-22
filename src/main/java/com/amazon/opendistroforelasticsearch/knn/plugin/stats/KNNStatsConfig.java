@@ -58,5 +58,14 @@ public class KNNStatsConfig {
             .put(StatNames.KNN_QUERY_REQUESTS.getName(), new KNNStat<>(false,
                     new KNNCounterSupplier(KNNCounter.KNN_QUERY_REQUESTS)))
             .put(StatNames.INDICES_IN_CACHE.getName(), new KNNStat<>(false,
-                    new KNNCacheSupplier<>(KNNIndexCache::getIndicesCacheStats))).build();
+                    new KNNCacheSupplier<>(KNNIndexCache::getIndicesCacheStats)))
+            .put(StatNames.SCRIPT_COMPILATIONS.getName(), new KNNStat<>(false,
+                    new KNNCounterSupplier(KNNCounter.SCRIPT_COMPILATIONS)))
+            .put(StatNames.SCRIPT_COMPILATION_ERRORS.getName(), new KNNStat<>(false,
+                    new KNNCounterSupplier(KNNCounter.SCRIPT_COMPILATION_ERRORS)))
+            .put(StatNames.SCRIPT_QUERY_REQUESTS.getName(), new KNNStat<>(false,
+                    new KNNCounterSupplier(KNNCounter.SCRIPT_QUERY_REQUESTS)))
+            .put(StatNames.SCRIPT_QUERY_ERRORS.getName(), new KNNStat<>(false,
+                    new KNNCounterSupplier(KNNCounter.SCRIPT_QUERY_ERRORS)))
+            .build();
 }

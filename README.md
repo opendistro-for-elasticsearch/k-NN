@@ -352,6 +352,18 @@ The total time in nanoseconds it has taken to load items into cache (cumulative)
 #### indices_in_cache
 For each index that has graphs in the cache, this stat provides the number of graphs that index has and the total graph_memory_usage that index is using in Kilobytes.
 
+#### script_compilations
+The number of times the knn script is compiled. This value should only be 0 or 1 most of the time. However, if the cache containing the compiled scripts is filled, it may cause the script to be recompiled.
+
+#### script_compilation_errors
+The number of errors during script compilation.
+
+#### script_query_requests
+The number of query requests that use the k-NN score script. One query request corresponds to one query for a given shard.
+
+#### script_query_errors
+The number of errors that have occurred during use of the k-NN score script. One error corresponds to one error for a given a shard.
+
 #### Examples
 ```
 
@@ -386,7 +398,11 @@ GET /_opendistro/_knn/stats?pretty
             "load_exception_count" : 0,
             "hit_count" : 0,
             "load_success_count" : 1,
-            "total_load_time" : 2878745
+            "total_load_time" : 2878745,
+            "script_compilations" : 1,
+            "script_compilation_errors" : 0,
+            "script_query_requests" : 534,
+            "script_query_errors" : 0
         }
     }
 }
