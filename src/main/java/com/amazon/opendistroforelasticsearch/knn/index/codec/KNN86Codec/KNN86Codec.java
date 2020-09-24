@@ -82,9 +82,14 @@ public final class KNN86Codec extends Codec {
      * approach of manually overriding.
      */
 
+    PostingsFormat postingsFormat = null;
+    public void setPostingsFormat(PostingsFormat postingsFormat) {
+        this.postingsFormat = postingsFormat;
+    }
+
     @Override
     public PostingsFormat postingsFormat() {
-        return getDelegatee().postingsFormat();
+        return this.postingsFormat;
     }
 
     @Override
