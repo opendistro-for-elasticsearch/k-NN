@@ -16,7 +16,6 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin;
 
-import org.apache.lucene.codecs.Codec;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.EngineConfig;
 import org.elasticsearch.index.engine.EngineFactory;
