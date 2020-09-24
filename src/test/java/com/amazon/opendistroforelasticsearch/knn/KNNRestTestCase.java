@@ -543,6 +543,16 @@ public class KNNRestTestCase extends ESRestTestCase {
         updateClusterSettings(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES, null);
     }
 
+    /**
+     * Clear script cache
+     *
+     * Remove k-NN script from script cache so that it has to be recompiled
+     */
+    protected void clearScriptCache() throws Exception {
+        updateClusterSettings("script.context.score.cache_expire", "0");
+        updateClusterSettings("script.context.score.cache_expire", null);
+    }
+
     protected Request constructKNNScriptQueryRequest(String indexName, QueryBuilder qb,
                                                      Map<String, Object> params, float[] queryVector) throws Exception {
         Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, KNNScoringScriptEngine.NAME, KNNScoringScriptEngine.SCRIPT_SOURCE, params);
