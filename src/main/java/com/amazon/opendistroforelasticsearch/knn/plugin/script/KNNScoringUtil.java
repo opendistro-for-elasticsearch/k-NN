@@ -1,10 +1,25 @@
+/*
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Base64;
 
 public class KNNScoringUtil {
     private static Logger logger = LogManager.getLogger(KNNScoringUtil.class);
@@ -76,14 +91,14 @@ public class KNNScoringUtil {
 
 
     /**
-     * This method calculates hamming distance
+     * This method calculates hamming distance on 2 BigIntegers
      *
-     * @param queryBase64 query long
-     * @param inputBase64 input long
+     * @param queryHexEmbedding query BigInteger
+     * @param inputHexEmbedding input BigInteger
      * @return hamming distance
      */
-    public static float hamming(String queryBase64, String inputBase64) {
-        return Long.bitCount(Long.parseLong(queryBase64) ^ Long.parseLong(inputBase64));
+    public static float hamming(BigInteger queryHexEmbedding, BigInteger inputHexEmbedding) {
+        return queryHexEmbedding.xor(inputHexEmbedding).bitCount();
     }
 
     /**

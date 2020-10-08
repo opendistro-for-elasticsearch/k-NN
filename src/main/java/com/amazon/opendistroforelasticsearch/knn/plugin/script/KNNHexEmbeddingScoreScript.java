@@ -28,18 +28,18 @@ import java.util.Map;
  * on a per document basis.
  *
  */
-public class KNNBinaryScoreScript extends ScoreScript {
+public class KNNHexEmbeddingScoreScript extends ScoreScript {
 
     private final BigInteger queryHexEmbedding;
     private final String similaritySpace;
     private final String field;
 
     /**
-     * This function called for each doc in the segment. We evaluate the score of the vector in the doc
+     * This function calculates the custom score for each doc in the segment.
      *
      * @param explanationHolder A helper to take in an explanation from a script and turn
      *                          it into an {@link org.apache.lucene.search.Explanation}
-     * @return score of the vector to the query vector
+     * @return score for the provided space between the doc and the query
      */
     @Override
     public double execute(ScoreScript.ExplanationHolder explanationHolder) {
@@ -53,7 +53,7 @@ public class KNNBinaryScoreScript extends ScoreScript {
     }
 
     @SuppressWarnings("unchecked")
-    public KNNBinaryScoreScript(Map<String, Object> params, String field, BigInteger queryHexEmbedding,
+    public KNNHexEmbeddingScoreScript(Map<String, Object> params, String field, BigInteger queryHexEmbedding,
                                 String similaritySpace, SearchLookup lookup, LeafReaderContext leafContext) {
         super(params, lookup, leafContext);
         this.similaritySpace = similaritySpace;
