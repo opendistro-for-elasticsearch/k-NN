@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Base64;
 
 public class KNNScoringUtil {
     private static Logger logger = LogManager.getLogger(KNNScoringUtil.class);
@@ -71,6 +72,18 @@ public class KNNScoringUtil {
             return Float.MIN_VALUE;
         }
         return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
+    }
+
+
+    /**
+     * This method calculates hamming distance
+     *
+     * @param queryBase64 query long
+     * @param inputBase64 input long
+     * @return hamming distance
+     */
+    public static float hamming(String queryBase64, String inputBase64) {
+        return Long.bitCount(Long.parseLong(queryBase64) ^ Long.parseLong(inputBase64));
     }
 
     /**

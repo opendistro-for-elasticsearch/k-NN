@@ -23,4 +23,5 @@ public class KNNConstants {
     public static final String HNSW_ALGO_INDEX_THREAD_QTY = "indexThreadQty";
     public static final String L2 = "l2";
     public static final String COSINESIMIL = "cosinesimil";
+    public static final String BIT_HAMMING = "bit_hamming";
 }
