@@ -223,6 +223,11 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         this.spaceType = spaceType;
         this.m = m;
         this.efConstruction = efConstruction;
+        this.fieldType = new FieldType(Defaults.FIELD_TYPE);
+        this.fieldType.putAttribute(KNNConstants.SPACE_TYPE, spaceType);
+        this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_M, String.valueOf(m));
+        this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, String.valueOf(efConstruction));
+        this.fieldType.freeze();
     }
 
     public static class Names {
@@ -311,12 +316,6 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         for (Float f : vector) {
             array[i++] = f;
         }
-
-        FieldType fieldType = new FieldType(Defaults.FIELD_TYPE);
-        fieldType.putAttribute(KNNConstants.SPACE_TYPE, spaceType);
-        fieldType.putAttribute(KNNConstants.HNSW_ALGO_M, String.valueOf(m));
-        fieldType.putAttribute(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, String.valueOf(efConstruction));
-        fieldType.freeze();
 
         VectorField point = new VectorField(name(), array, fieldType);
 
