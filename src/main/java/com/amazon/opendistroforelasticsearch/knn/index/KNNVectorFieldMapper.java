@@ -96,22 +96,8 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         private final Parameter<Map<String, String>> meta = new Parameter<>("meta", true,
                 Collections.emptyMap(), TypeParsers::parseMeta, m -> m.fieldType().meta());
 
-        protected String spaceType;
-        protected String m;
-        protected String efConstruction;
-
         public Builder(String name) {
             super(name);
-            this.spaceType = null;
-            this.m = null;
-            this.efConstruction = null;
-        }
-
-        public Builder(String name, String spaceType, String m, String efConstruction) {
-            super(name);
-            this.spaceType = spaceType;
-            this.m = m;
-            this.efConstruction = efConstruction;
         }
 
         @Override
@@ -131,21 +117,10 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         @Override
         public KNNVectorFieldMapper build(BuilderContext context) {
-            if (spaceType == null) {
-                spaceType = getSpaceType(context.indexSettings());
-            }
-
-            if (m == null) {
-                m = getM(context.indexSettings());
-            }
-
-            if (efConstruction == null) {
-                efConstruction = getEfConstruction(context.indexSettings());
-            }
-
             return new KNNVectorFieldMapper(name, new KNNVectorFieldType(buildFullName(context), meta.getValue(),
                     dimension.getValue()), multiFieldsBuilder.build(this, context),
-                    ignoreMalformed(context), spaceType, m, efConstruction, copyTo.build(), this);
+                    ignoreMalformed(context), getSpaceType(context.indexSettings()), getM(context.indexSettings()),
+                    getEfConstruction(context.indexSettings()), copyTo.build(), this);
         }
 
         private String getSpaceType(Settings indexSettings) {
@@ -352,7 +327,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
-        return new KNNVectorFieldMapper.Builder(simpleName(), spaceType, m, efConstruction).init(this);
+        return new KNNVectorFieldMapper.Builder(simpleName()).init(this);
     }
 
     @Override
