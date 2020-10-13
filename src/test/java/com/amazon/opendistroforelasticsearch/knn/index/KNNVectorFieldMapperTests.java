@@ -26,6 +26,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.index.IndexSettings;
+import org.elasticsearch.index.mapper.ContentPath;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperService;
 
@@ -98,9 +99,12 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder)typeParser.parse(fieldName, knnNodeMap,
                 context);
 
-        assertEquals(KNNConstants.COSINESIMIL, builder.spaceType);
-        assertEquals(m, builder.m);
-        assertEquals(efConstruction, builder.efConstruction);
+        Mapper.BuilderContext builderContext = new Mapper.BuilderContext(settings, new ContentPath());
+        KNNVectorFieldMapper knnVectorFieldMapper = builder.build(builderContext);
+
+        assertEquals(KNNConstants.COSINESIMIL, knnVectorFieldMapper.spaceType);
+        assertEquals(String.valueOf(m), knnVectorFieldMapper.m);
+        assertEquals(String.valueOf(efConstruction), builder.efConstruction);
     }
 
     public void testBuildKNNIndexSettings_emptySettings() throws IOException {
@@ -125,8 +129,12 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder)typeParser.parse(fieldName, knnNodeMap,
                 context);
 
-        assertEquals(KNNSettings.INDEX_KNN_DEFAULT_SPACE_TYPE, builder.spaceType);
-        assertEquals(KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M.intValue(), builder.m);
-        assertEquals(KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION.intValue(), builder.efConstruction);
+        Mapper.BuilderContext builderContext = new Mapper.BuilderContext(settings, new ContentPath());
+        KNNVectorFieldMapper knnVectorFieldMapper = builder.build(builderContext);
+
+        assertEquals(KNNSettings.INDEX_KNN_DEFAULT_SPACE_TYPE, knnVectorFieldMapper.spaceType);
+        assertEquals(KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M.toString(), knnVectorFieldMapper.m);
+        assertEquals(KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION.toString(),
+                knnVectorFieldMapper.efConstruction);
     }
 }

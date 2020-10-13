@@ -26,10 +26,10 @@ import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.search.DocValuesFieldExistsQuery;
 import org.apache.lucene.search.Query;
 import org.elasticsearch.common.Explicit;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
-import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
@@ -48,6 +48,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_SPACE_TYPE;
@@ -95,10 +97,17 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                 Collections.emptyMap(), TypeParsers::parseMeta, m -> m.fieldType().meta());
 
         protected String spaceType;
-        protected int m;
-        protected int efConstruction;
+        protected String m;
+        protected String efConstruction;
 
-        public Builder(String name, String spaceType, int m, int efConstruction) {
+        public Builder(String name) {
+            super(name);
+            this.spaceType = null;
+            this.m = null;
+            this.efConstruction = null;
+        }
+
+        public Builder(String name, String spaceType, String m, String efConstruction) {
             super(name);
             this.spaceType = spaceType;
             this.m = m;
@@ -122,9 +131,54 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         @Override
         public KNNVectorFieldMapper build(BuilderContext context) {
+            if (spaceType == null) {
+                spaceType = getSpaceType(context.indexSettings());
+            }
+
+            if (m == null) {
+                m = getM(context.indexSettings());
+            }
+
+            if (efConstruction == null) {
+                efConstruction = getEfConstruction(context.indexSettings());
+            }
+
             return new KNNVectorFieldMapper(name, new KNNVectorFieldType(buildFullName(context), meta.getValue(),
                     dimension.getValue()), multiFieldsBuilder.build(this, context),
                     ignoreMalformed(context), spaceType, m, efConstruction, copyTo.build(), this);
+        }
+
+        private String getSpaceType(Settings indexSettings) {
+            String spaceType =  indexSettings.get(INDEX_KNN_SPACE_TYPE.getKey());
+            if (spaceType == null) {
+                logger.info("[KNN] The setting \"" + KNNConstants.SPACE_TYPE + "\" was not set for the index. " +
+                        "Likely caused by recent version upgrade. Setting the setting to the default value="
+                        + INDEX_KNN_DEFAULT_SPACE_TYPE);
+                return INDEX_KNN_DEFAULT_SPACE_TYPE;
+            }
+            return spaceType;
+        }
+
+        private String getM(Settings indexSettings) {
+            String m =  indexSettings.get(INDEX_KNN_ALGO_PARAM_M_SETTING.getKey());
+            if (m == null) {
+                logger.info("[KNN] The setting \"" + KNNConstants.HNSW_ALGO_M + "\" was not set for the index. " +
+                        "Likely caused by recent version upgrade. Setting the setting to the default value="
+                        + INDEX_KNN_DEFAULT_ALGO_PARAM_M);
+                return String.valueOf(INDEX_KNN_DEFAULT_ALGO_PARAM_M);
+            }
+            return m;
+        }
+
+        private String getEfConstruction(Settings indexSettings) {
+            String efConstruction =  indexSettings.get(INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING.getKey());
+            if (efConstruction == null) {
+                logger.info("[KNN] The setting \"" + KNNConstants.HNSW_ALGO_EF_CONSTRUCTION + "\" was not set for" +
+                        " the index. Likely caused by recent version upgrade. Setting the setting to the default value="
+                        + INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION);
+                return String.valueOf(INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION);
+            }
+            return efConstruction;
         }
     }
 
@@ -132,9 +186,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         @Override
         public Mapper.Builder<?> parse(String name, Map<String, Object> node, ParserContext parserContext)
                 throws MapperParsingException {
-            IndexSettings indexSettings = parserContext.mapperService().getIndexSettings();
-            Builder builder = new KNNVectorFieldMapper.Builder(name, getSpaceType(indexSettings), getM(indexSettings),
-                    getEfConstruction(indexSettings));
+            Builder builder = new KNNVectorFieldMapper.Builder(name);
             builder.parse(name, parserContext, node);
 
             if (builder.dimension.getValue() == -1) {
@@ -142,39 +194,6 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
             }
 
             return builder;
-        }
-
-        private String getSpaceType(IndexSettings indexSettings) {
-            try {
-                return indexSettings.getValue(INDEX_KNN_SPACE_TYPE);
-            } catch(IllegalArgumentException ex) {
-                logger.debug("[KNN] The setting \"" + KNNConstants.SPACE_TYPE + "\" was not set for the index. " +
-                        "Likely caused by recent version upgrade. Setting the setting to the default value="
-                        + INDEX_KNN_DEFAULT_SPACE_TYPE);
-                return INDEX_KNN_DEFAULT_SPACE_TYPE;
-            }
-        }
-
-        private int getM(IndexSettings indexSettings) {
-            try {
-                return indexSettings.getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING);
-            } catch(IllegalArgumentException ex) {
-                logger.debug("[KNN] The setting \"" + KNNConstants.HNSW_ALGO_M + "\" was not set for the index. " +
-                        "Likely caused by recent version upgrade. Setting the setting to the default value="
-                        + INDEX_KNN_DEFAULT_ALGO_PARAM_M);
-                return INDEX_KNN_DEFAULT_ALGO_PARAM_M;
-            }
-        }
-
-        private int getEfConstruction(IndexSettings indexSettings) {
-            try {
-                return indexSettings.getValue(KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING);
-            } catch(IllegalArgumentException ex) {
-                logger.debug("[KNN] The setting \"" + KNNConstants.HNSW_ALGO_EF_CONSTRUCTION + "\" was not set for" +
-                        " the index. Likely caused by recent version upgrade. Setting the setting to the default value="
-                        + INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION);
-                return INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION;
-            }
         }
     }
 
@@ -207,13 +226,13 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
     protected Explicit<Boolean> ignoreMalformed;
     private final boolean stored;
     private final boolean hasDocValues;
-    private final String spaceType;
-    private final Integer m;
-    private final Integer efConstruction;
+    protected final String spaceType;
+    protected final String m;
+    protected final String efConstruction;
     private final Integer dimension;
 
     public KNNVectorFieldMapper(String simpleName, MappedFieldType mappedFieldType, MultiFields multiFields,
-                                Explicit<Boolean> ignoreMalformed, String spaceType, int m, int efConstruction,
+                                Explicit<Boolean> ignoreMalformed, String spaceType, String m, String efConstruction,
                                 CopyTo copyTo, Builder builder) {
         super(simpleName, mappedFieldType,  multiFields, copyTo);
         this.stored = builder.stored.getValue();
@@ -225,8 +244,8 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         this.efConstruction = efConstruction;
         this.fieldType = new FieldType(Defaults.FIELD_TYPE);
         this.fieldType.putAttribute(KNNConstants.SPACE_TYPE, spaceType);
-        this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_M, String.valueOf(m));
-        this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, String.valueOf(efConstruction));
+        this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_M, m);
+        this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, efConstruction);
         this.fieldType.freeze();
     }
 
