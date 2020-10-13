@@ -104,7 +104,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
 
         assertEquals(KNNConstants.COSINESIMIL, knnVectorFieldMapper.spaceType);
         assertEquals(String.valueOf(m), knnVectorFieldMapper.m);
-        assertEquals(String.valueOf(efConstruction), builder.efConstruction);
+        assertEquals(String.valueOf(efConstruction), knnVectorFieldMapper.efConstruction);
     }
 
     public void testBuildKNNIndexSettings_emptySettings() throws IOException {
