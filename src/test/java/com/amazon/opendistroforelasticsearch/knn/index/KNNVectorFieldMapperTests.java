@@ -57,14 +57,13 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         KNNVectorFieldMapper.TypeParser typeParser = new KNNVectorFieldMapper.TypeParser();
         typeParser.buildKNNIndexSettings(builder, parserContext);
 
-        assertEquals(KNNVectorFieldMapper.Defaults.FIELD_TYPE.getAttributes().get(KNNConstants.SPACE_TYPE),
+        assertEquals(builder.fieldType().getAttributes().get(KNNConstants.SPACE_TYPE),
                 INDEX_KNN_DEFAULT_SPACE_TYPE);
 
-        assertEquals(KNNVectorFieldMapper.Defaults.FIELD_TYPE.getAttributes().get(KNNConstants.HNSW_ALGO_M),
+        assertEquals(builder.fieldType().getAttributes().get(KNNConstants.HNSW_ALGO_M),
                 String.valueOf(INDEX_KNN_DEFAULT_ALGO_PARAM_M));
 
-        assertEquals(KNNVectorFieldMapper.Defaults.FIELD_TYPE.getAttributes().get(
-                KNNConstants.HNSW_ALGO_EF_CONSTRUCTION), String.valueOf(
-                        INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION));
+        assertEquals(builder.fieldType().getAttributes().get(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION),
+                String.valueOf(INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION));
     }
 }
