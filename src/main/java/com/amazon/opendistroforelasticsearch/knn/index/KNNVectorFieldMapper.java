@@ -88,6 +88,7 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
             FIELD_TYPE.setHasDocValues(true);
             FIELD_TYPE.setDocValuesType(DocValuesType.BINARY);
             FIELD_TYPE.putAttribute(KNN_FIELD, "true"); //This attribute helps to determine knn field type
+            FIELD_TYPE.freeze();
         }
     }
 
@@ -105,12 +106,12 @@ public class KNNVectorFieldMapper extends FieldMapper implements ArrayValueMappe
         }
 
         public Builder spaceTypeParam(String key, String paramValue) {
-            Defaults.FIELD_TYPE.putAttribute(key, paramValue.toLowerCase());
+            builder.fieldType.putAttribute(key, paramValue.toLowerCase());
             return builder;
         }
 
         public Builder algoParams(String key, int paramValue) {
-            Defaults.FIELD_TYPE.putAttribute(key, String.valueOf(paramValue));
+            builder.fieldType.putAttribute(key, String.valueOf(paramValue));
             return builder;
         }
 
