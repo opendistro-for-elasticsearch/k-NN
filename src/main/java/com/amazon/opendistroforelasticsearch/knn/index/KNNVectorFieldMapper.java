@@ -23,16 +23,14 @@ import org.apache.lucene.document.StoredField;
 import org.apache.lucene.index.DocValuesType;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexableField;
-import org.apache.lucene.index.Term;
+import org.apache.lucene.search.DocValuesFieldExistsQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
 import org.elasticsearch.common.Explicit;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.index.mapper.FieldMapper;
-import org.elasticsearch.index.mapper.FieldNamesFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperParsingException;
@@ -87,6 +85,7 @@ public class KNNVectorFieldMapper extends FieldMapper {
             FIELD_TYPE.setHasDocValues(true);
             FIELD_TYPE.setDocValuesType(DocValuesType.BINARY);
             FIELD_TYPE.putAttribute(KNN_FIELD, "true"); //This attribute helps to determine knn field type
+            FIELD_TYPE.freeze();
         }
     }
 
@@ -104,12 +103,12 @@ public class KNNVectorFieldMapper extends FieldMapper {
         }
 
         public Builder spaceTypeParam(String key, String paramValue) {
-            Defaults.FIELD_TYPE.putAttribute(key, paramValue.toLowerCase());
+            builder.fieldType.putAttribute(key, paramValue.toLowerCase());
             return builder;
         }
 
         public Builder algoParams(String key, int paramValue) {
-            Defaults.FIELD_TYPE.putAttribute(key, String.valueOf(paramValue));
+            builder.fieldType.putAttribute(key, String.valueOf(paramValue));
             return builder;
         }
 
@@ -264,7 +263,7 @@ public class KNNVectorFieldMapper extends FieldMapper {
 
         @Override
         public Query existsQuery(QueryShardContext context) {
-            return new TermQuery(new Term(FieldNamesFieldMapper.NAME, name()));
+            return new DocValuesFieldExistsQuery(name());
         }
 
         @Override
