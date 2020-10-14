@@ -16,7 +16,9 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin;
 
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN84Codec.KNN84Codec;
 import org.apache.lucene.codecs.Codec;
+import org.apache.lucene.codecs.PostingsFormat;
 import org.elasticsearch.index.codec.CodecService;
 
 import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN84Codec.KNN84Codec.KNN_84;
@@ -35,7 +37,7 @@ class KNNCodecService extends CodecService {
      * return the KNN Codec
      *
      * @param name dummy name
-     * @return KNN80Codec
+     * @return KNN84Codec
      */
     @Override
     public Codec codec(String name) {
@@ -45,4 +47,9 @@ class KNNCodecService extends CodecService {
         }
         return codec;
     }
+
+    public void setPostingsFormat(PostingsFormat postingsFormat) {
+        ((KNN84Codec)codec("")).setPostingsFormat(postingsFormat);
+    }
+
 }
