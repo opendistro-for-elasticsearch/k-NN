@@ -265,7 +265,7 @@ public class KNNESIT extends KNNRestTestCase {
 
         Exception ex = expectThrows(ResponseException.class, () ->
                 putMappingRequest(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 5)));
-        assertThat(ex.getMessage(), containsString("Dimension value cannot be updated. Previous value: 4, Current value: 5"));
+        assertThat(ex.getMessage(), containsString("Cannot update parameter [dimension] from [4] to [5]"));
     }
 
     /**
