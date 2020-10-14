@@ -26,7 +26,7 @@ import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_SPACE_TYPE;
 
-import static org.elasticsearch.Version.V_7_1_0;
+import static org.elasticsearch.Version.CURRENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -39,7 +39,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         Mapper.TypeParser.ParserContext parserContext = mock(Mapper.TypeParser.ParserContext.class);
         MapperService mapperService = mock(MapperService.class);
         IndexSettings indexSettings = new IndexSettings(
-                IndexMetadata.builder(indexName).settings(settings(V_7_1_0))
+                IndexMetadata.builder(indexName).settings(settings(CURRENT))
                         .numberOfShards(1)
                         .numberOfReplicas(0)
                         .version(7)
@@ -48,7 +48,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
                         .aliasesVersion(0)
                         .creationDate(0)
                         .build(),
-                settings(V_7_1_0).build());
+                settings(CURRENT).build());
         when(parserContext.mapperService()).thenReturn(mapperService);
         when(mapperService.getIndexSettings()).thenReturn(indexSettings);
 
@@ -57,14 +57,41 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         KNNVectorFieldMapper.TypeParser typeParser = new KNNVectorFieldMapper.TypeParser();
         typeParser.buildKNNIndexSettings(builder, parserContext);
 
-        assertEquals(KNNVectorFieldMapper.Defaults.FIELD_TYPE.getAttributes().get(KNNConstants.SPACE_TYPE),
-                INDEX_KNN_DEFAULT_SPACE_TYPE);
+        assertEquals(builder.fieldType().getAttributes().get(KNNConstants.SPACE_TYPE), INDEX_KNN_DEFAULT_SPACE_TYPE);
 
-        assertEquals(KNNVectorFieldMapper.Defaults.FIELD_TYPE.getAttributes().get(KNNConstants.HNSW_ALGO_M),
+        assertEquals(builder.fieldType().getAttributes().get(KNNConstants.HNSW_ALGO_M),
                 String.valueOf(INDEX_KNN_DEFAULT_ALGO_PARAM_M));
 
-        assertEquals(KNNVectorFieldMapper.Defaults.FIELD_TYPE.getAttributes().get(
-                KNNConstants.HNSW_ALGO_EF_CONSTRUCTION), String.valueOf(
-                        INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION));
+        assertEquals(builder.fieldType().getAttributes().get(
+                KNNConstants.HNSW_ALGO_EF_CONSTRUCTION), String.valueOf(INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION));
+    }
+
+    public void testBuildKNNIndexSettings_cosineSimilarity() {
+        String indexName = "test-index";
+        String fieldName = "test-fieldname";
+
+        Mapper.TypeParser.ParserContext parserContext = mock(Mapper.TypeParser.ParserContext.class);
+        MapperService mapperService = mock(MapperService.class);
+        IndexSettings indexSettings = new IndexSettings(
+                IndexMetadata.builder(indexName).settings(settings(CURRENT))
+                        .numberOfShards(1)
+                        .numberOfReplicas(0)
+                        .version(7)
+                        .mappingVersion(0)
+                        .settingsVersion(0)
+                        .aliasesVersion(0)
+                        .creationDate(0)
+                        .build(),
+                settings(CURRENT).build());
+        when(parserContext.mapperService()).thenReturn(mapperService);
+        when(mapperService.getIndexSettings()).thenReturn(indexSettings);
+
+        KNNVectorFieldMapper.Builder builder = new KNNVectorFieldMapper.Builder(fieldName);
+
+        KNNVectorFieldMapper.TypeParser typeParser = new KNNVectorFieldMapper.TypeParser();
+        typeParser.buildKNNIndexSettings(builder, parserContext);
+        builder.spaceTypeParam(KNNConstants.SPACE_TYPE, SpaceTypes.cosinesimil.getValue());
+
+        assertEquals(SpaceTypes.cosinesimil.getValue(), builder.fieldType().getAttributes().get(KNNConstants.SPACE_TYPE));
     }
 }
