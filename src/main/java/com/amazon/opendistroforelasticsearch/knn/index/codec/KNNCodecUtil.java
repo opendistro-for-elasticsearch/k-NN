@@ -18,6 +18,7 @@ package com.amazon.opendistroforelasticsearch.knn.index.codec;
 
 import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.util.BytesRef;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -43,10 +44,9 @@ public class KNNCodecUtil {
         ArrayList<float[]> vectorList = new ArrayList<>();
         ArrayList<Integer> docIdList = new ArrayList<>();
         for (int doc = values.nextDoc(); doc != DocIdSetIterator.NO_MORE_DOCS; doc = values.nextDoc()) {
-            byte[] value = values.binaryValue().bytes;
-
-            try (ByteArrayInputStream byteStream = new ByteArrayInputStream(value);
-                 ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
+            BytesRef bytesref = values.binaryValue();
+            try (ByteArrayInputStream byteStream = new ByteArrayInputStream(bytesref.bytes, bytesref.offset, bytesref.length);
+                ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
                 float[] vector = (float[]) objectStream.readObject();
                 vectorList.add(vector);
             } catch (ClassNotFoundException e) {
