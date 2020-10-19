@@ -22,11 +22,11 @@ import org.elasticsearch.script.ScoreScript;
 import org.elasticsearch.search.lookup.SearchLookup;
 
 import java.io.IOException;
-import java.math.BigInteger;
+import java.util.Base64;
+import java.util.BitSet;
 import java.util.Map;
 
-public class VectorScoreScriptFactory implements ScoreScript.LeafFactory {
-
+public class KNNScoringScriptFactory implements ScoreScript.LeafFactory {
     private final Map<String, Object> params;
     private final SearchLookup lookup;
     private String similaritySpace;
@@ -34,9 +34,10 @@ public class VectorScoreScriptFactory implements ScoreScript.LeafFactory {
 
     private float[] qVector;
     private float qVectorSquaredMagnitude;  // Used for cosine optimization
-    private BigInteger qHash;
+    private BitSet qBitSet;
+    private Long qLong;
 
-    public VectorScoreScriptFactory(Map<String, Object> params, SearchLookup lookup) {
+    public KNNScoringScriptFactory(Map<String, Object> params, SearchLookup lookup) {
         KNNCounter.SCRIPT_QUERY_REQUESTS.increment();
         this.params = params;
         this.lookup = lookup;
@@ -74,12 +75,28 @@ public class VectorScoreScriptFactory implements ScoreScript.LeafFactory {
                 qVectorSquaredMagnitude = KNNScoringUtil.getVectorMagnitudeSquared(qVector);
             }
         } else if (KNNConstants.BIT_HAMMING.equalsIgnoreCase(similaritySpace)) {
-            Object queryObject = params.get("hex_embedding");
-            if (queryObject == null) {
+            Object queryObjectBase64 = params.get("base64_encoding");
+            Object queryObjectLong = params.get("long_encoding");
+
+            if (queryObjectBase64 != null) {
+                try {
+                    this.qBitSet = BitSet.valueOf(Base64.getDecoder().decode((String) queryObjectBase64));
+                } catch (IllegalArgumentException ex) {
+                    throw new IllegalArgumentException(queryObjectBase64.getClass().getName()
+                            + "Invalid base64 query string: " + ex);
+                }
+            } else if (queryObjectLong != null) {
+
+                if (queryObjectLong instanceof Integer) {
+                    this.qLong = Long.valueOf((Integer) queryObjectLong);
+                } else {
+                    this.qLong = (Long) queryObjectLong;
+                }
+
+            } else {
                 KNNCounter.SCRIPT_QUERY_ERRORS.increment();
-                throw new IllegalArgumentException("Missing query binary parameter [hex_embedding]");
+                throw new IllegalArgumentException("Missing query binary parameter [base64_encoding]");
             }
-            this.qHash = new BigInteger((String) queryObject, 16);
         } else {
             KNNCounter.SCRIPT_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("Invalid space type. Please refer to the available space types.");
@@ -97,8 +114,13 @@ public class VectorScoreScriptFactory implements ScoreScript.LeafFactory {
             return new KNNVectorScoreScript(this.params, this.field, this.qVector, this.qVectorSquaredMagnitude,
                     this.similaritySpace, this.lookup, ctx);
         } else if (KNNConstants.BIT_HAMMING.equalsIgnoreCase(similaritySpace)) {
-            return new KNNHexEmbeddingScoreScript(this.params, this.field, this.qHash, this.similaritySpace,
-                    this.lookup, ctx);
+            if (qBitSet != null) {
+                return new KNNBinaryScoreScript(this.params, this.field, this.qBitSet, this.similaritySpace,
+                        this.lookup, ctx);
+            } else if (qLong != null) {
+                return new KNNLongScoreScript(this.params, this.field, this.qLong, this.similaritySpace, this.lookup,
+                        ctx);
+            }
         }
 
         /*

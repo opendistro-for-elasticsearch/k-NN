@@ -41,14 +41,15 @@ public class KNNScoringScriptEngine implements ScriptEngine {
         KNNCounter.SCRIPT_COMPILATIONS.increment();
         if (!ScoreScript.CONTEXT.equals(context)) {
             KNNCounter.SCRIPT_COMPILATION_ERRORS.increment();
-            throw new IllegalArgumentException(getType() + " KNN Vector scoring scripts cannot be used for context [" + context.name + "]");
+            throw new IllegalArgumentException(getType() + " KNN scoring scripts cannot be used for context ["
+                    + context.name + "]");
         }
         // we use the script "source" as the script identifier
         if (!SCRIPT_SOURCE.equals(code)) {
             KNNCounter.SCRIPT_COMPILATION_ERRORS.increment();
             throw new IllegalArgumentException("Unknown script name " + code);
         }
-        ScoreScript.Factory factory = VectorScoreScriptFactory::new;
+        ScoreScript.Factory factory = KNNScoringScriptFactory::new;
         return context.factoryClazz.cast(factory);
     }
 

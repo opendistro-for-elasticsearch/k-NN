@@ -17,25 +17,28 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.index.fielddata.ScriptDocValues;
 import org.elasticsearch.script.ScoreScript;
 import org.elasticsearch.search.lookup.SearchLookup;
 
-import java.math.BigInteger;
+import java.util.BitSet;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 /**
  * Binary score script used for adjusting the score based on binary similarity spaces
  * on a per document basis.
  *
  */
-public class KNNHexEmbeddingScoreScript extends ScoreScript {
-
-    private final BigInteger queryHexEmbedding;
+public class KNNBinaryScoreScript extends ScoreScript {
+    private final BitSet queryBitSet;
     private final String similaritySpace;
     private final String field;
+    private final BiFunction<BitSet, BitSet, Float> distanceMethod;
 
     /**
-     * This function calculates the custom score for each doc in the segment.
+     * This function calculates the bit hamming score for each doc in the segment.
      *
      * @param explanationHolder A helper to take in an explanation from a script and turn
      *                          it into an {@link org.apache.lucene.search.Explanation}
@@ -43,21 +46,25 @@ public class KNNHexEmbeddingScoreScript extends ScoreScript {
      */
     @Override
     public double execute(ScoreScript.ExplanationHolder explanationHolder) {
-        float score = Float.MIN_VALUE;
-        if (KNNConstants.BIT_HAMMING.equalsIgnoreCase(similaritySpace)) {
-            BigInteger docHash = new BigInteger(getDoc().get(this.field).get(0).toString(), 16);
-            score = 1/(1 + KNNScoringUtil.hamming(this.queryHexEmbedding, docHash));
+        ScriptDocValues<?> scriptDocValues = getDoc().get(this.field);
+        if (scriptDocValues.size() == 0) {
+            return Float.MIN_VALUE;
         }
-
-        return score;
+        return 1/(1 + this.distanceMethod.apply(this.queryBitSet,
+                BitSet.valueOf(((BytesRef) scriptDocValues.get(0)).bytes)));
     }
 
-    @SuppressWarnings("unchecked")
-    public KNNHexEmbeddingScoreScript(Map<String, Object> params, String field, BigInteger queryHexEmbedding,
-                                String similaritySpace, SearchLookup lookup, LeafReaderContext leafContext) {
+    public KNNBinaryScoreScript(Map<String, Object> params, String field, BitSet queryBitSet, String similaritySpace,
+                                SearchLookup lookup, LeafReaderContext leafContext) {
         super(params, lookup, leafContext);
         this.similaritySpace = similaritySpace;
-        this.queryHexEmbedding = queryHexEmbedding;
+        this.queryBitSet = queryBitSet;
         this.field = field;
+
+        if (KNNConstants.BIT_HAMMING.equalsIgnoreCase(similaritySpace)) {
+            this.distanceMethod = KNNScoringUtil::bitHamming;
+        } else {
+            throw new IllegalArgumentException("Invalid space type for KNNBinaryScoreScript: " + similaritySpace);
+        }
     }
 }
