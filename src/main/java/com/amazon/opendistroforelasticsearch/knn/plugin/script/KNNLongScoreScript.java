@@ -15,7 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
-import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import org.apache.lucene.index.LeafReaderContext;
 import org.elasticsearch.index.fielddata.ScriptDocValues;
 import org.elasticsearch.script.ScoreScript;
@@ -25,17 +24,12 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
- * Long score script used for adjusting the score based on similarity spaces dealing with longs on a per document basis.
- *
+ * A script score that takes a long query and Long doc values and calculates the distance between them based on
+ * the distance function passed into the constructor
  */
-public class KNNLongScoreScript extends ScoreScript {
-    private final Long queryLong;
-    private final String similaritySpace;
-    private final String field;
-    private final BiFunction<Long, Long, Float> distanceMethod;
-
+public class KNNLongScoreScript extends KNNScoreScript<Long> {
     /**
-     * This function calculates the bit hamming score for each doc in the segment.
+     * This function calculates the similarity score for each doc in the segment.
      *
      * @param explanationHolder A helper to take in an explanation from a script and turn
      *                          it into an {@link org.apache.lucene.search.Explanation}
@@ -47,20 +41,12 @@ public class KNNLongScoreScript extends ScoreScript {
         if (scriptDocValues.size() == 0) {
             return Float.MIN_VALUE;
         }
-        return 1/(1 + this.distanceMethod.apply(this.queryLong, (Long) scriptDocValues.get(0)));
+        return 1/(1 + this.distanceMethod.apply(this.queryValue, (Long) scriptDocValues.get(0)));
     }
 
-    public KNNLongScoreScript(Map<String, Object> params, String field, Long queryLong, String similaritySpace,
-                                SearchLookup lookup, LeafReaderContext leafContext) {
-        super(params, lookup, leafContext);
-        this.similaritySpace = similaritySpace;
-        this.queryLong = queryLong;
-        this.field = field;
-
-        if (KNNConstants.BIT_HAMMING.equalsIgnoreCase(similaritySpace)) {
-            this.distanceMethod = KNNScoringUtil::bitHamming;
-        } else {
-            throw new IllegalArgumentException("Invalid space type for KNNBinaryScoreScript: " + similaritySpace);
-        }
+    public KNNLongScoreScript(Map<String, Object> params, String field, Long queryValue,
+                              BiFunction<Long, Long, Float> distanceMethod, SearchLookup lookup,
+                              LeafReaderContext leafContext) {
+        super(params, queryValue, field, distanceMethod, lookup, leafContext);
     }
 }

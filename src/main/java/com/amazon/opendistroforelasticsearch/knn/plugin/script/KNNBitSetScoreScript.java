@@ -15,7 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
-import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.index.fielddata.ScriptDocValues;
@@ -27,18 +26,14 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
- * Binary score script used for adjusting the score based on binary similarity spaces
- * on a per document basis.
+ * KNNBitSetScoreScript is used for adjusting the score based on binary similarity spaces on a per document basis.
  *
  */
-public class KNNBinaryScoreScript extends ScoreScript {
-    private final BitSet queryBitSet;
-    private final String similaritySpace;
-    private final String field;
-    private final BiFunction<BitSet, BitSet, Float> distanceMethod;
+public class KNNBitSetScoreScript extends KNNScoreScript<BitSet> {
 
     /**
-     * This function calculates the bit hamming score for each doc in the segment.
+     * This function calculates the score for each doc in the segment based on the distance method passed into the
+     * constructor
      *
      * @param explanationHolder A helper to take in an explanation from a script and turn
      *                          it into an {@link org.apache.lucene.search.Explanation}
@@ -50,21 +45,13 @@ public class KNNBinaryScoreScript extends ScoreScript {
         if (scriptDocValues.size() == 0) {
             return Float.MIN_VALUE;
         }
-        return 1/(1 + this.distanceMethod.apply(this.queryBitSet,
+        return 1/(1 + this.distanceMethod.apply(this.queryValue,
                 BitSet.valueOf(((BytesRef) scriptDocValues.get(0)).bytes)));
     }
 
-    public KNNBinaryScoreScript(Map<String, Object> params, String field, BitSet queryBitSet, String similaritySpace,
-                                SearchLookup lookup, LeafReaderContext leafContext) {
-        super(params, lookup, leafContext);
-        this.similaritySpace = similaritySpace;
-        this.queryBitSet = queryBitSet;
-        this.field = field;
-
-        if (KNNConstants.BIT_HAMMING.equalsIgnoreCase(similaritySpace)) {
-            this.distanceMethod = KNNScoringUtil::bitHamming;
-        } else {
-            throw new IllegalArgumentException("Invalid space type for KNNBinaryScoreScript: " + similaritySpace);
-        }
+    public KNNBitSetScoreScript(Map<String, Object> params, String field, BitSet queryValue,
+                              BiFunction<BitSet, BitSet, Float> distanceMethod, SearchLookup lookup,
+                              LeafReaderContext leafContext) {
+        super(params, queryValue, field, distanceMethod, lookup, leafContext);
     }
 }

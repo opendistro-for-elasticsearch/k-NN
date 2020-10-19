@@ -26,6 +26,9 @@ import java.util.Base64;
 import java.util.BitSet;
 import java.util.Map;
 
+import static com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants.BASE64_ENCODING;
+import static com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants.LONG_ENCODING;
+
 public class KNNScoringScriptFactory implements ScoreScript.LeafFactory {
     private final Map<String, Object> params;
     private final SearchLookup lookup;
@@ -34,8 +37,7 @@ public class KNNScoringScriptFactory implements ScoreScript.LeafFactory {
 
     private float[] qVector;
     private float qVectorSquaredMagnitude;  // Used for cosine optimization
-    private BitSet qBitSet;
-    private Long qLong;
+    private Object qObject;
 
     public KNNScoringScriptFactory(Map<String, Object> params, SearchLookup lookup) {
         KNNCounter.SCRIPT_QUERY_REQUESTS.increment();
@@ -45,7 +47,7 @@ public class KNNScoringScriptFactory implements ScoreScript.LeafFactory {
     }
 
     private void validateAndInitParams(Map<String, Object> params) {
-        // query vector field
+        // Confirm query passed a field
         final Object field = params.get("field");
         if (field == null) {
             KNNCounter.SCRIPT_QUERY_ERRORS.increment();
@@ -54,48 +56,55 @@ public class KNNScoringScriptFactory implements ScoreScript.LeafFactory {
 
         this.field = field.toString();
 
-        // validate space
+        // Confirm query passed space_type parameter
         final Object space = params.get("space_type");
         if (space == null) {
             KNNCounter.SCRIPT_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("Missing parameter [space_type]");
         }
 
-        this.similaritySpace = (String)space;
+        this.similaritySpace = (String) space;
 
-        if (KNNConstants.L2.equalsIgnoreCase(similaritySpace)
-                || KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace)) {
+        if (KNNConstants.L2.equalsIgnoreCase(similaritySpace)) {
             Object queryObject = params.get("vector");
             if (queryObject == null) {
                 KNNCounter.SCRIPT_QUERY_ERRORS.increment();
                 throw new IllegalArgumentException("Missing query vector parameter [vector]");
             }
             this.qVector = KNNScoringUtil.convertVectorToPrimitive(queryObject);
-            if (KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace)) {
-                qVectorSquaredMagnitude = KNNScoringUtil.getVectorMagnitudeSquared(qVector);
+        } else if (KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace)) {
+            Object queryObject = params.get("vector");
+            if (queryObject == null) {
+                KNNCounter.SCRIPT_QUERY_ERRORS.increment();
+                throw new IllegalArgumentException("Missing query vector parameter [vector]");
             }
+            this.qVector = KNNScoringUtil.convertVectorToPrimitive(queryObject);
+            this.qVectorSquaredMagnitude = KNNScoringUtil.getVectorMagnitudeSquared(qVector);
         } else if (KNNConstants.BIT_HAMMING.equalsIgnoreCase(similaritySpace)) {
-            Object queryObjectBase64 = params.get("base64_encoding");
-            Object queryObjectLong = params.get("long_encoding");
-
-            if (queryObjectBase64 != null) {
+            Object queryObjectBase64 = params.get(BASE64_ENCODING);
+            Object queryObjectLong = params.get(LONG_ENCODING);
+            if (queryObjectBase64 != null && queryObjectLong != null) {
+                throw new IllegalArgumentException("KNN Scripting query should only specify one of the following " +
+                        "parameters: " + BASE64_ENCODING + ", " + LONG_ENCODING);
+            } else if (queryObjectBase64 != null) {
                 try {
-                    this.qBitSet = BitSet.valueOf(Base64.getDecoder().decode((String) queryObjectBase64));
+                    this.qObject = BitSet.valueOf(Base64.getDecoder().decode((String) queryObjectBase64));
                 } catch (IllegalArgumentException ex) {
                     throw new IllegalArgumentException(queryObjectBase64.getClass().getName()
-                            + "Invalid base64 query string: " + ex);
+                            + "Invalid " + BASE64_ENCODING + ": " + ex);
                 }
             } else if (queryObjectLong != null) {
-
                 if (queryObjectLong instanceof Integer) {
-                    this.qLong = Long.valueOf((Integer) queryObjectLong);
+                    this.qObject = Long.valueOf((Integer) queryObjectLong);
+                } else if (queryObjectLong instanceof  Long) {
+                    this.qObject = queryObjectLong;
                 } else {
-                    this.qLong = (Long) queryObjectLong;
+                    throw new IllegalArgumentException("Unable to convert \"" + LONG_ENCODING + "\" value to Long");
                 }
-
             } else {
                 KNNCounter.SCRIPT_QUERY_ERRORS.increment();
-                throw new IllegalArgumentException("Missing query binary parameter [base64_encoding]");
+                throw new IllegalArgumentException("Missing encoding parameter: " + BASE64_ENCODING + " or " +
+                        LONG_ENCODING);
             }
         } else {
             KNNCounter.SCRIPT_QUERY_ERRORS.increment();
@@ -114,12 +123,12 @@ public class KNNScoringScriptFactory implements ScoreScript.LeafFactory {
             return new KNNVectorScoreScript(this.params, this.field, this.qVector, this.qVectorSquaredMagnitude,
                     this.similaritySpace, this.lookup, ctx);
         } else if (KNNConstants.BIT_HAMMING.equalsIgnoreCase(similaritySpace)) {
-            if (qBitSet != null) {
-                return new KNNBinaryScoreScript(this.params, this.field, this.qBitSet, this.similaritySpace,
+            if (qObject instanceof BitSet) {
+                return new KNNBitSetScoreScript(this.params, this.field, (BitSet) this.qObject,
+                        KNNScoringUtil::bitHamming, this.lookup, ctx);
+            } else if (qObject instanceof Long) {
+                return new KNNLongScoreScript(this.params, this.field, (Long) this.qObject, KNNScoringUtil::bitHamming,
                         this.lookup, ctx);
-            } else if (qLong != null) {
-                return new KNNLongScoreScript(this.params, this.field, this.qLong, this.similaritySpace, this.lookup,
-                        ctx);
             }
         }
 
