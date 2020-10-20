@@ -24,11 +24,14 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.SegmentInfo;
 import org.apache.lucene.index.SegmentReader;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.FilterDirectory;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ShardPath;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -103,9 +106,10 @@ public class KNNIndexShard {
         List<String> hnswFiles = new ArrayList<>();
         for (LeafReaderContext leafReaderContext : indexReader.leaves()) {
             SegmentReader reader = (SegmentReader) FilterLeafReader.unwrap(leafReaderContext.reader());
+            Path shardPath = ((FSDirectory) FilterDirectory.unwrap(reader.directory())).getDirectory();
             hnswFiles.addAll(reader.getSegmentInfo().files().stream()
                     .filter(fileName -> fileName.endsWith(getHNSWFileExtension(reader.getSegmentInfo().info)))
-                    .map(fileName -> shardPath().resolveIndex().resolve(fileName).toString())
+                    .map(fileName -> shardPath.resolve(fileName).toString())
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList()));
         }
