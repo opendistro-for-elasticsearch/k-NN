@@ -37,11 +37,11 @@ public class KNNLongScoreScript extends KNNScoreScript<Long> {
      */
     @Override
     public double execute(ScoreScript.ExplanationHolder explanationHolder) {
-        ScriptDocValues<?> scriptDocValues = getDoc().get(this.field);
+        ScriptDocValues.Longs scriptDocValues = (ScriptDocValues.Longs) getDoc().get(this.field);
         if (scriptDocValues.size() == 0) {
             return Float.MIN_VALUE;
         }
-        return 1/(1 + this.distanceMethod.apply(this.queryValue, (Long) scriptDocValues.get(0)));
+        return 1/(1 + this.distanceMethod.apply(this.queryValue, scriptDocValues.getValue()));
     }
 
     public KNNLongScoreScript(Map<String, Object> params, String field, Long queryValue,

@@ -16,7 +16,6 @@
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.index.fielddata.ScriptDocValues;
 import org.elasticsearch.script.ScoreScript;
 import org.elasticsearch.search.lookup.SearchLookup;
@@ -41,12 +40,12 @@ public class KNNBitSetScoreScript extends KNNScoreScript<BitSet> {
      */
     @Override
     public double execute(ScoreScript.ExplanationHolder explanationHolder) {
-        ScriptDocValues<?> scriptDocValues = getDoc().get(this.field);
+        ScriptDocValues.BytesRefs scriptDocValues = (ScriptDocValues.BytesRefs) getDoc().get(this.field);
         if (scriptDocValues.size() == 0) {
             return Float.MIN_VALUE;
         }
         return 1/(1 + this.distanceMethod.apply(this.queryValue,
-                BitSet.valueOf(((BytesRef) scriptDocValues.get(0)).bytes)));
+                BitSet.valueOf((scriptDocValues.getValue()).bytes)));
     }
 
     public KNNBitSetScoreScript(Map<String, Object> params, String field, BitSet queryValue,
