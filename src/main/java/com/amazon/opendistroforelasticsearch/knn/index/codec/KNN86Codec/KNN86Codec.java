@@ -44,6 +44,7 @@ public final class KNN86Codec extends Codec {
     private final DocValuesFormat perFieldDocValuesFormat;
     private final CompoundFormat compoundFormat;
     private Codec lucene86Codec;
+    private PostingsFormat postingsFormat = null;
 
     public static final String KNN_86 = "KNN86Codec";
     public static final String LUCENE_86 = "Lucene86"; // Lucene Codec to be used
@@ -82,9 +83,17 @@ public final class KNN86Codec extends Codec {
      * approach of manually overriding.
      */
 
+
+    public void setPostingsFormat(PostingsFormat postingsFormat) {
+        this.postingsFormat = postingsFormat;
+    }
+
     @Override
     public PostingsFormat postingsFormat() {
-        return getDelegatee().postingsFormat();
+        if (this.postingsFormat == null) {
+            return getDelegatee().postingsFormat();
+        }
+        return this.postingsFormat;
     }
 
     @Override

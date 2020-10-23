@@ -18,53 +18,123 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.settings.IndexScopedSettings;
+import org.elasticsearch.common.settings.Setting;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.index.IndexSettings;
+import org.elasticsearch.index.mapper.ContentPath;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperService;
 
-import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION;
-import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M;
-import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_SPACE_TYPE;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-import static org.elasticsearch.Version.V_7_1_0;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_SPACE_TYPE;
+import static org.elasticsearch.Version.CURRENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class KNNVectorFieldMapperTests extends KNNTestCase {
 
-    public void testBuildKNNIndexSettings_emptySettings_checkDefaultsSet() {
-        String indexName = "test-index";
-        String fieldName = "test-fieldname";
+    public IndexMetadata buildIndexMetaData(String indexName, Settings settings) {
+        return IndexMetadata.builder(indexName).settings(settings)
+                .numberOfShards(1)
+                .numberOfReplicas(0)
+                .version(7)
+                .mappingVersion(0)
+                .settingsVersion(0)
+                .aliasesVersion(0)
+                .creationDate(0)
+                .build();
+    }
 
-        Mapper.TypeParser.ParserContext parserContext = mock(Mapper.TypeParser.ParserContext.class);
+    public Map<String, Object> buildKnnNodeMap(int dimension) throws IOException {
+        XContentBuilder xContentBuilder =  XContentFactory.jsonBuilder().startObject()
+                .field("type", "knn_vector")
+                .field("dimension", dimension)
+                .endObject();
+        return XContentHelper.convertToMap(BytesReference.bytes(xContentBuilder), true,
+                xContentBuilder.contentType()).v2();
+    }
+
+    public void testBuildKNNIndexSettings_normal() throws IOException {
+        String indexName = "test-index";
+        String fieldName = "test-field-name";
+        int m = 73;
+        int efConstruction = 47;
+        int dimension = 100;
+
+        Settings settings = Settings.builder()
+                .put(settings(CURRENT).build())
+                .put(KNNSettings.KNN_SPACE_TYPE, KNNConstants.COSINESIMIL)
+                .put(KNNSettings.KNN_ALGO_PARAM_M, m)
+                .put(KNNSettings.KNN_ALGO_PARAM_EF_CONSTRUCTION, efConstruction)
+                .build();
+        IndexMetadata indexMetadata = buildIndexMetaData(indexName, settings);
+
+        Set<Setting<?>> settingSet = new HashSet<>(IndexScopedSettings.BUILT_IN_INDEX_SETTINGS);
+        settingSet.add(INDEX_KNN_SPACE_TYPE);
+        settingSet.add(INDEX_KNN_ALGO_PARAM_M_SETTING);
+        settingSet.add(INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING);
+
+        IndexSettings indexSettings = new IndexSettings(indexMetadata, Settings.EMPTY,
+                new IndexScopedSettings(Settings.EMPTY, settingSet));
+
         MapperService mapperService = mock(MapperService.class);
-        IndexSettings indexSettings = new IndexSettings(
-                IndexMetadata.builder(indexName).settings(settings(V_7_1_0))
-                        .numberOfShards(1)
-                        .numberOfReplicas(0)
-                        .version(7)
-                        .mappingVersion(0)
-                        .settingsVersion(0)
-                        .aliasesVersion(0)
-                        .creationDate(0)
-                        .build(),
-                settings(V_7_1_0).build());
-        when(parserContext.mapperService()).thenReturn(mapperService);
         when(mapperService.getIndexSettings()).thenReturn(indexSettings);
 
-        KNNVectorFieldMapper.Builder builder = new KNNVectorFieldMapper.Builder(fieldName);
-
+        Mapper.TypeParser.ParserContext context = new Mapper.TypeParser.ParserContext(null,
+                mapperService, type -> new KNNVectorFieldMapper.TypeParser(), CURRENT, null);
         KNNVectorFieldMapper.TypeParser typeParser = new KNNVectorFieldMapper.TypeParser();
-        typeParser.buildKNNIndexSettings(builder, parserContext);
 
-        assertEquals(KNNVectorFieldMapper.Defaults.FIELD_TYPE.getAttributes().get(KNNConstants.SPACE_TYPE),
-                INDEX_KNN_DEFAULT_SPACE_TYPE);
+        Map<String, Object> knnNodeMap = buildKnnNodeMap(dimension);
+        KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder)typeParser.parse(fieldName, knnNodeMap,
+                context);
 
-        assertEquals(KNNVectorFieldMapper.Defaults.FIELD_TYPE.getAttributes().get(KNNConstants.HNSW_ALGO_M),
-                String.valueOf(INDEX_KNN_DEFAULT_ALGO_PARAM_M));
+        Mapper.BuilderContext builderContext = new Mapper.BuilderContext(settings, new ContentPath());
+        KNNVectorFieldMapper knnVectorFieldMapper = builder.build(builderContext);
 
-        assertEquals(KNNVectorFieldMapper.Defaults.FIELD_TYPE.getAttributes().get(
-                KNNConstants.HNSW_ALGO_EF_CONSTRUCTION), String.valueOf(
-                INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION));
+        assertEquals(KNNConstants.COSINESIMIL, knnVectorFieldMapper.spaceType);
+        assertEquals(String.valueOf(m), knnVectorFieldMapper.m);
+        assertEquals(String.valueOf(efConstruction), knnVectorFieldMapper.efConstruction);
+    }
+
+    public void testBuildKNNIndexSettings_emptySettings() throws IOException {
+        String indexName = "test-index";
+        String fieldName = "test-field-name";
+        int dimension = 100;
+
+        Settings settings = Settings.builder()
+                .put(settings(CURRENT).build())
+                .build();
+        IndexMetadata indexMetadata = buildIndexMetaData(indexName, settings);
+        IndexSettings indexSettings = new IndexSettings(indexMetadata, Settings.EMPTY,
+                new IndexScopedSettings(Settings.EMPTY, IndexScopedSettings.BUILT_IN_INDEX_SETTINGS));
+        MapperService mapperService = mock(MapperService.class);
+        when(mapperService.getIndexSettings()).thenReturn(indexSettings);
+
+        Mapper.TypeParser.ParserContext context = new Mapper.TypeParser.ParserContext(null,
+                mapperService, type -> new KNNVectorFieldMapper.TypeParser(), CURRENT, null);
+        KNNVectorFieldMapper.TypeParser typeParser = new KNNVectorFieldMapper.TypeParser();
+
+        Map<String, Object> knnNodeMap = buildKnnNodeMap(dimension);
+        KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder)typeParser.parse(fieldName, knnNodeMap,
+                context);
+
+        Mapper.BuilderContext builderContext = new Mapper.BuilderContext(settings, new ContentPath());
+        KNNVectorFieldMapper knnVectorFieldMapper = builder.build(builderContext);
+
+        assertEquals(KNNSettings.INDEX_KNN_DEFAULT_SPACE_TYPE, knnVectorFieldMapper.spaceType);
+        assertEquals(KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M.toString(), knnVectorFieldMapper.m);
+        assertEquals(KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION.toString(),
+                knnVectorFieldMapper.efConstruction);
     }
 }
