@@ -16,9 +16,11 @@
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import org.apache.lucene.index.LeafReaderContext;
+import org.elasticsearch.index.fielddata.ScriptDocValues;
 import org.elasticsearch.script.ScoreScript;
 import org.elasticsearch.search.lookup.SearchLookup;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -29,13 +31,42 @@ import java.util.function.BiFunction;
 public abstract class KNNScoreScript<T> extends ScoreScript {
     protected final T queryValue;
     protected final String field;
-    protected final BiFunction<T, T, Float> distanceMethod;
+    protected final BiFunction<T, T, Float> scoringMethod;
 
     public KNNScoreScript(Map<String, Object> params, T queryValue, String field,
-                          BiFunction<T, T, Float> distanceMethod, SearchLookup lookup, LeafReaderContext leafContext) {
+                          BiFunction<T, T, Float> scoringMethod, SearchLookup lookup, LeafReaderContext leafContext) {
         super(params, lookup, leafContext);
         this.queryValue = queryValue;
         this.field = field;
-        this.distanceMethod = distanceMethod;
+        this.scoringMethod = scoringMethod;
+    }
+
+
+    /**
+     * A script score that takes a list of long query and Long doc values and calculates the distance between them
+     * based on the distance function passed into the constructor
+     */
+    public static class KNNLongListScoreScript extends KNNScoreScript<List<Long>> {
+        /**
+         * This function calculates the similarity score for each doc in the segment.
+         *
+         * @param explanationHolder A helper to take in an explanation from a script and turn
+         *                          it into an {@link org.apache.lucene.search.Explanation}
+         * @return score for the provided space between the doc and the query
+         */
+        @Override
+        public double execute(ScoreScript.ExplanationHolder explanationHolder) {
+            ScriptDocValues.Longs scriptDocValues = (ScriptDocValues.Longs) getDoc().get(this.field);
+            if (scriptDocValues.size() == 0) {
+                return Float.MIN_VALUE;
+            }
+            return this.scoringMethod.apply(this.queryValue, scriptDocValues.subList(0, scriptDocValues.size()));
+        }
+
+        public KNNLongListScoreScript(Map<String, Object> params, String field, List<Long> queryValue,
+                                  BiFunction<List<Long>, List<Long>, Float> scoringMethod, SearchLookup lookup,
+                                  LeafReaderContext leafContext) {
+            super(params, queryValue, field, scoringMethod, lookup, leafContext);
+        }
     }
 }

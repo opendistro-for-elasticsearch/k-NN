@@ -20,6 +20,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
+import java.util.stream.IntStream;
 
 public class KNNScoringUtil {
     private static Logger logger = LogManager.getLogger(KNNScoringUtil.class);
@@ -100,6 +102,24 @@ public class KNNScoringUtil {
     public static float bitHamming(BitSet queryBits, BitSet inputBits) {
         inputBits.xor(queryBits);
         return inputBits.cardinality();
+    }
+
+    /**
+     * This method calculates hamming distance on 2 lists of longs
+     *
+     * @param queryLong query List
+     * @param inputLong input List
+     * @return hamming distance
+     */
+    public static float bitHamming(List<Long> queryLong, List<Long> inputLong) {
+        List<Long> maxList = queryLong.size() > inputLong.size() ? queryLong : inputLong;
+        List<Long> minList = queryLong.size() <= inputLong.size() ? queryLong : inputLong;
+        float bitCount = IntStream.range(0, minList.size())
+                .map(i -> (int) KNNScoringUtil.bitHamming(queryLong.get(i), inputLong.get(i)))
+                .sum();
+        return bitCount + IntStream.range(minList.size(), maxList.size())
+                .map(i -> Long.bitCount(maxList.get(i)))
+                .sum();
     }
 
     /**

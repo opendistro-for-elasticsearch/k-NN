@@ -15,7 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
-import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.LeafReaderContext;
@@ -28,6 +27,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.UncheckedIOException;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 /**
  * Vector score script used for adjusting the score based on similarity space
@@ -38,8 +38,7 @@ public class KNNVectorScoreScript extends ScoreScript {
 
     private BinaryDocValues binaryDocValuesReader;
     private final float[] queryVector;
-    private final String similaritySpace;
-    private float queryVectorSquaredMagnitude = -1;
+    private final BiFunction<float[], float[], Float> scoringMethod;
     private boolean vectorExist = true;
 
     /**
@@ -56,7 +55,6 @@ public class KNNVectorScoreScript extends ScoreScript {
             return Float.MIN_VALUE;
         }
 
-        float score = Float.MIN_VALUE;
         try {
             float[] doc_vector;
             BytesRef bytesref = binaryDocValuesReader.binaryValue();
@@ -65,8 +63,8 @@ public class KNNVectorScoreScript extends ScoreScript {
             if (bytesref == null) {
                 return Float.MIN_VALUE;
             }
-            try (ByteArrayInputStream byteStream = new ByteArrayInputStream(bytesref.bytes, bytesref.offset, bytesref.length);
-                 ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
+            try (ByteArrayInputStream byteStream = new ByteArrayInputStream(bytesref.bytes, bytesref.offset,
+                    bytesref.length); ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
                 doc_vector = (float[]) objectStream.readObject();
             } catch (ClassNotFoundException e) {
                 KNNCounter.SCRIPT_QUERY_ERRORS.increment();
@@ -79,18 +77,11 @@ public class KNNVectorScoreScript extends ScoreScript {
                         "query vector: " + queryVector.length + ", stored vector: " + doc_vector.length);
             }
 
-            if (KNNConstants.L2.equalsIgnoreCase(similaritySpace)) {
-                score = KNNScoringUtil.l2Squared(this.queryVector, doc_vector);
-                score = 1/(1 + score);
-            } else if (KNNConstants.COSINESIMIL.equalsIgnoreCase(similaritySpace)) {
-                // Scores cannot be negative so add +1 to the cosine score
-                score = 1 + KNNScoringUtil.cosinesimilOptimized(this.queryVector, doc_vector, this.queryVectorSquaredMagnitude);
-            }
+            return this.scoringMethod.apply(queryVector, doc_vector);
         } catch (IOException e) {
             KNNCounter.SCRIPT_QUERY_ERRORS.increment();
             throw new UncheckedIOException(e);
         }
-        return score;
     }
 
     @Override
@@ -103,14 +94,12 @@ public class KNNVectorScoreScript extends ScoreScript {
     }
 
     @SuppressWarnings("unchecked")
-    public KNNVectorScoreScript(Map<String, Object> params, String field, float[] queryVector, float queryVectorSquaredMagnitude,
-                                String similaritySpace, SearchLookup lookup, LeafReaderContext leafContext) throws IOException {
+    public KNNVectorScoreScript(Map<String, Object> params, String field, float[] queryVector,
+                                BiFunction<float[], float[], Float> scoringMethod, SearchLookup lookup,
+                                LeafReaderContext leafContext) throws IOException {
         super(params, lookup, leafContext);
-        // get query vector - convert to primitive
-        final Object vector = params.get("vector");
-        this.similaritySpace = similaritySpace;
         this.queryVector = queryVector;
-        this.queryVectorSquaredMagnitude = queryVectorSquaredMagnitude;
+        this.scoringMethod = scoringMethod;
         this.binaryDocValuesReader = leafContext.reader().getBinaryDocValues(field);
         if(this.binaryDocValuesReader == null) {
             KNNCounter.SCRIPT_QUERY_ERRORS.increment();

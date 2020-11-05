@@ -337,7 +337,7 @@ public class KNNRestTestCase extends ESRestTestCase {
     /**
      * Add a single numeric field Doc to an index
      */
-    protected void addDocWithNumericField(String index, String docId, String fieldName, int value) throws IOException {
+    protected void addDocWithNumericField(String index, String docId, String fieldName, long value) throws IOException {
         Request request = new Request(
                 "POST",
                 "/" + index + "/_doc/" + docId + "?refresh=true"
@@ -553,8 +553,8 @@ public class KNNRestTestCase extends ESRestTestCase {
         updateClusterSettings("script.context.score.cache_expire", null);
     }
 
-    protected Request constructKNNScriptQueryRequest(String indexName, QueryBuilder qb,
-                                                     Map<String, Object> params, float[] queryVector) throws Exception {
+    protected Request constructKNNScriptQueryRequest(String indexName, QueryBuilder qb, Map<String, Object> params)
+            throws Exception {
         Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, KNNScoringScriptEngine.NAME, KNNScoringScriptEngine.SCRIPT_SOURCE, params);
         ScriptScoreQueryBuilder sc = new ScriptScoreQueryBuilder(qb, script);
         XContentBuilder builder = XContentFactory.jsonBuilder().startObject().startObject("query");

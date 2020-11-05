@@ -61,9 +61,9 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
          */
         float[] queryVector = {1.0f, 1.0f};
         params.put("field", FIELD_NAME);
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.put("space_type", KNNConstants.L2);
-        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
                 RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -107,7 +107,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         /*
          *   params": {
          *       "field": "my_dense_vector",
-         *       "vector": [2.0, 2.0],
+         *       "query_value": [2.0, 2.0],
          *       "space_type": "L2"
          *      }
          *
@@ -115,9 +115,9 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
          */
         float[] queryVector = {2.0f, -2.0f};
         params.put("field", FIELD_NAME);
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.put("space_type", KNNConstants.COSINESIMIL);
-        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
                 RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -152,13 +152,13 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         /*
          *   params": {
          *       "field": "my_dense_vector",
-         *       "vector": [2.0, 2.0],
+         *       "query_value": [2.0, 2.0],
          *       "space_type": "cosinesimil"
          *      }
          */
         float[] queryVector = {2.0f, -2.0f};
         params.put("field", FIELD_NAME);
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.put("space_type", KNNConstants.COSINESIMIL);
         Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, KNNScoringScriptEngine.NAME, "Dummy_source", params);
         ScriptScoreQueryBuilder sc = new ScriptScoreQueryBuilder(qb, script);
@@ -197,9 +197,9 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         Map<String, Object> params = new HashMap<>();
         float[] queryVector = {2.0f, -2.0f};
         params.put("field", FIELD_NAME);
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.put("space_type", INVALID_SPACE);
-        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         ResponseException ex = expectThrows(ResponseException.class,  () -> client().performRequest(request));
         assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
                 containsString("Invalid space type. Please refer to the available space types"));
@@ -217,25 +217,25 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         QueryBuilder qb = new MatchAllQueryBuilder();
         Map<String, Object> params = new HashMap<>();
         float[] queryVector = {2.0f, -2.0f};
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.put("space_type", KNNConstants.COSINESIMIL);
-        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         ResponseException ex = expectThrows(ResponseException.class,  () -> client().performRequest(request));
         assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
                 containsString("Missing parameter [field]"));
 
         // Remove query vector parameter
         params.put("field", FIELD_NAME);
-        params.remove("vector");
-        Request vector_request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        params.remove("query_value");
+        Request vector_request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         ex = expectThrows(ResponseException.class,  () -> client().performRequest(vector_request));
         assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
-                containsString("Missing query vector parameter [vector]"));
+                containsString("Missing parameter [query_value]"));
 
         // Remove space parameter
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.remove("space_type");
-        Request space_request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Request space_request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         ex = expectThrows(ResponseException.class,  () -> client().performRequest(space_request));
         assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
                 containsString("Missing parameter [space_type]"));
@@ -256,9 +256,9 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         Map<String, Object> params = new HashMap<>();
         float[] queryVector = {2.0f, -2.0f, -2.0f};  // query dimension and field dimension mismatch
         params.put("field", FIELD_NAME);
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.put("space_type", KNNConstants.COSINESIMIL);
-        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         ResponseException ex = expectThrows(ResponseException.class,  () -> client().performRequest(request));
         assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
                 containsString("query vector and field vector dimensions mismatch"));
@@ -281,9 +281,9 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         Map<String, Object> params = new HashMap<>();
         float[] queryVector = {2.0f, 2.0f};  // query dimension and field dimension mismatch
         params.put("field", FIELD_NAME);
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.put("space_type", KNNConstants.L2);
-        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
                 RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -307,5 +307,60 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         //assert scores
         assertEquals(0.33333, scores.get(0), 0.001);
         assertEquals(Float.MIN_VALUE, scores.get(1), 0.001);
+    }
+
+//    @SuppressWarnings("unchecked")
+    public void testHammingScriptScore_Long() throws Exception {
+//        // Create index with long values in it
+//        createIndex(INDEX_NAME, Settings.EMPTY);
+//        String longMapping = Strings.toString(XContentFactory.jsonBuilder().startObject()
+//                .startObject("properties")
+//                .startObject(FIELD_NAME)
+//                .field("type", "long")
+//                .endObject()
+//                .endObject()
+//                .endObject());
+//        putMappingRequest(INDEX_NAME, longMapping);
+//
+//        // Add a couple docs to the index
+//        addDocWithNumericField(INDEX_NAME, "0", FIELD_NAME, 0L);
+//        addDocWithNumericField(INDEX_NAME, "1", FIELD_NAME, 1L);
+//        addDocWithNumericField(INDEX_NAME, "2", FIELD_NAME, 2L);
+//
+//        // Construct search request
+//        QueryBuilder qb = new MatchAllQueryBuilder();
+//        Map<String, Object> params = new HashMap<>();
+//        long queryLong = 0L;  // query dimension and field dimension mismatch
+//        params.put("field", FIELD_NAME);
+//        params.put("long_encoding", queryLong);
+//        params.put("space_type", KNNConstants.BIT_HAMMING);
+//        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
+//        Response response = client().performRequest(request);
+//        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+//                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+//
+//        String responseBody = EntityUtils.toString(response.getEntity());
+//        List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
+//                responseBody).map().get("hits")).get("hits");
+//
+//        List<String>  docIds = hits.stream().map(hit -> {
+//            String id = ((String)((Map<String, Object>)hit).get("_id"));
+//            return id;
+//        }).collect(Collectors.toList());
+//
+//        List<Double>  docScores = hits.stream().map(hit -> {
+//            Double score = ((Double)((Map<String, Object>)hit).get("_score"));
+//            return score;
+//        }).collect(Collectors.toList());
+//
+//        logger.info("Ids = " + docIds);
+//        logger.info("Scores = " + docScores);
+//
+//        fail();
+
+    }
+
+    public void testHammingScriptScore_Base64() {
+
     }
 }
