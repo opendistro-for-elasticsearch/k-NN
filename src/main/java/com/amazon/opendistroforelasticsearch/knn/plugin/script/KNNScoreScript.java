@@ -15,11 +15,18 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
+import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
+import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.index.fielddata.ScriptDocValues;
 import org.elasticsearch.script.ScoreScript;
 import org.elasticsearch.search.lookup.SearchLookup;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -40,7 +47,6 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
         this.field = field;
         this.scoringMethod = scoringMethod;
     }
-
 
     /**
      * A script score that takes a list of long query and Long doc values and calculates the distance between them
@@ -63,10 +69,73 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
             return this.scoringMethod.apply(this.queryValue, scriptDocValues.subList(0, scriptDocValues.size()));
         }
 
-        public KNNLongListScoreScript(Map<String, Object> params, String field, List<Long> queryValue,
-                                  BiFunction<List<Long>, List<Long>, Float> scoringMethod, SearchLookup lookup,
-                                  LeafReaderContext leafContext) {
+        public KNNLongListScoreScript(Map<String, Object> params, List<Long> queryValue, String field,
+                                      BiFunction<List<Long>, List<Long>, Float> scoringMethod, SearchLookup lookup,
+                                      LeafReaderContext leafContext) {
             super(params, queryValue, field, scoringMethod, lookup, leafContext);
+        }
+    }
+
+    /**
+     * Vector score script used for adjusting the score based on similarity space
+     * on a per document basis.
+     */
+    public static class KNNVectorScoreScript extends KNNScoreScript<float[]> {
+        private BinaryDocValues binaryDocValuesReader;
+        private boolean vectorExist = true;
+
+        /**
+         * This function called for each doc in the segment. We evaluate the score of the vector in the doc
+         *
+         * @param explanationHolder A helper to take in an explanation from a script and turn
+         *                          it into an {@link org.apache.lucene.search.Explanation}
+         * @return score of the vector to the query vector
+         */
+        @Override
+        public double execute(ScoreScript.ExplanationHolder explanationHolder) {
+            // If this document does not contain the vector, push it to end of the results.
+            if (!vectorExist) {
+                return Float.MIN_VALUE;
+            }
+
+            try {
+                float[] docVector;
+                BytesRef bytesref = binaryDocValuesReader.binaryValue();
+                try (ByteArrayInputStream byteStream = new ByteArrayInputStream(bytesref.bytes, bytesref.offset,
+                        bytesref.length); ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
+                    docVector = (float[]) objectStream.readObject();
+                } catch (ClassNotFoundException e) {
+                    KNNCounter.SCRIPT_QUERY_ERRORS.increment();
+                    throw new RuntimeException(e);
+                }
+
+                return this.scoringMethod.apply(queryValue, docVector);
+            } catch (IOException e) {
+                KNNCounter.SCRIPT_QUERY_ERRORS.increment();
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public void setDocument(int docId) {
+            try {
+                this.vectorExist = this.binaryDocValuesReader.advanceExact(docId);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        public KNNVectorScoreScript(Map<String, Object> params, float[] queryValue, String field,
+                                    BiFunction<float[], float[], Float> scoringMethod, SearchLookup lookup,
+                                    LeafReaderContext leafContext) throws IOException {
+            super(params, queryValue, field, scoringMethod, lookup, leafContext);
+            this.binaryDocValuesReader = leafContext.reader().getBinaryDocValues(field);
+            if (this.binaryDocValuesReader == null) {
+                KNNCounter.SCRIPT_QUERY_ERRORS.increment();
+                throw new IllegalStateException("Binary Doc values not enabled for the field " + field
+                        + " Please ensure the field type is knn_vector in mappings for this field");
+            }
         }
     }
 }
