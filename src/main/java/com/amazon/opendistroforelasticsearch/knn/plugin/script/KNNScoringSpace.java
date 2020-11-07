@@ -18,12 +18,15 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.apache.lucene.index.LeafReaderContext;
+import org.elasticsearch.index.mapper.BinaryFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.script.ScoreScript;
 import org.elasticsearch.search.lookup.SearchLookup;
 
 import java.io.IOException;
+import java.util.Base64;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +56,19 @@ public abstract class KNNScoringSpace {
      */
     public abstract void prepareQuery(Object query);
 
+    protected boolean isLongFieldType(MappedFieldType fieldType) {
+        return fieldType instanceof NumberFieldMapper.NumberFieldType
+                && ((NumberFieldMapper.NumberFieldType) fieldType).numericType() == LONG.numericType();
+    }
+
+    protected boolean isBinaryFieldType(MappedFieldType fieldType) {
+        return fieldType instanceof BinaryFieldMapper.BinaryFieldType;
+    }
+
+    protected boolean isKNNVectorFieldType(MappedFieldType fieldType) {
+        return fieldType instanceof KNNVectorFieldMapper.KNNVectorFieldType;
+    }
+
     /**
      * Return the correct scoring script for a given query. The scoring script
      *
@@ -74,12 +90,7 @@ public abstract class KNNScoringSpace {
         @Override
         @SuppressWarnings("unchecked")
         public void prepareQuery(Object query) {
-            if (!(fieldType instanceof NumberFieldMapper.NumberFieldType)) {
-                throw new IllegalArgumentException("Incompatible field_type for hamming space. The field type must " +
-                        "be an integral numeric type.");
-            }
-
-            if (((NumberFieldMapper.NumberFieldType) fieldType).numericType() == LONG.numericType()) {
+            if (isLongFieldType(fieldType)) {
                 /*
                  * Because an Elasticsearch field can have 0 or more values, the query should be processed as a list
                  * of Longs. Additionally, because there is no way to specify the type of integral that is passed in
@@ -102,7 +113,7 @@ public abstract class KNNScoringSpace {
                     processedQueryList = (List<Long>) query;
                     Collections.reverse(processedQueryList);
                 } else if (!(query instanceof List) || (((List<?>) query).size() != 0 &&
-                                !(((List<?>) query).iterator().next() instanceof Long))
+                        !(((List<?>) query).iterator().next() instanceof Long))
                 ) {
                     throw new IllegalArgumentException("Incompatible query_value for hamming space. query_value must " +
                             "be either a Long, an Integer, an array of Longs, or an array of Integers.");
@@ -111,7 +122,10 @@ public abstract class KNNScoringSpace {
                 }
 
                 this.processedQuery = processedQueryList;
-                this.scoringMethod = (List<Long> q, List<Long> v) -> 1.0f/(1 + KNNScoringUtil.bitHamming(q, v));
+                this.scoringMethod = (List<Long> q, List<Long> v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
+            } else if (isBinaryFieldType(fieldType)) {
+                this.processedQuery = BitSet.valueOf(Base64.getDecoder().decode((String) query));
+                this.scoringMethod = (BitSet q, BitSet v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
             } else {
                 throw new IllegalArgumentException("Incompatible field_type for hamming space. The field type must " +
                         "of type Long.");
@@ -122,9 +136,12 @@ public abstract class KNNScoringSpace {
         @SuppressWarnings("unchecked")
         public ScoreScript getScoreScript(Map<String, Object> params, String field, SearchLookup lookup,
                                                    LeafReaderContext ctx) throws IOException {
-            if (((NumberFieldMapper.NumberFieldType) fieldType).numericType() == LONG.numericType()) {
+            if (isLongFieldType(fieldType)) {
                 return new KNNScoreScript.KNNLongListScoreScript(params, (List<Long>) this.processedQuery, field,
                         (BiFunction<List<Long>, List<Long>, Float>) this.scoringMethod, lookup, ctx);
+            } else if (isBinaryFieldType(fieldType)) {
+                return new KNNScoreScript.KNNBitSetScoreScript(params, (BitSet) this.processedQuery, field,
+                        (BiFunction<BitSet, BitSet, Float>) this.scoringMethod, lookup, ctx);
             } else {
                 throw new IllegalArgumentException("Incompatible field_type for hamming space. The field type must " +
                         "of type Long.");
@@ -140,7 +157,7 @@ public abstract class KNNScoringSpace {
 
         @Override
         public void prepareQuery(Object query) {
-            if (!(fieldType instanceof KNNVectorFieldMapper.KNNVectorFieldType)) {
+            if (!isKNNVectorFieldType(fieldType)) {
                 throw new IllegalArgumentException("Incompatible field_type for l2 space. The field type must " +
                         "be a knn_vector.");
             }

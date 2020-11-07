@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.UncheckedIOException;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
@@ -75,6 +76,36 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
             super(params, queryValue, field, scoringMethod, lookup, leafContext);
         }
     }
+
+
+    /**
+     * A script score that takes a bitset query and Binary doc values and calculates the distance between them
+     * based on the distance scoring method passed into the constructor
+     */
+    public static class KNNBitSetScoreScript extends KNNScoreScript<BitSet> {
+        /**
+         * This function calculates the similarity score for each doc in the segment.
+         *
+         * @param explanationHolder A helper to take in an explanation from a script and turn
+         *                          it into an {@link org.apache.lucene.search.Explanation}
+         * @return score for the provided space between the doc and the query
+         */
+        @Override
+        public double execute(ScoreScript.ExplanationHolder explanationHolder) {
+            ScriptDocValues.BytesRefs scriptDocValues = (ScriptDocValues.BytesRefs) getDoc().get(this.field);
+            if (scriptDocValues.size() == 0) {
+                return Float.MIN_VALUE;
+            }
+            return this.scoringMethod.apply(this.queryValue, BitSet.valueOf((scriptDocValues.getValue()).bytes));
+        }
+
+        public KNNBitSetScoreScript(Map<String, Object> params, BitSet queryValue, String field,
+                                      BiFunction<BitSet, BitSet, Float> scoringMethod, SearchLookup lookup,
+                                      LeafReaderContext leafContext) {
+            super(params, queryValue, field, scoringMethod, lookup, leafContext);
+        }
+    }
+
 
     /**
      * Vector score script used for adjusting the score based on similarity space
