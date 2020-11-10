@@ -20,14 +20,17 @@ import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.elasticsearch.index.mapper.MappedFieldType;
 
+/**
+ * Factory to create correct KNNScoringSpace based on the spaceType passed in.
+ */
 public class KNNScoreSpaceFactory {
     public static KNNScoringSpace getSpace(String spaceType, Object query, MappedFieldType mappedFieldType) {
         if (spaceType.equalsIgnoreCase(KNNConstants.BIT_HAMMING)) {
-            return new KNNScoringSpace.HammingBitSpace(query, mappedFieldType);
+            return new KNNScoringSpace.HammingBit(query, mappedFieldType);
         } else if (spaceType.equalsIgnoreCase(KNNConstants.L2)) {
-            return new KNNScoringSpace.L2Space(query, mappedFieldType);
+            return new KNNScoringSpace.L2(query, mappedFieldType);
         } else if (spaceType.equalsIgnoreCase(KNNConstants.COSINESIMIL)) {
-            return new KNNScoringSpace.CosineSimilaritySpace(query, mappedFieldType);
+            return new KNNScoringSpace.CosineSimilarity(query, mappedFieldType);
         } else {
             KNNCounter.SCRIPT_QUERY_ERRORS.increment();
             throw new IllegalArgumentException("Invalid space type. Please refer to the available space types.");

@@ -33,8 +33,9 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
- * KNNScoreScript is used for adjusting the score based on a similarity distance method on a per document basis.
- *
+ * KNNScoreScript is used for adjusting the score of query results based on a similarity distance methods. Scripts
+ * operate on a per document basis. Because the scoring method is passed in during construction, KNNScoreScripts are
+ * only concerned with the types of the query and docs being processed.
  */
 public abstract class KNNScoreScript<T> extends ScoreScript {
     protected final T queryValue;
@@ -50,10 +51,10 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
     }
 
     /**
-     * A script score that takes a list of long query and Long doc values and calculates the distance between them
-     * based on the distance function passed into the constructor
+     * KNNScoreScript with List of Longs type. The query value passed in as well as the DocValues being searched over
+     * are expected to be lists of Longs.
      */
-    public static class KNNLongListScoreScript extends KNNScoreScript<List<Long>> {
+    public static class Longs extends KNNScoreScript<List<Long>> {
         /**
          * This function calculates the similarity score for each doc in the segment.
          *
@@ -70,19 +71,18 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
             return this.scoringMethod.apply(this.queryValue, scriptDocValues.subList(0, scriptDocValues.size()));
         }
 
-        public KNNLongListScoreScript(Map<String, Object> params, List<Long> queryValue, String field,
+        public Longs(Map<String, Object> params, List<Long> queryValue, String field,
                                       BiFunction<List<Long>, List<Long>, Float> scoringMethod, SearchLookup lookup,
                                       LeafReaderContext leafContext) {
             super(params, queryValue, field, scoringMethod, lookup, leafContext);
         }
     }
 
-
     /**
-     * A script score that takes a bitset query and Binary doc values and calculates the distance between them
-     * based on the distance scoring method passed into the constructor
+     * KNNScoreScript with BitSet type. The query value passed in as well as the DocValues being searched over
+     * are expected to be BitSets.
      */
-    public static class KNNBitSetScoreScript extends KNNScoreScript<BitSet> {
+    public static class BitSets extends KNNScoreScript<BitSet> {
         /**
          * This function calculates the similarity score for each doc in the segment.
          *
@@ -99,19 +99,18 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
             return this.scoringMethod.apply(this.queryValue, BitSet.valueOf((scriptDocValues.getValue()).bytes));
         }
 
-        public KNNBitSetScoreScript(Map<String, Object> params, BitSet queryValue, String field,
+        public BitSets(Map<String, Object> params, BitSet queryValue, String field,
                                       BiFunction<BitSet, BitSet, Float> scoringMethod, SearchLookup lookup,
                                       LeafReaderContext leafContext) {
             super(params, queryValue, field, scoringMethod, lookup, leafContext);
         }
     }
 
-
     /**
-     * Vector score script used for adjusting the score based on similarity space
-     * on a per document basis.
+     * KNNVectors with float[] type. The query value passed in is expected to be float[]. The fieldType of the docs
+     * being searched over are expected to be KNNVector type.
      */
-    public static class KNNVectorScoreScript extends KNNScoreScript<float[]> {
+    public static class KNNVectors extends KNNScoreScript<float[]> {
         private BinaryDocValues binaryDocValuesReader;
         private boolean vectorExist = true;
 
@@ -157,7 +156,7 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
         }
 
         @SuppressWarnings("unchecked")
-        public KNNVectorScoreScript(Map<String, Object> params, float[] queryValue, String field,
+        public KNNVectors(Map<String, Object> params, float[] queryValue, String field,
                                     BiFunction<float[], float[], Float> scoringMethod, SearchLookup lookup,
                                     LeafReaderContext leafContext) throws IOException {
             super(params, queryValue, field, scoringMethod, lookup, leafContext);
