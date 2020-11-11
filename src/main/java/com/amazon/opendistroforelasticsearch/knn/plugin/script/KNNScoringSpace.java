@@ -27,11 +27,8 @@ import org.elasticsearch.search.lookup.SearchLookup;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.BitSet;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.index.mapper.NumberFieldMapper.NumberType.LONG;
 
@@ -73,39 +70,22 @@ public abstract class KNNScoringSpace {
         return fieldType instanceof KNNVectorFieldMapper.KNNVectorFieldType;
     }
 
-    @SuppressWarnings("unchecked")
-    protected List<Long> parseLongQuery(Object query) {
+    protected Long parseLongQuery(Object query) {
         /*
-         * Because an Elasticsearch field can have 0 or more values, the query should be processed as a list
-         * of Longs. Additionally, because there is no way to specify the type of integral that is passed in
-         * during query, it is necessary to cast it to a long, or a list of longs here.
+         * Because there is no way to specify the type of integral that is passed in during query, it is necessary to
+         * cast it to a Long here.
          */
-        List<Long> processedQueryList;
+        Long processedQueryLong;
         if (query instanceof Integer) {
-            processedQueryList = Collections.singletonList(Long.valueOf((Integer) query));
+            processedQueryLong = Long.valueOf((Integer) query);
         } else if (query instanceof Long) {
-            processedQueryList = Collections.singletonList((Long) query);
-        } else if (query instanceof List && ((List<?>) query).iterator().next() instanceof Integer) {
-            /*
-             * Need to reverse the list because Elasticsearch stores lists in reverse order. Because this
-             * happens once per query, this does not incur a major latency penalty
-             */
-            processedQueryList = ((List<Integer>) query).stream().mapToLong(Integer::longValue).boxed()
-                    .collect(Collectors.toList());
-            Collections.reverse(processedQueryList);
-        } else if (query instanceof List && ((List<?>) query).iterator().next() instanceof Long) {
-            processedQueryList = (List<Long>) query;
-            Collections.reverse(processedQueryList);
-        } else if (!(query instanceof List) || (((List<?>) query).size() != 0 &&
-                !(((List<?>) query).iterator().next() instanceof Long))
-        ) {
-            throw new IllegalArgumentException("Incompatible query_value for hamming space. query_value must " +
-                    "be either a Long, an Integer, an array of Longs, or an array of Integers.");
+            processedQueryLong = (Long) query;
         } else {
-            processedQueryList = Collections.emptyList();
+            throw new IllegalArgumentException("Incompatible query_value for hamming space. query_value must " +
+                    "be either a Long or an Integer.");
         }
 
-        return processedQueryList;
+        return processedQueryLong;
     }
 
     protected BitSet parseBinaryQuery(Object query) {
@@ -145,13 +125,13 @@ public abstract class KNNScoringSpace {
         public void prepareQuery(Object query) {
             if (isLongFieldType(fieldType)) {
                 this.processedQuery = parseLongQuery(query);
-                this.scoringMethod = (List<Long> q, List<Long> v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
+                this.scoringMethod = (Long q, Long v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
             } else if (isBinaryFieldType(fieldType)) {
                 this.processedQuery = parseBinaryQuery(query);
                 this.scoringMethod = (BitSet q, BitSet v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
             } else {
                 throw new IllegalArgumentException("Incompatible field_type for hamming space. The field type must " +
-                        "of type Long.");
+                        "of type long or binary.");
             }
         }
 
@@ -160,14 +140,14 @@ public abstract class KNNScoringSpace {
         public ScoreScript getScoreScript(Map<String, Object> params, String field, SearchLookup lookup,
                                                    LeafReaderContext ctx) throws IOException {
             if (isLongFieldType(fieldType)) {
-                return new KNNScoreScript.Longs(params, (List<Long>) this.processedQuery, field,
-                        (BiFunction<List<Long>, List<Long>, Float>) this.scoringMethod, lookup, ctx);
+                return new KNNScoreScript.Longs(params, (Long) this.processedQuery, field,
+                        (BiFunction<Long, Long, Float>) this.scoringMethod, lookup, ctx);
             } else if (isBinaryFieldType(fieldType)) {
                 return new KNNScoreScript.BitSets(params, (BitSet) this.processedQuery, field,
                         (BiFunction<BitSet, BitSet, Float>) this.scoringMethod, lookup, ctx);
             } else {
                 throw new IllegalArgumentException("Incompatible field_type for hamming space. The field type must " +
-                        "of type Long.");
+                        "of type long or binary.");
             }
         }
     }
@@ -182,7 +162,7 @@ public abstract class KNNScoringSpace {
         public void prepareQuery(Object query) {
             if (!isKNNVectorFieldType(fieldType)) {
                 throw new IllegalArgumentException("Incompatible field_type for l2 space. The field type must " +
-                        "be a knn_vector.");
+                        "be knn_vector.");
             }
 
             this.processedQuery = parseKNNVectorQuery(query);
@@ -209,7 +189,7 @@ public abstract class KNNScoringSpace {
         public void prepareQuery(Object query) {
             if (!(fieldType instanceof KNNVectorFieldMapper.KNNVectorFieldType)) {
                 throw new IllegalArgumentException("Incompatible field_type for cosine space. The field type must " +
-                        "be a knn_vector.");
+                        "be knn_vector.");
             }
 
             this.processedQuery = parseKNNVectorQuery(query);

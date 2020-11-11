@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.UncheckedIOException;
 import java.util.BitSet;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -51,10 +50,10 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
     }
 
     /**
-     * KNNScoreScript with List of Longs type. The query value passed in as well as the DocValues being searched over
-     * are expected to be lists of Longs.
+     * KNNScoreScript with Long type. The query value passed in as well as the DocValues being searched over are
+     * expected to be Longs.
      */
-    public static class Longs extends KNNScoreScript<List<Long>> {
+    public static class Longs extends KNNScoreScript<Long> {
         /**
          * This function calculates the similarity score for each doc in the segment.
          *
@@ -68,12 +67,11 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
             if (scriptDocValues.size() == 0) {
                 return Float.MIN_VALUE;
             }
-            return this.scoringMethod.apply(this.queryValue, scriptDocValues.subList(0, scriptDocValues.size()));
+            return this.scoringMethod.apply(this.queryValue, scriptDocValues.getValue());
         }
 
-        public Longs(Map<String, Object> params, List<Long> queryValue, String field,
-                                      BiFunction<List<Long>, List<Long>, Float> scoringMethod, SearchLookup lookup,
-                                      LeafReaderContext leafContext) {
+        public Longs(Map<String, Object> params, Long queryValue, String field,
+                    BiFunction<Long, Long, Float> scoringMethod, SearchLookup lookup, LeafReaderContext leafContext) {
             super(params, queryValue, field, scoringMethod, lookup, leafContext);
         }
     }
@@ -155,7 +153,6 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
             }
         }
 
-        @SuppressWarnings("unchecked")
         public KNNVectors(Map<String, Object> params, float[] queryValue, String field,
                                     BiFunction<float[], float[], Float> scoringMethod, SearchLookup lookup,
                                     LeafReaderContext leafContext) throws IOException {

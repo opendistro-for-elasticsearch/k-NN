@@ -81,7 +81,6 @@ public class KNNScoringScriptFactory implements ScoreScript.LeafFactory {
      * @param ctx LeafReaderContext for the segment
      * @return ScoreScript to be executed
      */
-    @SuppressWarnings("unchecked")
     @Override // called number of segments times
     public ScoreScript newInstance(LeafReaderContext ctx) throws IOException {
         return knnScoringSpace.getScoreScript(params, field, lookup, ctx);
