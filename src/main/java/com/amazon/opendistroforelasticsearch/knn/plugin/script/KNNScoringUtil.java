@@ -110,10 +110,6 @@ public class KNNScoringUtil {
      * @return hamming distance
      */
     public static float bitHamming(Long queryLong, Long inputLong) {
-        logger.info("QueryLong: " + queryLong);
-        logger.info("InputLong: " + inputLong);
-        logger.info("XOR: " + (queryLong ^ inputLong));
-        logger.info("BitCount: " + Long.bitCount(queryLong ^ inputLong));
         return Long.bitCount(queryLong ^ inputLong);
     }
 
