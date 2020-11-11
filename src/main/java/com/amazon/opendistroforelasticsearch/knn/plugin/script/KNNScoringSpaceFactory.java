@@ -23,7 +23,7 @@ import org.elasticsearch.index.mapper.MappedFieldType;
 /**
  * Factory to create correct KNNScoringSpace based on the spaceType passed in.
  */
-public class KNNScoreSpaceFactory {
+public class KNNScoringSpaceFactory {
     public static KNNScoringSpace getSpace(String spaceType, Object query, MappedFieldType mappedFieldType) {
         if (spaceType.equalsIgnoreCase(KNNConstants.BIT_HAMMING)) {
             return new KNNScoringSpace.HammingBit(query, mappedFieldType);

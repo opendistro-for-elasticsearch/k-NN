@@ -23,7 +23,7 @@ import org.elasticsearch.search.lookup.SearchLookup;
 import java.io.IOException;
 import java.util.Map;
 
-public class KNNScoringScriptFactory implements ScoreScript.LeafFactory {
+public class KNNScoreScriptFactory implements ScoreScript.LeafFactory {
     private final Map<String, Object> params;
     private final SearchLookup lookup;
     private String similaritySpace;
@@ -31,14 +31,14 @@ public class KNNScoringScriptFactory implements ScoreScript.LeafFactory {
     private Object query;
     private KNNScoringSpace knnScoringSpace;
 
-    public KNNScoringScriptFactory(Map<String, Object> params, SearchLookup lookup) {
+    public KNNScoreScriptFactory(Map<String, Object> params, SearchLookup lookup) {
         KNNCounter.SCRIPT_QUERY_REQUESTS.increment();
         this.params = params;
         this.lookup = lookup;
 
         parseParameters();
 
-        this.knnScoringSpace = KNNScoreSpaceFactory.getSpace(this.similaritySpace, this.query,
+        this.knnScoringSpace = KNNScoringSpaceFactory.getSpace(this.similaritySpace, this.query,
                 lookup.doc().mapperService().fieldType(this.field));
 
     }
