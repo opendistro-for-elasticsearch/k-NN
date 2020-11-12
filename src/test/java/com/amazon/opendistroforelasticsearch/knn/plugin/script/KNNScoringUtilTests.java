@@ -13,10 +13,9 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.plugin.scripts;
+package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
-import com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringUtil;
 
 import java.util.BitSet;
 

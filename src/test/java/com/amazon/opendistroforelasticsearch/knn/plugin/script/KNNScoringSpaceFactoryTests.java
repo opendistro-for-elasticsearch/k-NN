@@ -13,13 +13,11 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.plugin.scripts;
+package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
-import com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringSpace;
-import com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringSpaceFactory;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 
 import java.util.ArrayList;

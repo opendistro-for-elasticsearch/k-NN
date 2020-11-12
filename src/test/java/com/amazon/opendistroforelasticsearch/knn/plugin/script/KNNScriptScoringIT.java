@@ -1,9 +1,8 @@
-package com.amazon.opendistroforelasticsearch.knn.plugin.scripts;
+package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
 import com.amazon.opendistroforelasticsearch.knn.KNNResult;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
-import com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringScriptEngine;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
