@@ -55,7 +55,7 @@ public abstract class KNNScoringSpace {
      *
      * @param query Raw query object passed in to be validated and processed for the given similarity space
      */
-    public abstract void prepareQuery(Object query);
+    protected abstract void prepareQuery(Object query);
 
     protected boolean isLongFieldType(MappedFieldType fieldType) {
         return fieldType instanceof NumberFieldMapper.NumberFieldType
@@ -123,7 +123,7 @@ public abstract class KNNScoringSpace {
         }
 
         @Override
-        public void prepareQuery(Object query) {
+        protected void prepareQuery(Object query) {
             if (!isKNNVectorFieldType(fieldType)) {
                 throw new IllegalArgumentException("Incompatible field_type for l2 space. The field type must " +
                         "be knn_vector.");
@@ -150,7 +150,7 @@ public abstract class KNNScoringSpace {
         }
 
         @Override
-        public void prepareQuery(Object query) {
+        protected void prepareQuery(Object query) {
             if (!(fieldType instanceof KNNVectorFieldMapper.KNNVectorFieldType)) {
                 throw new IllegalArgumentException("Incompatible field_type for cosine space. The field type must " +
                         "be knn_vector.");
@@ -177,7 +177,7 @@ public abstract class KNNScoringSpace {
         }
 
         @Override
-        public void prepareQuery(Object query) {
+        protected void prepareQuery(Object query) {
             if (isLongFieldType(fieldType)) {
                 this.processedQuery = parseLongQuery(query);
                 this.scoringMethod = (Long q, Long v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));

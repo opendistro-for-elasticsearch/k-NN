@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 /**
- * KNNScoreScript is used for adjusting the score of query results based on a similarity distance methods. Scripts
+ * KNNScoreScript is used for adjusting the score of query results based on similarity distance methods. Scripts
  * operate on a per document basis. Because the scoring method is passed in during construction, KNNScoreScripts are
  * only concerned with the types of the query and docs being processed.
  */
