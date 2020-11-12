@@ -116,42 +116,6 @@ public abstract class KNNScoringSpace {
     public abstract ScoreScript getScoreScript(Map<String, Object> params, String field, SearchLookup lookup,
                                                LeafReaderContext ctx) throws IOException;
 
-    public static class HammingBit extends KNNScoringSpace {
-        public HammingBit(Object query, MappedFieldType fieldType) {
-            super(query, fieldType);
-        }
-
-        @Override
-        public void prepareQuery(Object query) {
-            if (isLongFieldType(fieldType)) {
-                this.processedQuery = parseLongQuery(query);
-                this.scoringMethod = (Long q, Long v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
-            } else if (isBinaryFieldType(fieldType)) {
-                this.processedQuery = parseBinaryQuery(query);
-                this.scoringMethod = (BitSet q, BitSet v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
-            } else {
-                throw new IllegalArgumentException("Incompatible field_type for hamming space. The field type must " +
-                        "of type long or binary.");
-            }
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public ScoreScript getScoreScript(Map<String, Object> params, String field, SearchLookup lookup,
-                                                   LeafReaderContext ctx) throws IOException {
-            if (isLongFieldType(fieldType)) {
-                return new KNNScoreScript.Longs(params, (Long) this.processedQuery, field,
-                        (BiFunction<Long, Long, Float>) this.scoringMethod, lookup, ctx);
-            } else if (isBinaryFieldType(fieldType)) {
-                return new KNNScoreScript.BitSets(params, (BitSet) this.processedQuery, field,
-                        (BiFunction<BitSet, BitSet, Float>) this.scoringMethod, lookup, ctx);
-            } else {
-                throw new IllegalArgumentException("Incompatible field_type for hamming space. The field type must " +
-                        "of type long or binary.");
-            }
-        }
-    }
-
     public static class L2 extends KNNScoringSpace {
 
         public L2(Object query, MappedFieldType fieldType) {
@@ -204,6 +168,42 @@ public abstract class KNNScoringSpace {
                                           LeafReaderContext ctx) throws IOException {
                 return new KNNScoreScript.KNNVectors(params, (float[]) processedQuery, field,
                         (BiFunction<float[], float[], Float>) this.scoringMethod, lookup, ctx);
+        }
+    }
+
+    public static class HammingBit extends KNNScoringSpace {
+        public HammingBit(Object query, MappedFieldType fieldType) {
+            super(query, fieldType);
+        }
+
+        @Override
+        public void prepareQuery(Object query) {
+            if (isLongFieldType(fieldType)) {
+                this.processedQuery = parseLongQuery(query);
+                this.scoringMethod = (Long q, Long v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
+            } else if (isBinaryFieldType(fieldType)) {
+                this.processedQuery = parseBinaryQuery(query);
+                this.scoringMethod = (BitSet q, BitSet v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
+            } else {
+                throw new IllegalArgumentException("Incompatible field_type for hamming space. The field type must " +
+                        "of type long or binary.");
+            }
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public ScoreScript getScoreScript(Map<String, Object> params, String field, SearchLookup lookup,
+                                          LeafReaderContext ctx) throws IOException {
+            if (isLongFieldType(fieldType)) {
+                return new KNNScoreScript.Longs(params, (Long) this.processedQuery, field,
+                        (BiFunction<Long, Long, Float>) this.scoringMethod, lookup, ctx);
+            } else if (isBinaryFieldType(fieldType)) {
+                return new KNNScoreScript.BitSets(params, (BitSet) this.processedQuery, field,
+                        (BiFunction<BitSet, BitSet, Float>) this.scoringMethod, lookup, ctx);
+            } else {
+                throw new IllegalArgumentException("Incompatible field_type for hamming space. The field type must " +
+                        "of type long or binary.");
+            }
         }
     }
 }
