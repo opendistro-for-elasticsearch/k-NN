@@ -1,3 +1,18 @@
+/*
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
@@ -8,6 +23,7 @@ import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -308,58 +324,142 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         assertEquals(Float.MIN_VALUE, scores.get(1), 0.001);
     }
 
-//    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked")
     public void testHammingScriptScore_Long() throws Exception {
-//        // Create index with long values in it
-//        createIndex(INDEX_NAME, Settings.EMPTY);
-//        String longMapping = Strings.toString(XContentFactory.jsonBuilder().startObject()
-//                .startObject("properties")
-//                .startObject(FIELD_NAME)
-//                .field("type", "long")
-//                .endObject()
-//                .endObject()
-//                .endObject());
-//        putMappingRequest(INDEX_NAME, longMapping);
-//
-//        // Add a couple docs to the index
-//        addDocWithNumericField(INDEX_NAME, "0", FIELD_NAME, 0L);
-//        addDocWithNumericField(INDEX_NAME, "1", FIELD_NAME, 1L);
-//        addDocWithNumericField(INDEX_NAME, "2", FIELD_NAME, 2L);
-//
-//        // Construct search request
-//        QueryBuilder qb = new MatchAllQueryBuilder();
-//        Map<String, Object> params = new HashMap<>();
-//        long queryLong = 0L;  // query dimension and field dimension mismatch
-//        params.put("field", FIELD_NAME);
-//        params.put("long_encoding", queryLong);
-//        params.put("space_type", KNNConstants.BIT_HAMMING);
-//        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
-//        Response response = client().performRequest(request);
-//        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
-//                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
-//
-//        String responseBody = EntityUtils.toString(response.getEntity());
-//        List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
-//                responseBody).map().get("hits")).get("hits");
-//
-//        List<String>  docIds = hits.stream().map(hit -> {
-//            String id = ((String)((Map<String, Object>)hit).get("_id"));
-//            return id;
-//        }).collect(Collectors.toList());
-//
-//        List<Double>  docScores = hits.stream().map(hit -> {
-//            Double score = ((Double)((Map<String, Object>)hit).get("_score"));
-//            return score;
-//        }).collect(Collectors.toList());
-//
-//        logger.info("Ids = " + docIds);
-//        logger.info("Scores = " + docScores);
-//
-//        fail();
+        createIndex(INDEX_NAME, Settings.EMPTY);
+        String longMapping = Strings.toString(XContentFactory.jsonBuilder().startObject()
+                .startObject("properties")
+                .startObject(FIELD_NAME)
+                .field("type", "long")
+                .endObject()
+                .endObject()
+                .endObject());
+        putMappingRequest(INDEX_NAME, longMapping);
 
+        addDocWithNumericField(INDEX_NAME, "0", FIELD_NAME, 8L);
+        addDocWithNumericField(INDEX_NAME, "1", FIELD_NAME, 1L);
+        addDocWithNumericField(INDEX_NAME, "2", FIELD_NAME, -9_223_372_036_818_523_493L);
+        addDocWithNumericField(INDEX_NAME, "3", FIELD_NAME, 1_000_000_000_000_000L);
+
+        // Add docs without the field. These docs should not appear in top 4 of results
+        addDocWithNumericField(INDEX_NAME, "4", "price", 10);
+        addDocWithNumericField(INDEX_NAME, "5", "price", 10);
+        addDocWithNumericField(INDEX_NAME, "6", "price", 10);
+
+        /*
+         * Decimal to Binary conversions lookup
+         *
+         * Docs:
+         * 8                            b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00001000
+         * 1                            b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000001
+         * -9_223_372_036_818_523_493   b10000000_00000000_00000000_00000000_00000010_00101001_00101010_10011011
+         * 1_000_000_000_000_000        b00000000_00000011_10001101_01111110_10100100_11000110_10000000_00000000
+         *
+         * Queries:
+         * -9223372036818526181         b10000000_00000000_00000000_00000000_00000010_00101001_00100000_00011011
+         */
+
+        QueryBuilder qb = new MatchAllQueryBuilder();
+        Map<String, Object> params = new HashMap<>();
+        Long queryValue = -9223372036818526181L;
+        params.put("field", FIELD_NAME);
+        params.put("query_value", queryValue);
+        params.put("space_type", KNNConstants.BIT_HAMMING);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, 4);
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        String responseBody = EntityUtils.toString(response.getEntity());
+        List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
+                responseBody).map().get("hits")).get("hits");
+
+        List<String>  docIds = hits.stream().map(hit ->
+                ((String)((Map<String, Object>)hit).get("_id"))).collect(Collectors.toList());
+
+        List<Double>  docScores = hits.stream().map(hit ->
+                ((Double)((Map<String, Object>)hit).get("_score"))).collect(Collectors.toList());
+
+        double[] scores = new double[docScores.size()];
+        for (int i = 0; i < docScores.size(); i++) {
+            scores[i] = docScores.get(i);
+        }
+
+        List<String> correctIds = Arrays.asList("2", "0", "1", "3");
+        double[] correctScores = new double[] {1.0/(1 + 3), 1.0/(1 + 9), 1.0/(1 + 9), 1.0/(1 + 30)};
+
+        assertEquals(4, correctIds.size());
+        assertArrayEquals(correctIds.toArray(), docIds.toArray());
+        assertArrayEquals(correctScores, scores, 0.1);
     }
 
-    public void testHammingScriptScore_Base64() {
+    @SuppressWarnings("unchecked")
+    public void testHammingScriptScore_Base64() throws Exception  {
+        createIndex(INDEX_NAME, Settings.EMPTY);
+        String longMapping = Strings.toString(XContentFactory.jsonBuilder().startObject()
+                .startObject("properties")
+                .startObject(FIELD_NAME)
+                .field("type", "binary")
+                .field("doc_values", true)
+                .endObject()
+                .endObject()
+                .endObject());
+        putMappingRequest(INDEX_NAME, longMapping);
 
+        addDocWithBinaryField(INDEX_NAME, "0", FIELD_NAME, "AAAAAAAAAAg=");
+        addDocWithBinaryField(INDEX_NAME, "1", FIELD_NAME, "AAAAAAAAAAE=");
+        addDocWithBinaryField(INDEX_NAME, "2", FIELD_NAME, "gAAAAAIpKps=");
+        addDocWithBinaryField(INDEX_NAME, "3", FIELD_NAME, "AAONfqTGgAA=");
+
+        // Add docs without the field. These docs should not appear in top 4 of results
+        addDocWithNumericField(INDEX_NAME, "4", "price", 10);
+        addDocWithNumericField(INDEX_NAME, "5", "price", 10);
+        addDocWithNumericField(INDEX_NAME, "6", "price", 10);
+
+        /*
+         * Base64 encodings to Binary conversions lookup
+         *
+         * Docs:
+         * AAAAAAAAAAg=                 b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00001000
+         * AAAAAAAAAAE=                 b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000001
+         * gAAAAAIpKps=                 b10000000_00000000_00000000_00000000_00000010_00101001_00101010_10011011
+         * AAONfqTGgAA=                 b00000000_00000011_10001101_01111110_10100100_11000110_10000000_00000000
+         *
+         * Queries:
+         * gAAAAAIpIBs=                 b10000000_00000000_00000000_00000000_00000010_00101001_00100000_00011011
+         */
+
+        QueryBuilder qb = new MatchAllQueryBuilder();
+        Map<String, Object> params = new HashMap<>();
+        String queryValue = "gAAAAAIpIBs=";
+        params.put("field", FIELD_NAME);
+        params.put("query_value", queryValue);
+        params.put("space_type", KNNConstants.BIT_HAMMING);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, 4);
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        String responseBody = EntityUtils.toString(response.getEntity());
+        List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
+                responseBody).map().get("hits")).get("hits");
+
+        List<String>  docIds = hits.stream().map(hit ->
+                ((String)((Map<String, Object>)hit).get("_id"))).collect(Collectors.toList());
+
+        List<Double>  docScores = hits.stream().map(hit ->
+                ((Double)((Map<String, Object>)hit).get("_score"))).collect(Collectors.toList());
+
+        double[] scores = new double[docScores.size()];
+        for (int i = 0; i < docScores.size(); i++) {
+            scores[i] = docScores.get(i);
+        }
+
+        List<String> correctIds = Arrays.asList("2", "0", "1", "3");
+        double[] correctScores = new double[] {1.0/(1 + 3), 1.0/(1 + 9), 1.0/(1 + 9), 1.0/(1 + 30)};
+
+        assertEquals(4, correctIds.size());
+        assertArrayEquals(correctIds.toArray(), docIds.toArray());
+        assertArrayEquals(correctScores, scores, 0.1);
     }
 }

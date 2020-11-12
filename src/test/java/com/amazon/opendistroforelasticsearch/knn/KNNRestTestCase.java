@@ -357,6 +357,28 @@ public class KNNRestTestCase extends ESRestTestCase {
     }
 
     /**
+     * Add a single numeric field Doc to an index
+     */
+    protected void addDocWithBinaryField(String index, String docId, String fieldName, String base64String)
+            throws IOException {
+        Request request = new Request(
+                "POST",
+                "/" + index + "/_doc/" + docId + "?refresh=true"
+        );
+
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+                .field(fieldName, base64String)
+                .endObject();
+
+        request.setJsonEntity(Strings.toString(builder));
+
+        Response response = client().performRequest(request);
+
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.CREATED,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+    }
+
+    /**
      * Update a KNN Doc with a new vector for the given fieldName
      */
     protected void updateKnnDoc(String index, String docId, String fieldName, Object[] vector) throws IOException {
@@ -558,6 +580,28 @@ public class KNNRestTestCase extends ESRestTestCase {
         Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, KNNScoringScriptEngine.NAME, KNNScoringScriptEngine.SCRIPT_SOURCE, params);
         ScriptScoreQueryBuilder sc = new ScriptScoreQueryBuilder(qb, script);
         XContentBuilder builder = XContentFactory.jsonBuilder().startObject().startObject("query");
+        builder.startObject("script_score");
+        builder.field("query");
+        sc.query().toXContent(builder, ToXContent.EMPTY_PARAMS);
+        builder.field("script", script);
+        builder.endObject();
+        builder.endObject();
+        builder.endObject();
+        Request request = new Request(
+                "POST",
+                "/" + indexName + "/_search"
+        );
+        request.setJsonEntity(Strings.toString(builder));
+        return request;
+    }
+
+    protected Request constructKNNScriptQueryRequest(String indexName, QueryBuilder qb, Map<String, Object> params,
+                                                     int size) throws Exception {
+        Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, KNNScoringScriptEngine.NAME, KNNScoringScriptEngine.SCRIPT_SOURCE, params);
+        ScriptScoreQueryBuilder sc = new ScriptScoreQueryBuilder(qb, script);
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+                .field("size", size)
+                .startObject("query");
         builder.startObject("script_score");
         builder.field("query");
         sc.query().toXContent(builder, ToXContent.EMPTY_PARAMS);
