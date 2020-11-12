@@ -24,7 +24,5 @@ public class KNNConstants {
     public static final String L2 = "l2";
     public static final String COSINESIMIL = "cosinesimil";
     public static final String BIT_HAMMING = "bit_hamming";
-    public static final String BASE64_ENCODING = "base64_encoding";
-    public static final String LONG_ENCODING = "long_encoding";
     public static final String DIMENSION = "dimension";
 }
