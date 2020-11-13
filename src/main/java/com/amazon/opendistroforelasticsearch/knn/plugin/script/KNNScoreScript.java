@@ -27,7 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.UncheckedIOException;
-import java.util.BitSet;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -77,10 +77,10 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
     }
 
     /**
-     * KNNScoreScript with BitSet type. The query value passed in as well as the DocValues being searched over
-     * are expected to be BitSets.
+     * KNNScoreScript with BigInteger type. The query value passed in as well as the DocValues being searched over
+     * are expected to be BigInteger.
      */
-    public static class BitSets extends KNNScoreScript<BitSet> {
+    public static class BigIntegers extends KNNScoreScript<BigInteger> {
         /**
          * This function calculates the similarity score for each doc in the segment.
          *
@@ -94,12 +94,12 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
             if (scriptDocValues.size() == 0) {
                 return Float.MIN_VALUE;
             }
-            return this.scoringMethod.apply(this.queryValue, BitSet.valueOf((scriptDocValues.getValue()).bytes));
+            return this.scoringMethod.apply(this.queryValue, new BigInteger(1, scriptDocValues.getValue().bytes));
         }
 
-        public BitSets(Map<String, Object> params, BitSet queryValue, String field,
-                                      BiFunction<BitSet, BitSet, Float> scoringMethod, SearchLookup lookup,
-                                      LeafReaderContext leafContext) {
+        public BigIntegers(Map<String, Object> params, BigInteger queryValue, String field,
+                           BiFunction<BigInteger, BigInteger, Float> scoringMethod, SearchLookup lookup,
+                           LeafReaderContext leafContext) {
             super(params, queryValue, field, scoringMethod, lookup, leafContext);
         }
     }

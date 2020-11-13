@@ -25,10 +25,10 @@ import org.elasticsearch.script.ScoreScript;
 import org.elasticsearch.search.lookup.SearchLookup;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -69,17 +69,14 @@ public class KNNScoringSpaceTests extends KNNTestCase {
 
     public void testParseBinaryQuery() {
         TestScoringSpace testScoringSpace = new TestScoringSpace(null, null);
+        String base64String = "SrtFZw==";
 
-        // Hex: FF FF FF FF FF FF FF FF
-        // Binary: 1111 1111 1111 1111 1111 1111 1111 1111 1111 1111 1111 1111 1111 1111 1111 1111
-        String base64Encoding = "//////////8=";
-        BitSet bitSet = new BitSet(64);
-        bitSet.set(0, 64);
+        /*
+         * B64:         "SrtFZw=="
+         * Decoded Hex: 4ABB4567
+         */
 
-        assertEquals(bitSet, testScoringSpace.parseBinaryQuery(base64Encoding));
-
-        String invalidBase64String = "invalidBase64~~~~";
-        expectThrows(IllegalArgumentException.class, () -> testScoringSpace.parseLongQuery(invalidBase64String));
+        assertEquals(new BigInteger("4ABB4567", 16), testScoringSpace.parseBinaryQuery(base64String));
     }
 
     public void testParseKNNVectorQuery() {
@@ -155,15 +152,22 @@ public class KNNScoringSpaceTests extends KNNTestCase {
     @SuppressWarnings("unchecked")
     public void testHammingBit_Base64() {
         BinaryFieldMapper.BinaryFieldType fieldType = new BinaryFieldMapper.BinaryFieldType("field");
-        String base64Object1 = "q83vQUI="; // AB_CD_EF_41_42 1010_1011_1100_1101_1110_1111_0100_0001_0100_0010
-        String base64Object2 = "//43ITI="; // FF_FE_37_21_32 1111_1111_1111_1110_0011_0111_0010_0001_0011_0010
+        String base64Object1 = "q83vQUI=";
+        String base64Object2 = "//43ITI=";
+
+        /*
+         * Base64 to Binary
+         * q83vQUI= -> 1010 1011 1100 1101 1110 1111 0100 0001 0100 0010
+         * //43ITI= -> 1111 1111 1111 1110 0011 0111 0010 0001 0011 0010
+         */
+
         float expectedResult = 1F / (1 + 16);
         KNNScoringSpace.HammingBit hammingBit = new KNNScoringSpace.HammingBit(base64Object1, fieldType);
 
         assertEquals(expectedResult,
-                ((BiFunction<BitSet, BitSet, Float>)hammingBit.scoringMethod).apply(
-                        BitSet.valueOf(Base64.getDecoder().decode(base64Object1)),
-                        BitSet.valueOf(Base64.getDecoder().decode(base64Object2))
+                ((BiFunction<BigInteger, BigInteger, Float>)hammingBit.scoringMethod).apply(
+                        new BigInteger(Base64.getDecoder().decode(base64Object1)),
+                        new BigInteger(Base64.getDecoder().decode(base64Object2))
                 ), 0.1F);
 
         KNNVectorFieldMapper.KNNVectorFieldType invalidFieldType = mock(KNNVectorFieldMapper.KNNVectorFieldType.class);

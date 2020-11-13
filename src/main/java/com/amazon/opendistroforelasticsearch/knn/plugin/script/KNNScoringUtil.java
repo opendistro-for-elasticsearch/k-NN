@@ -18,8 +18,8 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.BitSet;
 
 public class KNNScoringUtil {
     private static Logger logger = LogManager.getLogger(KNNScoringUtil.class);
@@ -91,15 +91,14 @@ public class KNNScoringUtil {
 
 
     /**
-     * This method calculates hamming distance on 2 BitSets
+     * This method calculates hamming distance on 2 BigIntegers
      *
-     * @param queryBits query BitSet
-     * @param inputBits input BitSet
+     * @param queryBigInteger BigInteger
+     * @param inputBigInteger input BigInteger
      * @return hamming distance
      */
-    public static float bitHamming(BitSet queryBits, BitSet inputBits) {
-        inputBits.xor(queryBits);
-        return inputBits.cardinality();
+    public static float bitHamming(BigInteger queryBigInteger, BigInteger inputBigInteger) {
+        return inputBigInteger.xor(queryBigInteger).bitCount();
     }
 
     /**

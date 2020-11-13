@@ -348,15 +348,11 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
 
         /*
          * Decimal to Binary conversions lookup
-         *
-         * Docs:
-         * 8                            b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00001000
-         * 1                            b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000001
-         * -9_223_372_036_818_523_493   b10000000_00000000_00000000_00000000_00000010_00101001_00101010_10011011
-         * 1_000_000_000_000_000        b00000000_00000011_10001101_01111110_10100100_11000110_10000000_00000000
-         *
-         * Queries:
-         * -9223372036818526181         b10000000_00000000_00000000_00000000_00000010_00101001_00100000_00011011
+         * 8                          -> 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 1000
+         * 1                          -> 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0001
+         * -9_223_372_036_818_523_493 -> 1000 0000 0000 0000 0000 0000 0000 0000 0000 0010 0010 1001 0010 1010 1001 1011
+         * 1_000_000_000_000_000      -> 0000 0000 0000 0011 1000 1101 0111 1110 1010 0100 1100 0110 1000 0000 0000 0000
+         * -9_223_372_036_818_526_181 -> 1000 0000 0000 0000 0000 0000 0000 0000 0000 0010 0010 1001 0010 0000 0001 1011
          */
 
         QueryBuilder qb = new MatchAllQueryBuilder();
@@ -418,48 +414,78 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
 
         /*
          * Base64 encodings to Binary conversions lookup
-         *
-         * Docs:
-         * AAAAAAAAAAg=                 b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00001000
-         * AAAAAAAAAAE=                 b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000001
-         * gAAAAAIpKps=                 b10000000_00000000_00000000_00000000_00000010_00101001_00101010_10011011
-         * AAONfqTGgAA=                 b00000000_00000011_10001101_01111110_10100100_11000110_10000000_00000000
-         *
-         * Queries:
-         * gAAAAAIpIBs=                 b10000000_00000000_00000000_00000000_00000010_00101001_00100000_00011011
+         * AAAAAAAAAAg=  -> 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 1000
+         * AAAAAAAAAAE=  -> 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0001
+         * gAAAAAIpKps=  -> 1000 0000 0000 0000 0000 0000 0000 0000 0000 0010 0010 1001 0010 1010 1001 1011
+         * AAONfqTGgAA=  -> 0000 0000 0000 0011 1000 1101 0111 1110 1010 0100 1100 0110 1000 0000 0000 0000
+         * gAAAAAIpIBs=  -> 1000 0000 0000 0000 0000 0000 0000 0000 0000 0010 0010 1001 0010 0000 0001 1011
+         * AAAAAAIpIBs=  -> 0000 0000 0000 0000 0000 0000 0000 0000 0000 0010 0010 1001 0010 0000 0001 1011
          */
 
-        QueryBuilder qb = new MatchAllQueryBuilder();
-        Map<String, Object> params = new HashMap<>();
-        String queryValue = "gAAAAAIpIBs=";
-        params.put("field", FIELD_NAME);
-        params.put("query_value", queryValue);
-        params.put("space_type", KNNConstants.BIT_HAMMING);
-        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, 4);
-        Response response = client().performRequest(request);
-        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
-                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+        QueryBuilder qb1 = new MatchAllQueryBuilder();
+        Map<String, Object> params1 = new HashMap<>();
+        String queryValue1 = "gAAAAAIpIBs=";
+        params1.put("field", FIELD_NAME);
+        params1.put("query_value", queryValue1);
+        params1.put("space_type", KNNConstants.BIT_HAMMING);
+        Request request1 = constructKNNScriptQueryRequest(INDEX_NAME, qb1, params1, 4);
+        Response response1 = client().performRequest(request1);
+        assertEquals(request1.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response1.getStatusLine().getStatusCode()));
 
-        String responseBody = EntityUtils.toString(response.getEntity());
-        List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
-                responseBody).map().get("hits")).get("hits");
+        String responseBody1 = EntityUtils.toString(response1.getEntity());
+        List<Object> hits1 = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
+                responseBody1).map().get("hits")).get("hits");
 
-        List<String>  docIds = hits.stream().map(hit ->
+        List<String>  docIds1 = hits1.stream().map(hit ->
                 ((String)((Map<String, Object>)hit).get("_id"))).collect(Collectors.toList());
 
-        List<Double>  docScores = hits.stream().map(hit ->
+        List<Double>  docScores1 = hits1.stream().map(hit ->
                 ((Double)((Map<String, Object>)hit).get("_score"))).collect(Collectors.toList());
 
-        double[] scores = new double[docScores.size()];
-        for (int i = 0; i < docScores.size(); i++) {
-            scores[i] = docScores.get(i);
+        double[] scores1 = new double[docScores1.size()];
+        for (int i = 0; i < docScores1.size(); i++) {
+            scores1[i] = docScores1.get(i);
         }
 
-        List<String> correctIds = Arrays.asList("2", "0", "1", "3");
-        double[] correctScores = new double[] {1.0/(1 + 3), 1.0/(1 + 9), 1.0/(1 + 9), 1.0/(1 + 30)};
+        List<String> correctIds1 = Arrays.asList("2", "0", "1", "3");
+        double[] correctScores1 = new double[] {1.0/(1 + 3), 1.0/(1 + 9), 1.0/(1 + 9), 1.0/(1 + 30)};
 
-        assertEquals(4, correctIds.size());
-        assertArrayEquals(correctIds.toArray(), docIds.toArray());
-        assertArrayEquals(correctScores, scores, 0.1);
+        assertEquals(correctIds1.size(), docIds1.size());
+        assertArrayEquals(correctIds1.toArray(), docIds1.toArray());
+        assertArrayEquals(correctScores1, scores1, 0.1);
+
+        QueryBuilder qb2 = new MatchAllQueryBuilder();
+        Map<String, Object> params2 = new HashMap<>();
+        String queryValue2 = "gAAAAAIpIBs=";
+        params2.put("field", FIELD_NAME);
+        params2.put("query_value", queryValue2);
+        params2.put("space_type", KNNConstants.BIT_HAMMING);
+        Request request2 = constructKNNScriptQueryRequest(INDEX_NAME, qb2, params2, 4);
+        Response response2 = client().performRequest(request2);
+        assertEquals(request2.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response2.getStatusLine().getStatusCode()));
+
+        String responseBody2 = EntityUtils.toString(response2.getEntity());
+        List<Object> hits2 = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
+                responseBody2).map().get("hits")).get("hits");
+
+        List<String>  docIds2 = hits2.stream().map(hit ->
+                ((String)((Map<String, Object>)hit).get("_id"))).collect(Collectors.toList());
+
+        List<Double>  docScores2 = hits2.stream().map(hit ->
+                ((Double)((Map<String, Object>)hit).get("_score"))).collect(Collectors.toList());
+
+        double[] scores2 = new double[docScores2.size()];
+        for (int i = 0; i < docScores2.size(); i++) {
+            scores2[i] = docScores2.get(i);
+        }
+
+        List<String> correctIds2 = Arrays.asList("2", "0", "1", "3");
+        double[] correctScores2 = new double[] {1.0/(1 + 2), 1.0/(1 + 8), 1.0/(1 + 10), 1.0/(1 + 29)};
+
+        assertEquals(correctIds2.size(), docIds2.size());
+        assertArrayEquals(correctIds2.toArray(), docIds2.toArray());
+        assertArrayEquals(correctScores2, scores2, 0.1);
     }
 }

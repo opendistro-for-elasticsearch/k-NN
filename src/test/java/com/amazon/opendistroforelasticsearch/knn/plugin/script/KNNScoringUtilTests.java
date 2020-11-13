@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 
-import java.util.BitSet;
+import java.math.BigInteger;
 
 public class KNNScoringUtilTests extends KNNTestCase {
 
@@ -79,34 +79,59 @@ public class KNNScoringUtilTests extends KNNTestCase {
     }
 
     public void testBitHammingDistance_BitSet() {
-        BitSet bitSet1 = new BitSet(10);
-        BitSet bitSet2 = new BitSet(10);
-        BitSet bitSet3 = new BitSet(4);
+        BigInteger bigInteger1 = new BigInteger("4", 16);
+        BigInteger bigInteger2 = new BigInteger("32278", 16);
+        BigInteger bigInteger3 = new BigInteger("AB5432", 16);
+        BigInteger bigInteger4 = new BigInteger("EECCDDFF", 16);
+        BigInteger bigInteger5 = new BigInteger("1114AB5432", 16);
 
-        bitSet1.set(0);
-        bitSet1.set(3);
-        bitSet1.set(4);
-        bitSet1.set(9);
+        /*
+         * Hex to binary table:
+         *
+         * 4            -> 0000 0000 0000 0000 0000 0000 0000 0000 0000 0100
+         * 32278        -> 0000 0000 0000 0000 0000 0011 0010 0010 0111 1000
+         * AB5432       -> 0000 0000 0000 0000 1010 1011 0101 0100 0011 0010
+         * EECCDDFF     -> 0000 0000 1110 1110 1100 1100 1101 1101 1111 1111
+         * 1114AB5432   -> 0001 0001 0001 0100 1010 1011 0101 0100 0011 0010
+         */
 
-        bitSet2.set(0);
-        bitSet2.set(2);
-        bitSet2.set(4);
+        assertEquals(9.0, KNNScoringUtil.bitHamming(bigInteger1, bigInteger2), 0.1);
+        assertEquals(12.0, KNNScoringUtil.bitHamming(bigInteger1, bigInteger3), 0.1);
+        assertEquals(23.0, KNNScoringUtil.bitHamming(bigInteger1, bigInteger4), 0.1);
+        assertEquals(16.0, KNNScoringUtil.bitHamming(bigInteger1, bigInteger5), 0.1);
 
-        bitSet3.set(0);
-        bitSet3.set(3);
+        assertEquals(9.0, KNNScoringUtil.bitHamming(bigInteger2, bigInteger1), 0.1);
+        assertEquals(11.0, KNNScoringUtil.bitHamming(bigInteger2, bigInteger3), 0.1);
+        assertEquals(24.0, KNNScoringUtil.bitHamming(bigInteger2, bigInteger4), 0.1);
+        assertEquals(15.0, KNNScoringUtil.bitHamming(bigInteger2, bigInteger5), 0.1);
 
-        assertEquals(3.0, KNNScoringUtil.bitHamming(bitSet1, bitSet2), 0.1);
-        assertEquals(2.0, KNNScoringUtil.bitHamming(bitSet1, bitSet3), 0.1);
+        assertEquals(12.0, KNNScoringUtil.bitHamming(bigInteger3, bigInteger1), 0.1);
+        assertEquals(11.0, KNNScoringUtil.bitHamming(bigInteger3, bigInteger2), 0.1);
+        assertEquals(19.0, KNNScoringUtil.bitHamming(bigInteger3, bigInteger4), 0.1);
+        assertEquals(4.0, KNNScoringUtil.bitHamming(bigInteger3, bigInteger5), 0.1);
+
+        assertEquals(23.0, KNNScoringUtil.bitHamming(bigInteger4, bigInteger1), 0.1);
+        assertEquals(24.0, KNNScoringUtil.bitHamming(bigInteger4, bigInteger2), 0.1);
+        assertEquals(19.0, KNNScoringUtil.bitHamming(bigInteger4, bigInteger3), 0.1);
+        assertEquals(21.0, KNNScoringUtil.bitHamming(bigInteger4, bigInteger5), 0.1);
+
+        assertEquals(16.0, KNNScoringUtil.bitHamming(bigInteger5, bigInteger1), 0.1);
+        assertEquals(15.0, KNNScoringUtil.bitHamming(bigInteger5, bigInteger2), 0.1);
+        assertEquals(4.0, KNNScoringUtil.bitHamming(bigInteger5, bigInteger3), 0.1);
+        assertEquals(21.0, KNNScoringUtil.bitHamming(bigInteger5, bigInteger4), 0.1);
     }
 
     public void testBitHammingDistance_Long() {
-        // 64 bit 2's complement:
-        // 1_817L                   = 00000000_00000000_00000000_00000000_00000000_00000000_00000111_00011001
-        // 500_000_924_849_631L     = 00000000_00000001_11000110_10111111_10001001_10000011_01010101_11011111
-        // -500_000_924_849_631L    = 11111111_11111110_00111001_01000000_01110110_01111100_10101010_00100001
         Long long1 = 1_817L;
         Long long2 = 500_000_924_849_631L;
         Long long3 = -500_000_924_849_631L;
+
+        /*
+         * 64 bit 2's complement:
+         * 1_817L                  -> 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0111 0001 1001
+         * 500_000_924_849_631L    -> 0000 0000 0000 0001 1100 0110 1011 1111 1000 1001 1000 0011 0101 0101 1101 1111
+         * -500_000_924_849_631L   -> 1111 1111 1111 1110 0011 1001 0100 0000 0111 0110 0111 1100 1010 1010 0010 0001
+         */
 
         assertEquals(25.0, KNNScoringUtil.bitHamming(long1, long2), 0.1);
         assertEquals(38.0, KNNScoringUtil.bitHamming(long1, long3), 0.1);

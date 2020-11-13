@@ -25,8 +25,8 @@ import org.elasticsearch.script.ScoreScript;
 import org.elasticsearch.search.lookup.SearchLookup;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Base64;
-import java.util.BitSet;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -88,8 +88,8 @@ public abstract class KNNScoringSpace {
         return processedQueryLong;
     }
 
-    protected BitSet parseBinaryQuery(Object query) {
-        return BitSet.valueOf(Base64.getDecoder().decode((String) query));
+    protected BigInteger parseBinaryQuery(Object query) {
+        return new BigInteger(1, Base64.getDecoder().decode((String) query));
     }
 
     protected float[] parseKNNVectorQuery(Object query) {
@@ -183,7 +183,7 @@ public abstract class KNNScoringSpace {
                 this.scoringMethod = (Long q, Long v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
             } else if (isBinaryFieldType(fieldType)) {
                 this.processedQuery = parseBinaryQuery(query);
-                this.scoringMethod = (BitSet q, BitSet v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
+                this.scoringMethod = (BigInteger q, BigInteger v) -> 1.0f / (1 + KNNScoringUtil.bitHamming(q, v));
             } else {
                 throw new IllegalArgumentException("Incompatible field_type for hamming space. The field type must " +
                         "of type long or binary.");
@@ -198,8 +198,8 @@ public abstract class KNNScoringSpace {
                 return new KNNScoreScript.Longs(params, (Long) this.processedQuery, field,
                         (BiFunction<Long, Long, Float>) this.scoringMethod, lookup, ctx);
             } else if (isBinaryFieldType(fieldType)) {
-                return new KNNScoreScript.BitSets(params, (BitSet) this.processedQuery, field,
-                        (BiFunction<BitSet, BitSet, Float>) this.scoringMethod, lookup, ctx);
+                return new KNNScoreScript.BigIntegers(params, (BigInteger) this.processedQuery, field,
+                        (BiFunction<BigInteger, BigInteger, Float>) this.scoringMethod, lookup, ctx);
             } else {
                 throw new IllegalArgumentException("Incompatible field_type for hamming space. The field type must " +
                         "of type long or binary.");
