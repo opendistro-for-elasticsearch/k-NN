@@ -360,7 +360,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         Long queryValue = -9223372036818526181L;
         params.put("field", FIELD_NAME);
         params.put("query_value", queryValue);
-        params.put("space_type", KNNConstants.BIT_HAMMING);
+        params.put("space_type", KNNConstants.HAMMING_BIT);
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, 4);
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
@@ -427,7 +427,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         String queryValue1 = "gAAAAAIpIBs=";
         params1.put("field", FIELD_NAME);
         params1.put("query_value", queryValue1);
-        params1.put("space_type", KNNConstants.BIT_HAMMING);
+        params1.put("space_type", KNNConstants.HAMMING_BIT);
         Request request1 = constructKNNScriptQueryRequest(INDEX_NAME, qb1, params1, 4);
         Response response1 = client().performRequest(request1);
         assertEquals(request1.getEndpoint() + ": failed", RestStatus.OK,
@@ -460,7 +460,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         String queryValue2 = "gAAAAAIpIBs=";
         params2.put("field", FIELD_NAME);
         params2.put("query_value", queryValue2);
-        params2.put("space_type", KNNConstants.BIT_HAMMING);
+        params2.put("space_type", KNNConstants.HAMMING_BIT);
         Request request2 = constructKNNScriptQueryRequest(INDEX_NAME, qb2, params2, 4);
         Response response2 = client().performRequest(request2);
         assertEquals(request2.getEndpoint() + ": failed", RestStatus.OK,

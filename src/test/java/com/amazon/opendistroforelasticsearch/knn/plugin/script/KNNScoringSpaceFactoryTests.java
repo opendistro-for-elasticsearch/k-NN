@@ -35,16 +35,16 @@ public class KNNScoringSpaceFactoryTests extends KNNTestCase {
         List<Float> floatQueryObject = new ArrayList<>();
         Long longQueryObject = 0L;
 
-        assertTrue(KNNScoringSpaceFactory.getSpace(KNNConstants.L2, floatQueryObject, knnVectorFieldType)
+        assertTrue(KNNScoringSpaceFactory.create(KNNConstants.L2, floatQueryObject, knnVectorFieldType)
                 instanceof KNNScoringSpace.L2);
-        assertTrue(KNNScoringSpaceFactory.getSpace(KNNConstants.COSINESIMIL, floatQueryObject, knnVectorFieldType)
+        assertTrue(KNNScoringSpaceFactory.create(KNNConstants.COSINESIMIL, floatQueryObject, knnVectorFieldType)
                 instanceof KNNScoringSpace.CosineSimilarity);
-        assertTrue(KNNScoringSpaceFactory.getSpace(KNNConstants.BIT_HAMMING, longQueryObject, numberFieldType)
+        assertTrue(KNNScoringSpaceFactory.create(KNNConstants.HAMMING_BIT, longQueryObject, numberFieldType)
                 instanceof KNNScoringSpace.HammingBit);
     }
 
     public void testInvalidSpace() {
-        expectThrows(IllegalArgumentException.class, () -> KNNScoringSpaceFactory.getSpace(KNNConstants.L2,
+        expectThrows(IllegalArgumentException.class, () -> KNNScoringSpaceFactory.create(KNNConstants.L2,
                 null, null));
     }
 }

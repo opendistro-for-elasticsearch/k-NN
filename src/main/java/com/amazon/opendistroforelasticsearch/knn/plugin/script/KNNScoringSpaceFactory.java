@@ -24,16 +24,19 @@ import org.elasticsearch.index.mapper.MappedFieldType;
  * Factory to create correct KNNScoringSpace based on the spaceType passed in.
  */
 public class KNNScoringSpaceFactory {
-    public static KNNScoringSpace getSpace(String spaceType, Object query, MappedFieldType mappedFieldType) {
-        if (spaceType.equalsIgnoreCase(KNNConstants.BIT_HAMMING)) {
+    public static KNNScoringSpace create(String spaceType, Object query, MappedFieldType mappedFieldType) {
+        if (KNNConstants.HAMMING_BIT.equalsIgnoreCase(spaceType)) {
             return new KNNScoringSpace.HammingBit(query, mappedFieldType);
-        } else if (spaceType.equalsIgnoreCase(KNNConstants.L2)) {
-            return new KNNScoringSpace.L2(query, mappedFieldType);
-        } else if (spaceType.equalsIgnoreCase(KNNConstants.COSINESIMIL)) {
-            return new KNNScoringSpace.CosineSimilarity(query, mappedFieldType);
-        } else {
-            KNNCounter.SCRIPT_QUERY_ERRORS.increment();
-            throw new IllegalArgumentException("Invalid space type. Please refer to the available space types.");
         }
+
+        if (KNNConstants.L2.equalsIgnoreCase(spaceType)) {
+            return new KNNScoringSpace.L2(query, mappedFieldType);
+        }
+        if (KNNConstants.COSINESIMIL.equalsIgnoreCase(spaceType)) {
+            return new KNNScoringSpace.CosineSimilarity(query, mappedFieldType);
+        }
+
+        KNNCounter.SCRIPT_QUERY_ERRORS.increment();
+        throw new IllegalArgumentException("Invalid space type. Please refer to the available space types.");
     }
 }

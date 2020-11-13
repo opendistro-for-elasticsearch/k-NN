@@ -97,7 +97,7 @@ public class KNNScoringUtil {
      * @param inputBigInteger input BigInteger
      * @return hamming distance
      */
-    public static float bitHamming(BigInteger queryBigInteger, BigInteger inputBigInteger) {
+    public static float calculateHammingBit(BigInteger queryBigInteger, BigInteger inputBigInteger) {
         return inputBigInteger.xor(queryBigInteger).bitCount();
     }
 
@@ -108,7 +108,7 @@ public class KNNScoringUtil {
      * @param inputLong input Long
      * @return hamming distance
      */
-    public static float bitHamming(Long queryLong, Long inputLong) {
+    public static float calculateHammingBit(Long queryLong, Long inputLong) {
         return Long.bitCount(queryLong ^ inputLong);
     }
 

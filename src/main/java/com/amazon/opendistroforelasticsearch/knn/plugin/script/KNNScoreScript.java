@@ -53,7 +53,7 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
      * KNNScoreScript with Long type. The query value passed in as well as the DocValues being searched over are
      * expected to be Longs.
      */
-    public static class Longs extends KNNScoreScript<Long> {
+    public static class LongType extends KNNScoreScript<Long> {
         /**
          * This function calculates the similarity score for each doc in the segment.
          *
@@ -70,7 +70,7 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
             return this.scoringMethod.apply(this.queryValue, scriptDocValues.getValue());
         }
 
-        public Longs(Map<String, Object> params, Long queryValue, String field,
+        public LongType(Map<String, Object> params, Long queryValue, String field,
                     BiFunction<Long, Long, Float> scoringMethod, SearchLookup lookup, LeafReaderContext leafContext) {
             super(params, queryValue, field, scoringMethod, lookup, leafContext);
         }
@@ -80,7 +80,7 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
      * KNNScoreScript with BigInteger type. The query value passed in as well as the DocValues being searched over
      * are expected to be BigInteger.
      */
-    public static class BigIntegers extends KNNScoreScript<BigInteger> {
+    public static class BigIntegerType extends KNNScoreScript<BigInteger> {
         /**
          * This function calculates the similarity score for each doc in the segment.
          *
@@ -97,7 +97,7 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
             return this.scoringMethod.apply(this.queryValue, new BigInteger(1, scriptDocValues.getValue().bytes));
         }
 
-        public BigIntegers(Map<String, Object> params, BigInteger queryValue, String field,
+        public BigIntegerType(Map<String, Object> params, BigInteger queryValue, String field,
                            BiFunction<BigInteger, BigInteger, Float> scoringMethod, SearchLookup lookup,
                            LeafReaderContext leafContext) {
             super(params, queryValue, field, scoringMethod, lookup, leafContext);
@@ -108,7 +108,7 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
      * KNNVectors with float[] type. The query value passed in is expected to be float[]. The fieldType of the docs
      * being searched over are expected to be KNNVector type.
      */
-    public static class KNNVectors extends KNNScoreScript<float[]> {
+    public static class KNNVectorType extends KNNScoreScript<float[]> {
         private BinaryDocValues binaryDocValuesReader;
         private boolean vectorExist = true;
 
@@ -153,7 +153,7 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
             }
         }
 
-        public KNNVectors(Map<String, Object> params, float[] queryValue, String field,
+        public KNNVectorType(Map<String, Object> params, float[] queryValue, String field,
                                     BiFunction<float[], float[], Float> scoringMethod, SearchLookup lookup,
                                     LeafReaderContext leafContext) throws IOException {
             super(params, queryValue, field, scoringMethod, lookup, leafContext);

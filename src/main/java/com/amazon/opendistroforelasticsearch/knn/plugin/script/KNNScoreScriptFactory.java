@@ -38,7 +38,7 @@ public class KNNScoreScriptFactory implements ScoreScript.LeafFactory {
 
         parseParameters();
 
-        this.knnScoringSpace = KNNScoringSpaceFactory.getSpace(this.similaritySpace, this.query,
+        this.knnScoringSpace = KNNScoringSpaceFactory.create(this.similaritySpace, this.query,
                 lookup.doc().mapperService().fieldType(this.field));
 
     }

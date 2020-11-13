@@ -95,30 +95,30 @@ public class KNNScoringUtilTests extends KNNTestCase {
          * 1114AB5432   -> 0001 0001 0001 0100 1010 1011 0101 0100 0011 0010
          */
 
-        assertEquals(9.0, KNNScoringUtil.bitHamming(bigInteger1, bigInteger2), 0.1);
-        assertEquals(12.0, KNNScoringUtil.bitHamming(bigInteger1, bigInteger3), 0.1);
-        assertEquals(23.0, KNNScoringUtil.bitHamming(bigInteger1, bigInteger4), 0.1);
-        assertEquals(16.0, KNNScoringUtil.bitHamming(bigInteger1, bigInteger5), 0.1);
+        assertEquals(9.0, KNNScoringUtil.calculateHammingBit(bigInteger1, bigInteger2), 0.1);
+        assertEquals(12.0, KNNScoringUtil.calculateHammingBit(bigInteger1, bigInteger3), 0.1);
+        assertEquals(23.0, KNNScoringUtil.calculateHammingBit(bigInteger1, bigInteger4), 0.1);
+        assertEquals(16.0, KNNScoringUtil.calculateHammingBit(bigInteger1, bigInteger5), 0.1);
 
-        assertEquals(9.0, KNNScoringUtil.bitHamming(bigInteger2, bigInteger1), 0.1);
-        assertEquals(11.0, KNNScoringUtil.bitHamming(bigInteger2, bigInteger3), 0.1);
-        assertEquals(24.0, KNNScoringUtil.bitHamming(bigInteger2, bigInteger4), 0.1);
-        assertEquals(15.0, KNNScoringUtil.bitHamming(bigInteger2, bigInteger5), 0.1);
+        assertEquals(9.0, KNNScoringUtil.calculateHammingBit(bigInteger2, bigInteger1), 0.1);
+        assertEquals(11.0, KNNScoringUtil.calculateHammingBit(bigInteger2, bigInteger3), 0.1);
+        assertEquals(24.0, KNNScoringUtil.calculateHammingBit(bigInteger2, bigInteger4), 0.1);
+        assertEquals(15.0, KNNScoringUtil.calculateHammingBit(bigInteger2, bigInteger5), 0.1);
 
-        assertEquals(12.0, KNNScoringUtil.bitHamming(bigInteger3, bigInteger1), 0.1);
-        assertEquals(11.0, KNNScoringUtil.bitHamming(bigInteger3, bigInteger2), 0.1);
-        assertEquals(19.0, KNNScoringUtil.bitHamming(bigInteger3, bigInteger4), 0.1);
-        assertEquals(4.0, KNNScoringUtil.bitHamming(bigInteger3, bigInteger5), 0.1);
+        assertEquals(12.0, KNNScoringUtil.calculateHammingBit(bigInteger3, bigInteger1), 0.1);
+        assertEquals(11.0, KNNScoringUtil.calculateHammingBit(bigInteger3, bigInteger2), 0.1);
+        assertEquals(19.0, KNNScoringUtil.calculateHammingBit(bigInteger3, bigInteger4), 0.1);
+        assertEquals(4.0, KNNScoringUtil.calculateHammingBit(bigInteger3, bigInteger5), 0.1);
 
-        assertEquals(23.0, KNNScoringUtil.bitHamming(bigInteger4, bigInteger1), 0.1);
-        assertEquals(24.0, KNNScoringUtil.bitHamming(bigInteger4, bigInteger2), 0.1);
-        assertEquals(19.0, KNNScoringUtil.bitHamming(bigInteger4, bigInteger3), 0.1);
-        assertEquals(21.0, KNNScoringUtil.bitHamming(bigInteger4, bigInteger5), 0.1);
+        assertEquals(23.0, KNNScoringUtil.calculateHammingBit(bigInteger4, bigInteger1), 0.1);
+        assertEquals(24.0, KNNScoringUtil.calculateHammingBit(bigInteger4, bigInteger2), 0.1);
+        assertEquals(19.0, KNNScoringUtil.calculateHammingBit(bigInteger4, bigInteger3), 0.1);
+        assertEquals(21.0, KNNScoringUtil.calculateHammingBit(bigInteger4, bigInteger5), 0.1);
 
-        assertEquals(16.0, KNNScoringUtil.bitHamming(bigInteger5, bigInteger1), 0.1);
-        assertEquals(15.0, KNNScoringUtil.bitHamming(bigInteger5, bigInteger2), 0.1);
-        assertEquals(4.0, KNNScoringUtil.bitHamming(bigInteger5, bigInteger3), 0.1);
-        assertEquals(21.0, KNNScoringUtil.bitHamming(bigInteger5, bigInteger4), 0.1);
+        assertEquals(16.0, KNNScoringUtil.calculateHammingBit(bigInteger5, bigInteger1), 0.1);
+        assertEquals(15.0, KNNScoringUtil.calculateHammingBit(bigInteger5, bigInteger2), 0.1);
+        assertEquals(4.0, KNNScoringUtil.calculateHammingBit(bigInteger5, bigInteger3), 0.1);
+        assertEquals(21.0, KNNScoringUtil.calculateHammingBit(bigInteger5, bigInteger4), 0.1);
     }
 
     public void testBitHammingDistance_Long() {
@@ -133,9 +133,9 @@ public class KNNScoringUtilTests extends KNNTestCase {
          * -500_000_924_849_631L   -> 1111 1111 1111 1110 0011 1001 0100 0000 0111 0110 0111 1100 1010 1010 0010 0001
          */
 
-        assertEquals(25.0, KNNScoringUtil.bitHamming(long1, long2), 0.1);
-        assertEquals(38.0, KNNScoringUtil.bitHamming(long1, long3), 0.1);
-        assertEquals(63.0, KNNScoringUtil.bitHamming(long2, long3), 0.1);
-        assertEquals(0.0, KNNScoringUtil.bitHamming(long3, long3), 0.1);
+        assertEquals(25.0, KNNScoringUtil.calculateHammingBit(long1, long2), 0.1);
+        assertEquals(38.0, KNNScoringUtil.calculateHammingBit(long1, long3), 0.1);
+        assertEquals(63.0, KNNScoringUtil.calculateHammingBit(long2, long3), 0.1);
+        assertEquals(0.0, KNNScoringUtil.calculateHammingBit(long3, long3), 0.1);
     }
 }
