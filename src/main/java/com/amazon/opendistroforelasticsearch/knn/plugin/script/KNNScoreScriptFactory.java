@@ -52,6 +52,7 @@ public class KNNScoreScriptFactory implements ScoreScript.LeafFactory {
         throw new IllegalArgumentException("Missing parameter ["+ fieldName +"]");
     }
 
+    @Override
     public boolean needs_score() {
         return false;
     }
