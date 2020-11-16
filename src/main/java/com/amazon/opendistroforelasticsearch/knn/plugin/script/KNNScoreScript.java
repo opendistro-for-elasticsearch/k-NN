@@ -54,6 +54,12 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
      * expected to be Longs.
      */
     public static class LongType extends KNNScoreScript<Long> {
+        public LongType(Map<String, Object> params, Long queryValue, String field,
+                        BiFunction<Long, Long, Float> scoringMethod, SearchLookup lookup,
+                        LeafReaderContext leafContext) {
+            super(params, queryValue, field, scoringMethod, lookup, leafContext);
+        }
+
         /**
          * This function calculates the similarity score for each doc in the segment.
          *
@@ -64,15 +70,10 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
         @Override
         public double execute(ScoreScript.ExplanationHolder explanationHolder) {
             ScriptDocValues.Longs scriptDocValues = (ScriptDocValues.Longs) getDoc().get(this.field);
-            if (scriptDocValues.size() == 0) {
+            if (scriptDocValues.isEmpty()) {
                 return Float.MIN_VALUE;
             }
             return this.scoringMethod.apply(this.queryValue, scriptDocValues.getValue());
-        }
-
-        public LongType(Map<String, Object> params, Long queryValue, String field,
-                    BiFunction<Long, Long, Float> scoringMethod, SearchLookup lookup, LeafReaderContext leafContext) {
-            super(params, queryValue, field, scoringMethod, lookup, leafContext);
         }
     }
 
@@ -81,6 +82,12 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
      * are expected to be BigInteger.
      */
     public static class BigIntegerType extends KNNScoreScript<BigInteger> {
+        public BigIntegerType(Map<String, Object> params, BigInteger queryValue, String field,
+                              BiFunction<BigInteger, BigInteger, Float> scoringMethod, SearchLookup lookup,
+                              LeafReaderContext leafContext) {
+            super(params, queryValue, field, scoringMethod, lookup, leafContext);
+        }
+
         /**
          * This function calculates the similarity score for each doc in the segment.
          *
@@ -91,16 +98,10 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
         @Override
         public double execute(ScoreScript.ExplanationHolder explanationHolder) {
             ScriptDocValues.BytesRefs scriptDocValues = (ScriptDocValues.BytesRefs) getDoc().get(this.field);
-            if (scriptDocValues.size() == 0) {
+            if (scriptDocValues.isEmpty()) {
                 return Float.MIN_VALUE;
             }
             return this.scoringMethod.apply(this.queryValue, new BigInteger(1, scriptDocValues.getValue().bytes));
-        }
-
-        public BigIntegerType(Map<String, Object> params, BigInteger queryValue, String field,
-                           BiFunction<BigInteger, BigInteger, Float> scoringMethod, SearchLookup lookup,
-                           LeafReaderContext leafContext) {
-            super(params, queryValue, field, scoringMethod, lookup, leafContext);
         }
     }
 
@@ -111,6 +112,18 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
     public static class KNNVectorType extends KNNScoreScript<float[]> {
         private BinaryDocValues binaryDocValuesReader;
         private boolean vectorExist = true;
+
+        public KNNVectorType(Map<String, Object> params, float[] queryValue, String field,
+                             BiFunction<float[], float[], Float> scoringMethod, SearchLookup lookup,
+                             LeafReaderContext leafContext) throws IOException {
+            super(params, queryValue, field, scoringMethod, lookup, leafContext);
+            this.binaryDocValuesReader = leafContext.reader().getBinaryDocValues(field);
+            if (this.binaryDocValuesReader == null) {
+                KNNCounter.SCRIPT_QUERY_ERRORS.increment();
+                throw new IllegalStateException("Binary Doc values not enabled for the field " + field
+                        + " Please ensure the field type is knn_vector in mappings for this field");
+            }
+        }
 
         /**
          * This function called for each doc in the segment. We evaluate the score of the vector in the doc
@@ -150,18 +163,6 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
                 this.vectorExist = this.binaryDocValuesReader.advanceExact(docId);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
-            }
-        }
-
-        public KNNVectorType(Map<String, Object> params, float[] queryValue, String field,
-                                    BiFunction<float[], float[], Float> scoringMethod, SearchLookup lookup,
-                                    LeafReaderContext leafContext) throws IOException {
-            super(params, queryValue, field, scoringMethod, lookup, leafContext);
-            this.binaryDocValuesReader = leafContext.reader().getBinaryDocValues(field);
-            if (this.binaryDocValuesReader == null) {
-                KNNCounter.SCRIPT_QUERY_ERRORS.increment();
-                throw new IllegalStateException("Binary Doc values not enabled for the field " + field
-                        + " Please ensure the field type is knn_vector in mappings for this field");
             }
         }
     }

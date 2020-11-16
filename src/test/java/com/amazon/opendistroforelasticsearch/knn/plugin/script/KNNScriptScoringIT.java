@@ -275,8 +275,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         params.put("space_type", KNNConstants.COSINESIMIL);
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         ResponseException ex = expectThrows(ResponseException.class,  () -> client().performRequest(request));
-        assertThat(EntityUtils.toString(ex.getResponse().getEntity()),
-                containsString("query vector and field vector dimensions mismatch"));
+        assertThat(EntityUtils.toString(ex.getResponse().getEntity()), containsString("does not match"));
     }
 
     @SuppressWarnings("unchecked")

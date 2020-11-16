@@ -19,7 +19,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 
 public class KNNScoringUtil {
     private static Logger logger = LogManager.getLogger(KNNScoringUtil.class);
@@ -110,41 +109,5 @@ public class KNNScoringUtil {
      */
     public static float calculateHammingBit(Long queryLong, Long inputLong) {
         return Long.bitCount(queryLong ^ inputLong);
-    }
-
-    /**
-     * Converts Object vector to primitive float[]
-     *
-     * @param vector input vector
-     * @return Float array representing the vector
-     */
-    @SuppressWarnings("unchecked")
-    public static float[] convertVectorToPrimitive(Object vector) {
-        float[] primitiveVector = null;
-        if (vector != null) {
-            final ArrayList<Double> tmp = (ArrayList<Double>) vector;
-            primitiveVector = new float[tmp.size()];
-            for (int i = 0; i < primitiveVector.length; i++) {
-                primitiveVector[i] = tmp.get(i).floatValue();
-            }
-        }
-        return primitiveVector;
-    }
-
-    /**
-     * Calculates the magnitude of given vector
-     *
-     * @param inputVector input vector
-     * @return Magnitude of vector
-     */
-    public static float getVectorMagnitudeSquared(float[] inputVector) {
-        if (null == inputVector) {
-            throw new IllegalStateException("vector magnitude cannot be evaluated as it is null");
-        }
-        float normInputVector = 0.0f;
-        for (int i = 0; i < inputVector.length; i++) {
-            normInputVector += inputVector[i] * inputVector[i];
-        }
-        return normInputVector;
     }
 }

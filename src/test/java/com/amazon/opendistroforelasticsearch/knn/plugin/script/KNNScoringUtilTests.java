@@ -19,6 +19,9 @@ import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 
 import java.math.BigInteger;
 
+import static com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringSpaceUtil.convertVectorToPrimitive;
+import static com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringSpaceUtil.getVectorMagnitudeSquared;
+
 public class KNNScoringUtilTests extends KNNTestCase {
 
     public void testL2SquaredScoringFunction() {
@@ -33,8 +36,8 @@ public class KNNScoringUtilTests extends KNNTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f};
         float[] inputVector = {4.0f, 4.0f, 4.0f};
 
-        float queryVectorMagnitude = KNNScoringUtil.getVectorMagnitudeSquared(queryVector);
-        float inputVectorMagnitude = KNNScoringUtil.getVectorMagnitudeSquared(inputVector);
+        float queryVectorMagnitude = getVectorMagnitudeSquared(queryVector);
+        float inputVectorMagnitude = getVectorMagnitudeSquared(inputVector);
         float dotProduct = 12.0f;
         float expectedScore = (float) (dotProduct / (Math.sqrt(queryVectorMagnitude * inputVectorMagnitude)));
 
@@ -46,8 +49,8 @@ public class KNNScoringUtilTests extends KNNTestCase {
     public void testCosineSimilOptimizedScoringFunction() {
         float[] queryVector = {1.0f, 1.0f, 1.0f};
         float[] inputVector = {4.0f, 4.0f, 4.0f};
-        float queryVectorMagnitude = KNNScoringUtil.getVectorMagnitudeSquared(queryVector);
-        float inputVectorMagnitude = KNNScoringUtil.getVectorMagnitudeSquared(inputVector);
+        float queryVectorMagnitude = getVectorMagnitudeSquared(queryVector);
+        float inputVectorMagnitude = getVectorMagnitudeSquared(inputVector);
         float dotProduct = 12.0f;
         float expectedScore = (float) (dotProduct / (Math.sqrt(queryVectorMagnitude * inputVectorMagnitude)));
 
@@ -58,12 +61,12 @@ public class KNNScoringUtilTests extends KNNTestCase {
     public void testGetInvalidVectorMagnitudeSquared() {
         float[] queryVector = null;
         // vector cannot be null
-        expectThrows(IllegalStateException.class, () -> KNNScoringUtil.getVectorMagnitudeSquared(queryVector));
+        expectThrows(IllegalStateException.class, () -> getVectorMagnitudeSquared(queryVector));
     }
 
     public void testConvertInvalidVectorToPrimitive() {
         float[] primitiveVector = null;
-        assertEquals(primitiveVector, KNNScoringUtil.convertVectorToPrimitive(primitiveVector));
+        assertEquals(primitiveVector, convertVectorToPrimitive(primitiveVector));
     }
 
     public void testCosineSimilQueryVectorZeroMagnitude() {

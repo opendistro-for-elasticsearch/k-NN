@@ -35,37 +35,21 @@ public class KNNScoreScriptFactory implements ScoreScript.LeafFactory {
         KNNCounter.SCRIPT_QUERY_REQUESTS.increment();
         this.params = params;
         this.lookup = lookup;
-
-        parseParameters();
+        this.field = getValue(params, "field").toString();
+        this.similaritySpace = getValue(params, "space_type").toString();
+        this.query = getValue(params, "query_value");
 
         this.knnScoringSpace = KNNScoringSpaceFactory.create(this.similaritySpace, this.query,
                 lookup.doc().mapperService().fieldType(this.field));
-
     }
 
-    private void parseParameters() {
-        final Object field = params.get("field");
-        if (field == null) {
-            KNNCounter.SCRIPT_QUERY_ERRORS.increment();
-            throw new IllegalArgumentException("Missing parameter [field]");
-        }
+    private Object getValue(Map<String, Object> params, String fieldName) {
+        final Object value = params.get(fieldName);
+        if (value != null)
+            return value;
 
-        this.field = field.toString();
-
-        final Object space = params.get("space_type");
-        if (space == null) {
-            KNNCounter.SCRIPT_QUERY_ERRORS.increment();
-            throw new IllegalArgumentException("Missing parameter [space_type]");
-        }
-
-        this.similaritySpace = space.toString();
-
-        final Object queryValue = params.get("query_value");
-        if (queryValue == null) {
-            KNNCounter.SCRIPT_QUERY_ERRORS.increment();
-            throw new IllegalArgumentException("Missing parameter [query_value]");
-        }
-        this.query = queryValue;
+        KNNCounter.SCRIPT_QUERY_ERRORS.increment();
+        throw new IllegalArgumentException("Missing parameter ["+ fieldName +"]");
     }
 
     public boolean needs_score() {
@@ -73,15 +57,15 @@ public class KNNScoreScriptFactory implements ScoreScript.LeafFactory {
     }
 
     /**
-     * For each segment, supply the KNNScoreScript that should be run on the values returned from the fetch phase.
-     * Because the method to score the documents was set during Factory construction, the scripts are agnostic of
+     * For each segment, supply the KNNScoreScript that should be used to re-score the documents returned from the
+     * query. Because the method to score the documents was set during factory construction, the scripts are agnostic of
      * the similarity space. The KNNScoringSpace will return the correct script, given the query, the field type, and
      * the similarity space.
      *
      * @param ctx LeafReaderContext for the segment
      * @return ScoreScript to be executed
      */
-    @Override // called number of segments times
+    @Override
     public ScoreScript newInstance(LeafReaderContext ctx) throws IOException {
         return knnScoringSpace.getScoreScript(params, field, lookup, ctx);
     }
