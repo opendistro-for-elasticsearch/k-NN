@@ -352,40 +352,80 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
          * -9_223_372_036_818_523_493 -> 1000 0000 0000 0000 0000 0000 0000 0000 0000 0010 0010 1001 0010 1010 1001 1011
          * 1_000_000_000_000_000      -> 0000 0000 0000 0011 1000 1101 0111 1110 1010 0100 1100 0110 1000 0000 0000 0000
          * -9_223_372_036_818_526_181 -> 1000 0000 0000 0000 0000 0000 0000 0000 0000 0010 0010 1001 0010 0000 0001 1011
+         * 10                         -> 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 1010
          */
 
-        QueryBuilder qb = new MatchAllQueryBuilder();
-        Map<String, Object> params = new HashMap<>();
-        Long queryValue = -9223372036818526181L;
-        params.put("field", FIELD_NAME);
-        params.put("query_value", queryValue);
-        params.put("space_type", KNNConstants.HAMMING_BIT);
-        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, 4);
-        Response response = client().performRequest(request);
-        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
-                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+        QueryBuilder qb1 = new MatchAllQueryBuilder();
+        Map<String, Object> params1 = new HashMap<>();
+        Long queryValue1 = -9223372036818526181L;
+        params1.put("field", FIELD_NAME);
+        params1.put("query_value", queryValue1);
+        params1.put("space_type", KNNConstants.HAMMING_BIT);
+        Request request1 = constructKNNScriptQueryRequest(INDEX_NAME, qb1, params1, 4);
+        Response response1 = client().performRequest(request1);
+        assertEquals(request1.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response1.getStatusLine().getStatusCode()));
 
-        String responseBody = EntityUtils.toString(response.getEntity());
-        List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
-                responseBody).map().get("hits")).get("hits");
+        String responseBody1 = EntityUtils.toString(response1.getEntity());
+        List<Object> hits1 = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
+                responseBody1).map().get("hits")).get("hits");
 
-        List<String>  docIds = hits.stream().map(hit ->
+        List<String>  docIds1 = hits1.stream().map(hit ->
                 ((String)((Map<String, Object>)hit).get("_id"))).collect(Collectors.toList());
 
-        List<Double>  docScores = hits.stream().map(hit ->
+        List<Double>  docScores1 = hits1.stream().map(hit ->
                 ((Double)((Map<String, Object>)hit).get("_score"))).collect(Collectors.toList());
 
-        double[] scores = new double[docScores.size()];
-        for (int i = 0; i < docScores.size(); i++) {
-            scores[i] = docScores.get(i);
+        double[] scores1 = new double[docScores1.size()];
+        for (int i = 0; i < docScores1.size(); i++) {
+            scores1[i] = docScores1.get(i);
         }
 
-        List<String> correctIds = Arrays.asList("2", "0", "1", "3");
-        double[] correctScores = new double[] {1.0/(1 + 3), 1.0/(1 + 9), 1.0/(1 + 9), 1.0/(1 + 30)};
+        List<String> correctIds1 = Arrays.asList("2", "0", "1", "3");
+        double[] correctScores1 = new double[] {1.0/(1 + 3), 1.0/(1 + 9), 1.0/(1 + 9), 1.0/(1 + 30)};
 
-        assertEquals(4, correctIds.size());
-        assertArrayEquals(correctIds.toArray(), docIds.toArray());
-        assertArrayEquals(correctScores, scores, 0.1);
+        assertEquals(4, correctIds1.size());
+        assertArrayEquals(correctIds1.toArray(), docIds1.toArray());
+        assertArrayEquals(correctScores1, scores1, 0.001);
+
+        /*
+         * Force merge to one segment to confirm that docs without field are not included in the results when segment
+         * is mixed with docs that have the field and docs that dont.
+         */
+        forceMergeKnnIndex(INDEX_NAME);
+
+        QueryBuilder qb2 = new MatchAllQueryBuilder();
+        Map<String, Object> params2 = new HashMap<>();
+        Long queryValue2 = 10L;
+        params2.put("field", FIELD_NAME);
+        params2.put("query_value", queryValue2);
+        params2.put("space_type", KNNConstants.HAMMING_BIT);
+        Request request2 = constructKNNScriptQueryRequest(INDEX_NAME, qb2, params2, 4);
+        Response response2 = client().performRequest(request2);
+        assertEquals(request2.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response2.getStatusLine().getStatusCode()));
+
+        String responseBody2 = EntityUtils.toString(response2.getEntity());
+        List<Object> hits2 = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
+                responseBody2).map().get("hits")).get("hits");
+
+        List<String>  docIds2 = hits2.stream().map(hit ->
+                ((String)((Map<String, Object>)hit).get("_id"))).collect(Collectors.toList());
+
+        List<Double>  docScores2 = hits2.stream().map(hit ->
+                ((Double)((Map<String, Object>)hit).get("_score"))).collect(Collectors.toList());
+
+        double[] scores2 = new double[docScores2.size()];
+        for (int i = 0; i < docScores2.size(); i++) {
+            scores2[i] = docScores2.get(i);
+        }
+
+        List<String> correctIds2 = Arrays.asList("0", "1", "2", "3");
+        double[] correctScores2 = new double[] {1.0/(1 + 1), 1.0/(1 + 3), 1.0/(1 + 11), 1.0/(1 + 22)};
+
+        assertEquals(4, correctIds2.size());
+        assertArrayEquals(correctIds2.toArray(), docIds2.toArray());
+        assertArrayEquals(correctScores2, scores2, 0.001);
     }
 
     @SuppressWarnings("unchecked")
@@ -401,7 +441,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
                 .endObject());
         putMappingRequest(INDEX_NAME, longMapping);
 
-        addDocWithBinaryField(INDEX_NAME, "0", FIELD_NAME, "AAAAAAAAAAg=");
+        addDocWithBinaryField(INDEX_NAME, "0", FIELD_NAME, "AAAAAAAAAAk=");
         addDocWithBinaryField(INDEX_NAME, "1", FIELD_NAME, "AAAAAAAAAAE=");
         addDocWithBinaryField(INDEX_NAME, "2", FIELD_NAME, "gAAAAAIpKps=");
         addDocWithBinaryField(INDEX_NAME, "3", FIELD_NAME, "AAONfqTGgAA=");
@@ -413,7 +453,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
 
         /*
          * Base64 encodings to Binary conversions lookup
-         * AAAAAAAAAAg=  -> 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 1000
+         * AAAAAAAAAAk=  -> 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 1001
          * AAAAAAAAAAE=  -> 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0001
          * gAAAAAIpKps=  -> 1000 0000 0000 0000 0000 0000 0000 0000 0000 0010 0010 1001 0010 1010 1001 1011
          * AAONfqTGgAA=  -> 0000 0000 0000 0011 1000 1101 0111 1110 1010 0100 1100 0110 1000 0000 0000 0000
@@ -448,15 +488,21 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         }
 
         List<String> correctIds1 = Arrays.asList("2", "0", "1", "3");
-        double[] correctScores1 = new double[] {1.0/(1 + 3), 1.0/(1 + 9), 1.0/(1 + 9), 1.0/(1 + 30)};
+        double[] correctScores1 = new double[] {1.0/(1 + 3), 1.0/(1 + 8), 1.0/(1 + 9), 1.0/(1 + 30)};
 
         assertEquals(correctIds1.size(), docIds1.size());
         assertArrayEquals(correctIds1.toArray(), docIds1.toArray());
-        assertArrayEquals(correctScores1, scores1, 0.1);
+        assertArrayEquals(correctScores1, scores1, 0.001);
+
+        /*
+         * Force merge to one segment to confirm that docs without field are not included in the results when segment
+         * is mixed with docs that have the field and docs that dont.
+         */
+        forceMergeKnnIndex(INDEX_NAME);
 
         QueryBuilder qb2 = new MatchAllQueryBuilder();
         Map<String, Object> params2 = new HashMap<>();
-        String queryValue2 = "gAAAAAIpIBs=";
+        String queryValue2 = "AAAAAAIpIBs=";
         params2.put("field", FIELD_NAME);
         params2.put("query_value", queryValue2);
         params2.put("space_type", KNNConstants.HAMMING_BIT);
@@ -481,10 +527,10 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         }
 
         List<String> correctIds2 = Arrays.asList("2", "0", "1", "3");
-        double[] correctScores2 = new double[] {1.0/(1 + 2), 1.0/(1 + 8), 1.0/(1 + 10), 1.0/(1 + 29)};
+        double[] correctScores2 = new double[] {1.0/(1 + 4), 1.0/(1 + 7), 1.0/(1 + 8), 1.0/(1 + 29)};
 
         assertEquals(correctIds2.size(), docIds2.size());
         assertArrayEquals(correctIds2.toArray(), docIds2.toArray());
-        assertArrayEquals(correctScores2, scores2, 0.1);
+        assertArrayEquals(correctScores2, scores2, 0.001);
     }
 }
