@@ -15,7 +15,7 @@
 
 buildscript {
     ext {
-        es_version = System.getProperty("es.version", "7.9.1")
+        es_version = System.getProperty("es.version", "7.10.0")
         es_group = "org.elasticsearch"
         distribution = 'oss-zip'
     }
@@ -44,6 +44,7 @@ plugins {
 }
 
 apply plugin: 'elasticsearch.esplugin'
+apply plugin: 'elasticsearch.rest-test'
 
 def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || System.properties.containsKey('tests.cluster')
 def usingMultiNode = project.properties.containsKey('numNodes')
@@ -57,7 +58,7 @@ if (!usingRemoteCluster) {
 }
 
 ext {
-    opendistroVersion = '1.11.0'
+    opendistroVersion = '1.12.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.TXT')
@@ -88,6 +89,10 @@ esplugin {
     classname 'com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin'
 }
 
+tasks.named("integTest").configure {
+    it.dependsOn(project.tasks.named("bundlePlugin"))
+}
+
 task release(type: Copy, group: 'build') {
     dependsOn allprojects*.tasks.build
     from(zipTree(project.tasks.bundlePlugin.outputs.files.getSingleFile()))
@@ -110,6 +115,7 @@ dependencies {
 licenseHeaders.enabled = false
 dependencyLicenses.enabled = false
 thirdPartyAudit.enabled = false
+loggerUsageCheck.enabled = false
 
 def es_tmp_dir = rootProject.file('build/private/es_tmp').absoluteFile
 es_tmp_dir.mkdirs()
@@ -136,36 +142,35 @@ integTest {
     if (integTestDependOnJniLib) {
         dependsOn buildJniLib
     }
-    runner {
-        systemProperty 'tests.security.manager', 'false'
-        systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
-        systemProperty "java.library.path", "$rootDir/jni/release"
-        // allows integration test classes to access test resource from project root path
-        systemProperty('project.root', project.rootDir.absolutePath)
+    systemProperty 'tests.security.manager', 'false'
+    systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
+    systemProperty "java.library.path", "$rootDir/jni/release"
+    // allows integration test classes to access test resource from project root path
+    systemProperty('project.root', project.rootDir.absolutePath)
 
-        doFirst {
-            // Tell the test JVM if the cluster JVM is running under a debugger so that tests can
-            // use longer timeouts for requests.
-            def isDebuggingCluster = getDebug() || System.getProperty("test.debug") != null
-            systemProperty 'cluster.debug', isDebuggingCluster
-            // Set number of nodes system property to be used in tests
-            systemProperty 'cluster.number_of_nodes', "${_numNodes}"
-            // There seems to be an issue when running multi node run or integ tasks with unicast_hosts
-            // not being written, the waitForAllConditions ensures it's written
-            getClusters().forEach { cluster ->
+    doFirst {
+        // Tell the test JVM if the cluster JVM is running under a debugger so that tests can
+        // use longer timeouts for requests.
+        def isDebuggingCluster = getDebug() || System.getProperty("test.debug") != null
+        systemProperty 'cluster.debug', isDebuggingCluster
+        // Set number of nodes system property to be used in tests
+        systemProperty 'cluster.number_of_nodes', "${_numNodes}"
+        // There seems to be an issue when running multi node run or integ tasks with unicast_hosts
+        // not being written, the waitForAllConditions ensures it's written
+        getClusters().forEach { cluster ->
                 cluster.waitForAllConditions()
-            }
         }
+    }
 
-        // The -Ddebug.es option makes the cluster debuggable; this makes the tests debuggable
-        if (System.getProperty("test.debug") != null) {
-            jvmArgs '-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=8000'
-        }
+    // The -Ddebug.es option makes the cluster debuggable; this makes the tests debuggable
+    if (System.getProperty("test.debug") != null) {
+        jvmArgs '-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=8000'
     }
 }
 
 testClusters.integTest {
         testDistribution = "OSS"
+        plugin(project.tasks.bundlePlugin.archiveFile)
         // Cluster shrink exception thrown if we try to set numberOfNodes to 1, so only apply if > 1
         if (_numNodes > 1) numberOfNodes = _numNodes
         // When running integration tests it doesn't forward the --debug-jvm to the cluster anymore
@@ -182,6 +187,7 @@ testClusters.integTest {
 }
 
 run {
+    useCluster project.testClusters.integTest
     dependsOn buildJniLib
     doFirst {
         // There seems to be an issue when running multi node run or integ tasks with unicast_hosts

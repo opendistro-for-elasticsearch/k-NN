@@ -92,7 +92,8 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         when(mapperService.getIndexSettings()).thenReturn(indexSettings);
 
         Mapper.TypeParser.ParserContext context = new Mapper.TypeParser.ParserContext(null,
-                mapperService, type -> new KNNVectorFieldMapper.TypeParser(), CURRENT, null);
+                mapperService, type -> new KNNVectorFieldMapper.TypeParser(), CURRENT, null,
+                null, null);
         KNNVectorFieldMapper.TypeParser typeParser = new KNNVectorFieldMapper.TypeParser();
 
         Map<String, Object> knnNodeMap = buildKnnNodeMap(dimension);
@@ -122,7 +123,8 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         when(mapperService.getIndexSettings()).thenReturn(indexSettings);
 
         Mapper.TypeParser.ParserContext context = new Mapper.TypeParser.ParserContext(null,
-                mapperService, type -> new KNNVectorFieldMapper.TypeParser(), CURRENT, null);
+                mapperService, type -> new KNNVectorFieldMapper.TypeParser(), CURRENT, null,
+                null, null);
         KNNVectorFieldMapper.TypeParser typeParser = new KNNVectorFieldMapper.TypeParser();
 
         Map<String, Object> knnNodeMap = buildKnnNodeMap(dimension);

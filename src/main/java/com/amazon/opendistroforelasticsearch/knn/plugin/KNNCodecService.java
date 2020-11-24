@@ -16,12 +16,12 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin;
 
-import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN86Codec.KNN86Codec;
+import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN87Codec.KNN87Codec;
 import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.codecs.PostingsFormat;
 import org.elasticsearch.index.codec.CodecService;
 
-import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN86Codec.KNN86Codec.KNN_86;
+import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNN87Codec.KNN87Codec.KNN_87;
 
 /**
  * KNNCodecService to inject the right KNNCodec version
@@ -37,11 +37,11 @@ class KNNCodecService extends CodecService {
      * return the KNN Codec
      *
      * @param name dummy name
-     * @return KNN86Codec
+     * @return Latest KNN Codec
      */
     @Override
     public Codec codec(String name) {
-        Codec codec = Codec.forName(KNN_86);
+        Codec codec = Codec.forName(KNN_87);
         if (codec == null) {
             throw new IllegalArgumentException("failed to find codec [" + name + "]");
         }
@@ -49,6 +49,6 @@ class KNNCodecService extends CodecService {
     }
 
     public void setPostingsFormat(PostingsFormat postingsFormat) {
-        ((KNN86Codec)codec("")).setPostingsFormat(postingsFormat);
+        ((KNN87Codec)codec("")).setPostingsFormat(postingsFormat);
     }
 }

@@ -51,7 +51,7 @@ task dummyIntegTest(type: Test) {
     }
 }
 
-integTest.runner {
+integTest {
     systemProperty 'jacoco.dir', "${jacocoDir}"
 }
 
@@ -71,7 +71,7 @@ jacocoTestReport {
 
 allprojects{
     afterEvaluate {
-        jacocoTestReport.dependsOn integTest.runner
+        jacocoTestReport.dependsOn integTest
 
         testClusters.integTest {
             jvmArgs " ${dummyIntegTest.jacoco.getAsJvmArg()}".replace('javaagent:','javaagent:/')
