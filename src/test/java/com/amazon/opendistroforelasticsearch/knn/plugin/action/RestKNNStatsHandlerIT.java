@@ -279,7 +279,8 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         );
         nodeStats = parseNodeStatsResponse(EntityUtils.toString(response.getEntity()));
         assertEquals((int) (nodeStats.get(0).get(StatNames.SCRIPT_COMPILATIONS.getName())), initialScriptCompilations + 1);
-        //TODO fix the test case. For some reason request count is treated as 4
+        //TODO fix the test case. For some reason request count is treated as 4.
+        // https://github.com/opendistro-for-elasticsearch/k-NN/issues/272
         assertEquals(initialScriptQueryRequests + 4,
                 (int)(nodeStats.get(0).get(StatNames.SCRIPT_QUERY_REQUESTS.getName())));
 
