@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -13,17 +13,17 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN86Codec;
+package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN87Codec;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecTestCase;
 
-public class  KNN86CodecTests extends KNNCodecTestCase {
+public class KNN87CodecTests extends KNNCodecTestCase {
 
     public void testFooter() throws Exception {
-        testFooter(new KNN86Codec());
+        testFooter(new KNN87Codec());
     }
 
     public void testMultiFieldsKnnIndex() throws Exception {
-        testMultiFieldsKnnIndex(new KNN86Codec());
+        testMultiFieldsKnnIndex(new KNN87Codec());
     }
 }

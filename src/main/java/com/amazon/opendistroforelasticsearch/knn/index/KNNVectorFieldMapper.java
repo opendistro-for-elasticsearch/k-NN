@@ -34,17 +34,18 @@ import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperParsingException;
+import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.mapper.ParametrizedFieldMapper;
 import org.elasticsearch.index.mapper.ParseContext;
 import org.elasticsearch.index.mapper.TextSearchInfo;
-import org.elasticsearch.index.mapper.TypeParsers;
+import org.elasticsearch.index.mapper.ValueFetcher;
 import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.index.query.QueryShardException;
+import org.elasticsearch.search.lookup.SearchLookup;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -78,8 +79,11 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                 m -> toType(m).stored, false);
         private final Parameter<Boolean> hasDocValues = Parameter.boolParam("doc_values", false,
                 m -> toType(m).hasDocValues,  true);
-        private final Parameter<Integer> dimension = new Parameter<>(KNNConstants.DIMENSION, false, -1,
-                (n, o) -> {
+        private final Parameter<Integer> dimension = new Parameter<>(KNNConstants.DIMENSION, false, () -> -1,
+                (n, c, o) -> {
+                            if (o == null) {
+                                throw new IllegalArgumentException("Dimension cannot be null");
+                            }
                             int value = XContentMapValues.nodeIntegerValue(o);
                             if (value > MAX_DIMENSION) {
                                 throw new IllegalArgumentException("Dimension value cannot be greater than " +
@@ -92,9 +96,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                             }
                             return value;
                 }, m -> toType(m).dimension);
-
-        private final Parameter<Map<String, String>> meta = new Parameter<>("meta", true,
-                Collections.emptyMap(), TypeParsers::parseMeta, m -> m.fieldType().meta());
+        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
         public Builder(String name) {
             super(name);
@@ -177,8 +179,13 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         int dimension;
 
         public KNNVectorFieldType(String name, Map<String, String> meta, int dimension) {
-            super(name, false, true, TextSearchInfo.NONE, meta);
+            super(name, false, false, true, TextSearchInfo.NONE, meta);
             this.dimension = dimension;
+        }
+
+        @Override
+        public ValueFetcher valueFetcher(MapperService mapperService, SearchLookup searchLookup, String format) {
+            throw new UnsupportedOperationException("KNN Vector do not support fields search");
         }
 
         @Override
@@ -248,7 +255,6 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
             FIELD_TYPE.freeze();
         }
     }
-
 
     @Override
     protected String contentType() {
@@ -350,6 +356,5 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         if (includeDefaults || ignoreMalformed.explicit()) {
             builder.field(Names.IGNORE_MALFORMED, ignoreMalformed.value());
         }
-        builder.field(KNNConstants.DIMENSION, fieldType().dimension);
     }
 }

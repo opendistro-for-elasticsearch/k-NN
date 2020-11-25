@@ -31,7 +31,7 @@ class KNNEngineFactory implements EngineFactory {
     @Override
     public Engine newReadWriteEngine(EngineConfig config) {
         codecService.setPostingsFormat(config.getCodec().postingsFormat());
-        EngineConfig engineConfig = new EngineConfig(config.getShardId(), config.getAllocationId(),
+        EngineConfig engineConfig = new EngineConfig(config.getShardId(),
                 config.getThreadPool(), config.getIndexSettings(), config.getWarmer(), config.getStore(),
                 config.getMergePolicy(), config.getAnalyzer(), config.getSimilarity(), codecService,
                 config.getEventListener(), config.getQueryCache(), config.getQueryCachingPolicy(),
