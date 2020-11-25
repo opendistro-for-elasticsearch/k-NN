@@ -197,9 +197,9 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         Map<String, Object> params = new HashMap<>();
         float[] queryVector = {1.0f, 1.0f};
         params.put("field", FIELD_NAME);
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.put("space_type", KNNConstants.L2);
-        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
                 RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -216,9 +216,9 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         // Check query error stats
         params = new HashMap<>();
         params.put("field", FIELD_NAME);
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.put("space_type", "invalid_space");
-        request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         Request finalRequest = request;
         expectThrows(ResponseException.class, () -> client().performRequest(finalRequest));
 
@@ -266,9 +266,9 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         Map<String, Object> params = new HashMap<>();
         float[] queryVector = {1.0f, 1.0f};
         params.put("field", FIELD_NAME);
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.put("space_type", KNNConstants.L2);
-        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
                 RestStatus.fromCode(response.getStatusLine().getStatusCode()));
@@ -285,9 +285,9 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         // Check query error stats
         params = new HashMap<>();
         params.put("field", FIELD_NAME);
-        params.put("vector", queryVector);
+        params.put("query_value", queryVector);
         params.put("space_type", "invalid_space");
-        request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params, queryVector);
+        request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         Request finalRequest = request;
         expectThrows(ResponseException.class, () -> client().performRequest(finalRequest));
 

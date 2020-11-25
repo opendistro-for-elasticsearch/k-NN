@@ -1,9 +1,24 @@
+/*
+ *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
+import java.math.BigInteger;
 
 public class KNNScoringUtil {
     private static Logger logger = LogManager.getLogger(KNNScoringUtil.class);
@@ -73,39 +88,26 @@ public class KNNScoringUtil {
         return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
     }
 
+
     /**
-     * Converts Object vector to primitive float[]
+     * This method calculates hamming distance on 2 BigIntegers
      *
-     * @param vector input vector
-     * @return Float array representing the vector
+     * @param queryBigInteger BigInteger
+     * @param inputBigInteger input BigInteger
+     * @return hamming distance
      */
-    @SuppressWarnings("unchecked")
-    public static float[] convertVectorToPrimitive(Object vector) {
-        float[] primitiveVector = null;
-        if (vector != null) {
-            final ArrayList<Double> tmp = (ArrayList<Double>) vector;
-            primitiveVector = new float[tmp.size()];
-            for (int i = 0; i < primitiveVector.length; i++) {
-                primitiveVector[i] = tmp.get(i).floatValue();
-            }
-        }
-        return primitiveVector;
+    public static float calculateHammingBit(BigInteger queryBigInteger, BigInteger inputBigInteger) {
+        return inputBigInteger.xor(queryBigInteger).bitCount();
     }
 
     /**
-     * Calculates the magnitude of given vector
+     * This method calculates hamming distance on 2 longs
      *
-     * @param inputVector input vector
-     * @return Magnitude of vector
+     * @param queryLong query Long
+     * @param inputLong input Long
+     * @return hamming distance
      */
-    public static float getVectorMagnitudeSquared(float[] inputVector) {
-        if (null == inputVector) {
-            throw new IllegalStateException("vector magnitude cannot be evaluated as it is null");
-        }
-        float normInputVector = 0.0f;
-        for (int i = 0; i < inputVector.length; i++) {
-            normInputVector += inputVector[i] * inputVector[i];
-        }
-        return normInputVector;
+    public static float calculateHammingBit(Long queryLong, Long inputLong) {
+        return Long.bitCount(queryLong ^ inputLong);
     }
 }

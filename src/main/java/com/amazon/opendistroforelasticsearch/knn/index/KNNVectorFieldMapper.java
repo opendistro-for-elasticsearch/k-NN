@@ -196,6 +196,10 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
             throw new QueryShardException(context, "KNN vector do not support exact searching, use KNN queries " +
                     "instead: [" + name() + "]");
         }
+
+        public int getDimension() {
+            return dimension;
+        }
     }
 
     protected Explicit<Boolean> ignoreMalformed;
