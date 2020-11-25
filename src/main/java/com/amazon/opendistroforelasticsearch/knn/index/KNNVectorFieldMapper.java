@@ -81,7 +81,10 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                 m -> toType(m).hasDocValues,  true);
         private final Parameter<Integer> dimension = new Parameter<>(KNNConstants.DIMENSION, false, () -> -1,
                 (n, c, o) -> {
-                            int value = (o == null ? null : XContentMapValues.nodeIntegerValue(o));
+                            if (o == null) {
+                                throw new IllegalArgumentException("Dimension cannot be null");
+                            }
+                            int value = XContentMapValues.nodeIntegerValue(o);
                             if (value > MAX_DIMENSION) {
                                 throw new IllegalArgumentException("Dimension value cannot be greater than " +
                                     MAX_DIMENSION + " for vector: " + name);
