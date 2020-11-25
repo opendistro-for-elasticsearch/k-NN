@@ -349,6 +349,5 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         if (includeDefaults || ignoreMalformed.explicit()) {
             builder.field(Names.IGNORE_MALFORMED, ignoreMalformed.value());
         }
-        //builder.field(KNNConstants.DIMENSION, fieldType().dimension);
     }
 }
