@@ -72,7 +72,7 @@ install(TARGETS ${KNN_INDEX}
 set(KNN_MAINTAINER "OpenDistro for Elasticsearch Team <opendistro@amazon.com>")
 set(ODFE_DOWNLOAD_URL "https://opendistro.github.io/elasticsearch/downloads")
 set(CPACK_PACKAGE_NAME ${KNN_PACKAGE_NAME})
-set(CPACK_PACKAGE_VERSION 1.11.0.0)
+set(CPACK_PACKAGE_VERSION 1.12.0.0)
 set(CMAKE_INSTALL_PREFIX /usr)
 set(CPACK_GENERATOR "RPM;DEB")
 SET(CPACK_OUTPUT_FILE_PREFIX packages)
