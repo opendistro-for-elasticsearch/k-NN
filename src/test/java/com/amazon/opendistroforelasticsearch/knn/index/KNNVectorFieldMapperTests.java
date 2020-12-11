@@ -26,11 +26,14 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.index.IndexSettings;
+import org.elasticsearch.index.fielddata.IndexFieldData;
 import org.elasticsearch.index.mapper.ContentPath;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperService;
+import org.elasticsearch.search.aggregations.support.CoreValuesSourceType;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -138,5 +141,20 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         assertEquals(KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M.toString(), knnVectorFieldMapper.m);
         assertEquals(KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION.toString(),
                 knnVectorFieldMapper.efConstruction);
+    }
+
+    public void testVectorFieldMapperTypeFieldDataBuilder(){
+
+        String mockIndexFieldName = "test-field-name";
+        KNNVectorFieldMapper.KNNVectorFieldType vectorFieldType = new KNNVectorFieldMapper.KNNVectorFieldType(
+                mockIndexFieldName, Collections.<String, String>emptyMap(), 10
+        );
+        IndexFieldData.Builder builder = vectorFieldType.fielddataBuilder(mockIndexFieldName, null);
+        IndexFieldData<?> knnVectorIndexField = builder.build(null, null);
+        assertNotNull(knnVectorIndexField);
+        assertTrue(knnVectorIndexField instanceof KNNVectorIndexFieldData);
+        assertEquals(mockIndexFieldName, knnVectorIndexField.getFieldName());
+        assertEquals(CoreValuesSourceType.BYTES, knnVectorIndexField.getValuesSourceType());
+
     }
 }
