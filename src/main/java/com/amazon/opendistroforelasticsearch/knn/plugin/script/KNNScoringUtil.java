@@ -15,10 +15,13 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
+import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorScriptDocValues;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.math.BigInteger;
+import java.util.List;
+import java.util.Objects;
 
 public class KNNScoringUtil {
     private static Logger logger = LogManager.getLogger(KNNScoringUtil.class);
@@ -40,6 +43,43 @@ public class KNNScoringUtil {
         return squaredDistance;
     }
 
+    private static float[] toFloat(List<Number> inputVector) {
+        Objects.requireNonNull(inputVector);
+        float []value = new float[inputVector.size()];
+        int index = 0;
+        for (final Number val : inputVector){
+            value[index++] = val.floatValue();
+        }
+        return value;
+    }
+
+    /**
+     * Whitelisted method for users that calculates L2 squared distance between query vector
+     * and document vectors
+     * example
+     *  "script": {
+     *         "source": "1/(1 + l2Squared(params.query_vector, doc[params.field]))",
+     *         "params": {
+     *           "query_vector": [1, 2, 3.4],
+     *           "field": "my_dense_vector"
+     *         }
+     *       }
+     *
+     * @param queryVector query vector
+     * @param docValues script doc values
+     * @return L2 score
+     */
+    public static float l2Squared(List <Number> queryVector, KNNVectorScriptDocValues docValues){
+        float[] knnDocVector;
+        try {
+            knnDocVector  = docValues.getValue();
+        } catch (Exception e) {
+            logger.debug("Failed to get vector from doc. Returning minimum score to put this result to end", e);
+            return Float.MIN_VALUE;
+        }
+        return l2Squared(toFloat(queryVector), knnDocVector);
+    }
+
     /**
      * This method can be used script to avoid repeated calculation of normalization
      * for query vector for each filtered documents
@@ -50,7 +90,7 @@ public class KNNScoringUtil {
      * @return cosine score
      */
     public static float cosinesimilOptimized(float[] queryVector, float[] inputVector, float normQueryVector) {
-        float dotProduct = 0.0f;
+            float dotProduct = 0.0f;
         float normInputVector = 0.0f;
         for (int i = 0; i < queryVector.length; i++) {
             dotProduct += queryVector[i] * inputVector[i];
@@ -62,6 +102,35 @@ public class KNNScoringUtil {
             return Float.MIN_VALUE;
         }
         return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
+    }
+
+    /**
+     * Whitelisted method for users that can be used script to avoid repeated calculation of normalization
+     * for query vector for each filtered documents
+     * example
+     *  "script": {
+     *         "source": "cosineSimilarity(params.query_vector, docs[field], 1.0) ",
+     *         "params": {
+     *           "query_vector": [1, 2, 3.4],
+     *           "field": "my_dense_vector"
+     *         }
+     *       }
+     *
+     * @param queryVector query vector
+     * @param docValues script doc values
+     * @param normQueryVector normalized query vector value.
+     * @return cosine score
+     */
+    public static float cosineSimilarityOptimized(
+            List <Number> queryVector, KNNVectorScriptDocValues docValues, Number normQueryVector) {
+        float[] knnDocVector;
+        try {
+            knnDocVector  = docValues.getValue();
+        } catch (Exception e) {
+            logger.debug("Failed to get vector from doc. Returning minimum score to put this result to end", e);
+            return Float.MIN_VALUE;
+        }
+        return cosinesimilOptimized(toFloat(queryVector), knnDocVector, normQueryVector.floatValue());
     }
 
     /**
@@ -86,6 +155,33 @@ public class KNNScoringUtil {
             return Float.MIN_VALUE;
         }
         return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
+    }
+
+    /**
+     * Whitelisted method for users that calculates cosine similarity between query vectors and
+     * document vectors
+     * example:
+     *  "script": {
+     *         "source": "cosineSimilarity(params.query_vector, docs[field]) ",
+     *         "params": {
+     *           "query_vector": [1, 2, 3.4],
+     *           "field": "my_dense_vector"
+     *         }
+     *       }
+     *
+     * @param queryVector query vector
+     * @param docValues script doc values
+     * @return cosine score
+     */
+    public static float cosineSimilarity(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
+        float[] knnDocVector;
+        try {
+            knnDocVector  = docValues.getValue();
+        } catch (Exception e) {
+            logger.debug("Failed to get vector from doc. Returning minimum score to put this result to end", e);
+            return Float.MIN_VALUE;
+        }
+        return cosinesimil(toFloat(queryVector), knnDocVector);
     }
 
 
