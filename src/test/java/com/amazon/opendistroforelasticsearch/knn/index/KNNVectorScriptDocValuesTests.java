@@ -26,7 +26,6 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.store.Directory;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 
 import java.io.IOException;
 
@@ -55,7 +54,7 @@ public class KNNVectorScriptDocValuesTests extends KNNTestCase {
         knnDocument.add(
                 new BinaryDocValuesField(
                         MOCK_INDEX_FIELD_NAME,
-                        new VectorField(MOCK_INDEX_FIELD_NAME,SAMPLE_VECTOR_DATA , new FieldType()).binaryValue()));
+                        new VectorField(MOCK_INDEX_FIELD_NAME, SAMPLE_VECTOR_DATA, new FieldType()).binaryValue()));
         writer.addDocument(knnDocument);
         writer.commit();
         writer.close();
@@ -68,9 +67,19 @@ public class KNNVectorScriptDocValuesTests extends KNNTestCase {
         directory.close();
     }
 
-    @Test
     public void testGetValue() throws IOException {
-      scriptDocValues.setNextDocId(0);
-      Assert.assertArrayEquals(SAMPLE_VECTOR_DATA, scriptDocValues.getValue(), 0.1f);
+        scriptDocValues.setNextDocId(0);
+        Assert.assertArrayEquals(SAMPLE_VECTOR_DATA, scriptDocValues.getValue(), 0.1f);
+    }
+
+    public void testSize() throws IOException {
+        Assert.assertEquals(0, scriptDocValues.size());
+        scriptDocValues.setNextDocId(0);
+        Assert.assertEquals(1, scriptDocValues.size());
+    }
+
+    public void testGet() throws IOException {
+        expectThrows(UnsupportedOperationException.class,
+                () -> scriptDocValues.get(0));
     }
 }

@@ -24,7 +24,6 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.store.Directory;
 import org.elasticsearch.search.aggregations.support.CoreValuesSourceType;
 import org.junit.Before;
-import org.junit.Test;
 
 import java.io.IOException;
 
@@ -56,17 +55,14 @@ public class KNNVectorIndexFieldDataTests extends KNNTestCase {
         directory.close();
     }
 
-    @Test
     public void testGetFieldName() {
         assertEquals(MOCK_INDEX_FIELD_NAME, indexFieldData.getFieldName());
     }
 
-    @Test
     public void testGetValuesSourceType() {
         assertEquals(CoreValuesSourceType.BYTES, indexFieldData.getValuesSourceType());
     }
 
-    @Test
     public void testLoad() throws IOException {
         final DirectoryReader reader = DirectoryReader.open(directory);
         LeafReaderContext leafReaderContext = reader.getContext().leaves().get(0);
@@ -75,7 +71,6 @@ public class KNNVectorIndexFieldDataTests extends KNNTestCase {
         reader.close();
     }
 
-    @Test
     public void testLoadDirect() throws IOException {
         final DirectoryReader reader = DirectoryReader.open(directory);
         LeafReaderContext leafReaderContext = reader.getContext().leaves().get(0);
@@ -84,13 +79,15 @@ public class KNNVectorIndexFieldDataTests extends KNNTestCase {
         reader.close();
     }
 
-    @Test(expected = UnsupportedOperationException.class)
     public void testSortField() {
-        indexFieldData.sortField(null, null, null, false);
+
+        expectThrows(UnsupportedOperationException.class,
+                () -> indexFieldData.sortField(null, null, null, false));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
     public void testNewBucketedSort() {
-        indexFieldData.newBucketedSort(null, null, null, null, null, null, 0, null);
+
+        expectThrows(UnsupportedOperationException.class,
+                () -> indexFieldData.newBucketedSort(null, null, null, null, null, null, 0, null));
     }
 }

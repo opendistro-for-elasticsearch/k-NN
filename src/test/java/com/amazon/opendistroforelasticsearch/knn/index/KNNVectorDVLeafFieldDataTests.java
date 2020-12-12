@@ -26,14 +26,13 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.store.Directory;
 import org.elasticsearch.index.fielddata.ScriptDocValues;
 import org.junit.Before;
-import org.junit.Test;
 
 import java.io.IOException;
 
 public class KNNVectorDVLeafFieldDataTests extends KNNTestCase {
 
     private static final String MOCK_INDEX_FIELD_NAME = "test-index-field-name";
-    private KNNVectorDVLeafFieldData leafFieldData;
+    private LeafReaderContext leafReaderContext;
     private Directory directory;
     private DirectoryReader reader;
 
@@ -43,8 +42,7 @@ public class KNNVectorDVLeafFieldDataTests extends KNNTestCase {
         directory = newDirectory();
         createKNNVectorDocument(directory);
         reader = DirectoryReader.open(directory);
-        LeafReaderContext leafReaderContext = reader.getContext().leaves().get(0);
-        leafFieldData = new KNNVectorDVLeafFieldData(leafReaderContext.reader(), MOCK_INDEX_FIELD_NAME);
+        leafReaderContext = reader.getContext().leaves().get(0);
     }
 
     private void createKNNVectorDocument(Directory directory) throws IOException {
@@ -67,10 +65,27 @@ public class KNNVectorDVLeafFieldDataTests extends KNNTestCase {
         directory.close();
     }
 
-    @Test
     public void testGetScriptValues() {
+        KNNVectorDVLeafFieldData leafFieldData = new KNNVectorDVLeafFieldData(leafReaderContext.reader(), MOCK_INDEX_FIELD_NAME);
         ScriptDocValues<float[]> scriptValues = leafFieldData.getScriptValues();
         assertNotNull(scriptValues);
         assertTrue(scriptValues instanceof KNNVectorScriptDocValues);
+    }
+
+    public void testGetScriptValuesWrongFieldName() {
+        KNNVectorDVLeafFieldData leafFieldData = new KNNVectorDVLeafFieldData(leafReaderContext.reader(), "");
+        expectThrows(IllegalStateException.class,
+                () -> leafFieldData.getScriptValues());
+    }
+
+    public void testRamBytesUsed() {
+        KNNVectorDVLeafFieldData leafFieldData = new KNNVectorDVLeafFieldData(leafReaderContext.reader(), "");
+        assertEquals(0, leafFieldData.ramBytesUsed());
+    }
+
+    public void testGetBytesValues() {
+        KNNVectorDVLeafFieldData leafFieldData = new KNNVectorDVLeafFieldData(leafReaderContext.reader(), "");
+        expectThrows(UnsupportedOperationException.class,
+                () -> leafFieldData.getBytesValues());
     }
 }

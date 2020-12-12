@@ -60,7 +60,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
     }
 
     public Map<String, Object> buildKnnNodeMap(int dimension) throws IOException {
-        XContentBuilder xContentBuilder =  XContentFactory.jsonBuilder().startObject()
+        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject()
                 .field("type", "knn_vector")
                 .field("dimension", dimension)
                 .endObject();
@@ -100,7 +100,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         KNNVectorFieldMapper.TypeParser typeParser = new KNNVectorFieldMapper.TypeParser();
 
         Map<String, Object> knnNodeMap = buildKnnNodeMap(dimension);
-        KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder)typeParser.parse(fieldName, knnNodeMap,
+        KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder) typeParser.parse(fieldName, knnNodeMap,
                 context);
 
         Mapper.BuilderContext builderContext = new Mapper.BuilderContext(settings, new ContentPath());
@@ -131,7 +131,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         KNNVectorFieldMapper.TypeParser typeParser = new KNNVectorFieldMapper.TypeParser();
 
         Map<String, Object> knnNodeMap = buildKnnNodeMap(dimension);
-        KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder)typeParser.parse(fieldName, knnNodeMap,
+        KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder) typeParser.parse(fieldName, knnNodeMap,
                 context);
 
         Mapper.BuilderContext builderContext = new Mapper.BuilderContext(settings, new ContentPath());
@@ -143,7 +143,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
                 knnVectorFieldMapper.efConstruction);
     }
 
-    public void testVectorFieldMapperTypeFieldDataBuilder(){
+    public void testVectorFieldMapperTypeFieldDataBuilder() {
 
         String mockIndexFieldName = "test-field-name";
         KNNVectorFieldMapper.KNNVectorFieldType vectorFieldType = new KNNVectorFieldMapper.KNNVectorFieldType(
