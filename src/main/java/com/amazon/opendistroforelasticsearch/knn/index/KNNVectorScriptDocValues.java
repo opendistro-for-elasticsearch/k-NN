@@ -50,7 +50,6 @@ public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
             throw new IllegalArgumentException("no value found for the corresponding doc ID");
         }
         BytesRef value = binaryDocValues.binaryValue();
-        Objects.requireNonNull(value);
         ByteArrayInputStream byteStream = new ByteArrayInputStream(value.bytes, value.offset, value.length);
         ObjectInputStream objectStream = new ObjectInputStream(byteStream);
         try {
