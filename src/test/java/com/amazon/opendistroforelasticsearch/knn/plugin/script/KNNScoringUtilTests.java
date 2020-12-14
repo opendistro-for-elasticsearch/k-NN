@@ -22,11 +22,7 @@ import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.document.BinaryDocValuesField;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldType;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.NoMergePolicy;
+import org.apache.lucene.index.*;
 import org.apache.lucene.store.Directory;
 
 import java.io.IOException;
@@ -214,7 +210,7 @@ public class KNNScoringUtilTests extends KNNTestCase {
         dataset.createKNNVectorDocument(new float[]{4.0f, 4.0f, 4.0f}, "test-index-field-name");
         KNNVectorScriptDocValues scriptDocValues = dataset.getScriptDocValues("test-index-field-name");
         scriptDocValues.setNextDocId(0);
-        Float actualScore = KNNScoringUtil.cosineSimilarityOptimized(queryVector, scriptDocValues, 3.0f);
+        Float actualScore = KNNScoringUtil.cosineSimilarity(queryVector, scriptDocValues, 3.0f);
         assertEquals(1.0f, actualScore, 0.0001);
         dataset.close();
     }
@@ -224,7 +220,7 @@ public class KNNScoringUtilTests extends KNNTestCase {
         TestKNNScriptDocValues dataset = new TestKNNScriptDocValues();
         dataset.createKNNVectorDocument(new float[]{4.0f, 4.0f, 4.0f}, "test-index-field-name");
         KNNVectorScriptDocValues scriptDocValues = dataset.getScriptDocValues("test-index-field-name");
-        Float actualScore = KNNScoringUtil.cosineSimilarityOptimized(queryVector, scriptDocValues, 3.0f);
+        Float actualScore = KNNScoringUtil.cosineSimilarity(queryVector, scriptDocValues, 3.0f);
         assertEquals(Float.MIN_VALUE, actualScore, 0.0001);
         dataset.close();
     }

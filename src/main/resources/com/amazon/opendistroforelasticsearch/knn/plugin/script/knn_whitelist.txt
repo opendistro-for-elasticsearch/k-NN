@@ -18,5 +18,5 @@ class com.amazon.opendistroforelasticsearch.knn.index.KNNVectorScriptDocValues {
 static_import {
   float l2Squared(List, com.amazon.opendistroforelasticsearch.knn.index.KNNVectorScriptDocValues) from_class com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringUtil
   float cosineSimilarity(List, com.amazon.opendistroforelasticsearch.knn.index.KNNVectorScriptDocValues) from_class com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringUtil
-  float cosineSimilarityOptimized(List, com.amazon.opendistroforelasticsearch.knn.index.KNNVectorScriptDocValues, Number) from_class com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringUtil
+  float cosineSimilarity(List, com.amazon.opendistroforelasticsearch.knn.index.KNNVectorScriptDocValues, Number) from_class com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringUtil
 }

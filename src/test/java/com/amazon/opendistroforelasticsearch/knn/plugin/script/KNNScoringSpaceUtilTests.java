@@ -10,12 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringSpaceUtil.isBinaryFieldType;
-import static com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringSpaceUtil.isKNNVectorFieldType;
-import static com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringSpaceUtil.isLongFieldType;
-import static com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringSpaceUtil.parseToBigInteger;
-import static com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringSpaceUtil.parseToFloatArray;
-import static com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringSpaceUtil.parseToLong;
+import static com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringSpaceUtil.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

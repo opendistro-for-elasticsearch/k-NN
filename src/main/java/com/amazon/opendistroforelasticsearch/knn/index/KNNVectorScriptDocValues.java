@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Objects;
 
+// This class is thread safe, since docExists is synchronized at an instance level
 public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
 
     private final BinaryDocValues binaryDocValues;
@@ -35,14 +36,16 @@ public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
 
     @Override
     public void setNextDocId(int docId) throws IOException {
-        if (binaryDocValues.advanceExact(docId)) {
-            docExists = true;
-            return;
+        synchronized (this) {
+            if (binaryDocValues.advanceExact(docId)) {
+                docExists = true;
+                return;
+            }
+            docExists = false;
         }
-        docExists=false;
     }
 
-    public float[] getValue() throws IOException{
+    public synchronized float[] getValue() throws IOException {
         if (!docExists) {
             throw new IllegalArgumentException("no value found for the corresponding doc ID");
         }
@@ -52,14 +55,16 @@ public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
         ObjectInputStream objectStream = new ObjectInputStream(byteStream);
         try {
             return (float[]) objectStream.readObject();
-        }catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             throw new RuntimeException((e));
         }
     }
 
     @Override
     public int size() {
-        return docExists ? 1 : 0;
+        synchronized (this) {
+            return docExists ? 1 : 0;
+        }
     }
 
     @Override
