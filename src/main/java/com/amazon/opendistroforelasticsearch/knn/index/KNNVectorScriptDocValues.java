@@ -22,7 +22,6 @@ import org.elasticsearch.index.fielddata.ScriptDocValues;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.Objects;
 
 // This class is thread safe, since docExists is synchronized at an instance level
 public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {

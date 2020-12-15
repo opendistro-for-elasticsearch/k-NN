@@ -38,7 +38,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.*;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_SPACE_TYPE;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
 import static org.elasticsearch.Version.CURRENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
