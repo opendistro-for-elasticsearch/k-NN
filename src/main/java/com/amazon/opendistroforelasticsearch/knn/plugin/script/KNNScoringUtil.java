@@ -116,13 +116,13 @@ public class KNNScoringUtil {
      *         }
      *       }
      *
-     * @param queryVector     query vector
-     * @param docValues       script doc values
-     * @param normQueryVector normalized query vector value.
+     * @param queryVector          query vector
+     * @param docValues            script doc values
+     * @param queryVectorMagnitude the magnitude of the query vector.
      * @return cosine score
      */
     public static float cosineSimilarity(
-            List<Number> queryVector, KNNVectorScriptDocValues docValues, Number normQueryVector) {
+            List<Number> queryVector, KNNVectorScriptDocValues docValues, Number queryVectorMagnitude) {
         float[] knnDocVector;
         try {
             knnDocVector = docValues.getValue();
@@ -130,7 +130,7 @@ public class KNNScoringUtil {
             logger.debug("Failed to get vector from doc. Returning minimum score to put this result to end", e);
             return Float.MIN_VALUE;
         }
-        return cosinesimilOptimized(toFloat(queryVector), knnDocVector, normQueryVector.floatValue());
+        return cosinesimilOptimized(toFloat(queryVector), knnDocVector, queryVectorMagnitude.floatValue());
     }
 
     /**

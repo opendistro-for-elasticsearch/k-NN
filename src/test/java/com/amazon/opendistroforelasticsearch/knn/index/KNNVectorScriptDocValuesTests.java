@@ -72,6 +72,13 @@ public class KNNVectorScriptDocValuesTests extends KNNTestCase {
         Assert.assertArrayEquals(SAMPLE_VECTOR_DATA, scriptDocValues.getValue(), 0.1f);
     }
 
+
+    //Test getValue without calling setNextDocId
+    public void testGetValueFails() throws IOException {
+        expectThrows(IllegalStateException.class,
+                () -> scriptDocValues.getValue());
+    }
+
     public void testSize() throws IOException {
         Assert.assertEquals(0, scriptDocValues.size());
         scriptDocValues.setNextDocId(0);
