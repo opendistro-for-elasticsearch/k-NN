@@ -16,6 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index.v206;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
+import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 
@@ -50,10 +51,12 @@ public class KNNIndex implements AutoCloseable {
 
     private final long indexPointer;
     private final long indexSize;
+    private final String spaceType;
 
-    private KNNIndex(final long indexPointer, final long indexSize) {
+    private KNNIndex(final long indexPointer, final long indexSize, final String spaceType) {
         this.indexPointer = indexPointer;
         this.indexSize = indexSize;
+        this.spaceType = spaceType;
     }
 
     /**
@@ -68,7 +71,9 @@ public class KNNIndex implements AutoCloseable {
         return this.indexSize;
     }
 
+    public String getSpaceType() { return this.spaceType; }
     public KNNQueryResult[] queryIndex(final float[] query, final int k) throws IOException {
+
         Lock readLock = readWriteLock.readLock();
         readLock.lock();
         KNNCounter.GRAPH_QUERY_REQUESTS.increment();
@@ -92,7 +97,70 @@ public class KNNIndex implements AutoCloseable {
             readLock.unlock();
         }
     }
+    public KNNQueryResult[] queryIndex(final int[] query, final int k) throws IOException {
+        Lock readLock = readWriteLock.readLock();
+        readLock.lock();
+        KNNCounter.GRAPH_QUERY_REQUESTS.increment();
+        try {
+            if (this.isClosed) {
+                throw new IOException("Index is already closed");
+            }
+            final long indexPointer = this.indexPointer;
+            return AccessController.doPrivileged(
+                    new PrivilegedAction<KNNQueryResult[]>() {
+                        public KNNQueryResult[] run() {
+                            return queryIndexI(indexPointer, query, k);
+                        }
+                    }
+            );
 
+        } catch (Exception ex) {
+            KNNCounter.GRAPH_QUERY_ERRORS.increment();
+            throw new RuntimeException("Unable to query the index: " + ex);
+        } finally {
+            readLock.unlock();
+        }
+    }
+    public KNNQueryResult[] queryIndex(final String query, final int k) throws IOException {
+        Lock readLock = readWriteLock.readLock();
+        readLock.lock();
+        KNNCounter.GRAPH_QUERY_REQUESTS.increment();
+        try {
+            if (this.isClosed) {
+                throw new IOException("Index is already closed");
+            }
+            final long indexPointer = this.indexPointer;
+            return AccessController.doPrivileged(
+                    new PrivilegedAction<KNNQueryResult[]>() {
+                        public KNNQueryResult[] run() {
+                            return queryIndexB(indexPointer, query, k);
+                        }
+                    }
+            );
+
+        } catch (Exception ex) {
+            KNNCounter.GRAPH_QUERY_ERRORS.increment();
+            throw new RuntimeException("Unable to query the index: " + ex);
+        } finally {
+            readLock.unlock();
+        }
+    }
+
+    // Builds index and writes to disk (no index pointer escapes).
+    public static void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams, String spaceType) {
+        //default use optimized index so do not need load index
+        boolean saveData = !SpaceTypes.getOptimizedValues().contains(spaceType);
+        saveIndex(ids, data, indexPath, algoParams, spaceType, saveData);
+
+    }
+    public static void saveIndex(int[] ids, int[][] data, String indexPath, String[] algoParams, String spaceType) {
+        //default use optimized index so do not need load index
+        saveIndexI(ids, data, indexPath, algoParams, spaceType, true);
+    }
+    public static void saveIndex(int[] ids, String[] data, String indexPath, String[] algoParams, String spaceType) {
+        //default use optimized index so do not need load index
+        saveIndexB(ids, data, indexPath, algoParams, spaceType, true);
+    }
     @Override
     public void close() {
         Lock writeLock = readWriteLock.writeLock();
@@ -120,8 +188,20 @@ public class KNNIndex implements AutoCloseable {
      */
     public static KNNIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
         long fileSize = computeFileSize(indexPath);
-        long indexPointer = init(indexPath, algoParams, spaceType);
-        return new KNNIndex(indexPointer, fileSize);
+        boolean stringSapces = SpaceTypes.getStringSpaces().contains(spaceType);
+        boolean loadData = !SpaceTypes.getOptimizedValues().contains(spaceType);
+        long indexPointer;
+        if (stringSapces) {
+            indexPointer = initI(indexPath, algoParams, spaceType, loadData);
+        } else {
+            indexPointer = init(indexPath, algoParams, spaceType, loadData);
+        }
+        return new KNNIndex(indexPointer, fileSize, spaceType);
+    }
+    public static KNNIndex loadIndexI(String indexPath, final String[] algoParams, final String spaceType) {
+        long fileSize = computeFileSize(indexPath);
+        long indexPointer = initI(indexPath, algoParams, spaceType, false);
+        return new KNNIndex(indexPointer, fileSize, spaceType);
     }
 
     /**
@@ -141,17 +221,26 @@ public class KNNIndex implements AutoCloseable {
         return file.length() / 1024 + 1;
     }
 
-    // Builds index and writes to disk (no index pointer escapes).
-    public static native void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams, String spaceType);
+
+    public static native void saveIndex(int[] ids, float[][] data, String indexPath,
+                                        String[] algoParams, String spaceType, boolean loadData);
+    public static native void saveIndexI(int[] ids, int[][] data, String indexPath,
+                                         String[] algoParams, String spaceType, boolean loadData);
+    public static native void saveIndexB(int[] ids, String[] data, String indexPath,
+                                         String[] algoParams, String spaceType, boolean loadData);
 
     // Queries index (thread safe with other readers, blocked by write lock)
     private static native KNNQueryResult[] queryIndex(long indexPointer, float[] query, int k);
-
+    private static native KNNQueryResult[] queryIndexI(long indexPointer, int[] query, int k);
+    private static native KNNQueryResult[] queryIndexB(long indexPointer, String query, int k);
     // Loads index and returns pointer to index
-    private static native long init(String indexPath, String[] algoParams, String spaceType);
+
+    private static native long init(String indexPath, String[] algoParams, String spaceType, boolean loadData);
+    private static native long initI(String indexPath, String[] algoParams, String spaceType, boolean loadData);
 
     // Deletes memory pointed to by index pointer (needs write lock)
     private static native void gc(long indexPointer);
+    private static native void gcI(long indexPointer);
 
     // Calls nmslib's initLibrary function: https://github.com/nmslib/nmslib/blob/v2.0.6/similarity_search/include/init.h#L27
     private static native void initLibrary();

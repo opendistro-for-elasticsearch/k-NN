@@ -56,6 +56,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
     private final Logger logger = LogManager.getLogger(KNN80DocValuesConsumer.class);
 
     private final String TEMP_SUFFIX = "tmp";
+    private final String DAT_SUFFIX = ".dat";
     private DocValuesConsumer delegatee;
     private SegmentWriteState state;
 
@@ -89,27 +90,40 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(state.directory))).getDirectory().toString(),
                     hnswFileName).toString();
 
-            KNNCodecUtil.Pair pair = KNNCodecUtil.getFloats(values);
-            if (pair == null || pair.vectors.length == 0 || pair.docs.length == 0) {
-                logger.info("Skipping hnsw index creation as there are no vectors or docs in the documents");
-                return;
-            }
 
             // Pass the path for the nms library to save the file
             String tempIndexPath = indexPath + TEMP_SUFFIX;
             Map<String, String> fieldAttributes = field.attributes();
             String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceTypes.l2.getValue());
             String[] algoParams = getKNNIndexParams(fieldAttributes);
+            KNNCodecUtil.Pair pair;
+            boolean stringSapces = SpaceTypes.getStringSpaces().contains(spaceType);
+
+            if (stringSapces) {
+                pair = KNNCodecUtil.getStrings(values);
+            } else {
+                pair = KNNCodecUtil.getFloats(values);
+            }
+            if (pair == null || (pair.vectors.length == 0 && pair.vectorsStr.length == 0) || pair.docs.length == 0) {
+                logger.info("Skipping hnsw index creation as there are no vectors or docs in the documents");
+                return;
+            }
+
             AccessController.doPrivileged(
                     new PrivilegedAction<Void>() {
                         public Void run() {
-                            KNNIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
+                            if (stringSapces) {
+                                KNNIndex.saveIndex(pair.docs, pair.vectorsStr, tempIndexPath, algoParams, spaceType);
+                            } else {
+                                KNNIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
+                            }
                             return null;
                         }
                     }
             );
 
             String hsnwTempFileName = hnswFileName + TEMP_SUFFIX;
+            String hsnwTempDatFileName = hsnwTempFileName + DAT_SUFFIX;
 
             /**
              * Adds Footer to the serialized graph
@@ -124,11 +138,18 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
                  IndexOutput os = state.directory.createOutput(hnswFileName, state.context)) {
                 os.copyBytes(is, is.length());
                 CodecUtil.writeFooter(os);
+                if (!SpaceTypes.getOptimizedValues().contains(spaceType)) {
+                    IndexInput datIs = state.directory.openInput(hsnwTempDatFileName, state.context);
+                    IndexOutput datOs = state.directory.createOutput(hnswFileName + DAT_SUFFIX, state.context);
+                    datOs.copyBytes(datIs, datIs.length());
+                    CodecUtil.writeFooter(datOs);
+                }
             } catch (Exception ex) {
                 KNNCounter.GRAPH_INDEX_ERRORS.increment();
                 throw new RuntimeException("[KNN] Adding footer to serialized graph failed: " + ex);
             } finally {
                 IOUtils.deleteFilesIgnoringExceptions(state.directory, hsnwTempFileName);
+                IOUtils.deleteFilesIgnoringExceptions(state.directory, hsnwTempDatFileName);
             }
         }
     }
