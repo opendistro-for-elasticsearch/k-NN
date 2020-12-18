@@ -243,7 +243,7 @@ public class KNNJNITests extends KNNTestCase {
         String queryVector = "1 1 1 1";
         String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNIndex knnIndex = KNNIndex.loadIndexI(indexPath, algoQueryParams, "bit_hamming");
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, algoQueryParams, "bit_hamming");
         final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(

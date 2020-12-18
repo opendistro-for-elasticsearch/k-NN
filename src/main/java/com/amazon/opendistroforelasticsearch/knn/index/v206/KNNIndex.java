@@ -126,6 +126,7 @@ public class KNNIndex implements AutoCloseable {
         readLock.lock();
         KNNCounter.GRAPH_QUERY_REQUESTS.increment();
         try {
+
             if (this.isClosed) {
                 throw new IOException("Index is already closed");
             }
@@ -198,11 +199,7 @@ public class KNNIndex implements AutoCloseable {
         }
         return new KNNIndex(indexPointer, fileSize, spaceType);
     }
-    public static KNNIndex loadIndexI(String indexPath, final String[] algoParams, final String spaceType) {
-        long fileSize = computeFileSize(indexPath);
-        long indexPointer = initI(indexPath, algoParams, spaceType, false);
-        return new KNNIndex(indexPointer, fileSize, spaceType);
-    }
+
 
     /**
      * determines the size of the hnsw index on disk

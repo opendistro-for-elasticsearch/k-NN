@@ -100,6 +100,7 @@ public class KNNWeight extends Weight {
             final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
             final KNNQueryResult[] results;
             boolean stringSapces = SpaceTypes.getStringSpaces().contains(index.getSpaceType());
+
             if (stringSapces) {
                 results = index.queryIndex(
                         knnQuery.getQueryVectorStr(),

@@ -47,6 +47,19 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         addKnnDoc(INDEX_NAME, "4", FIELD_NAME, f4);
     }
 
+    private void addBitTestData() throws  Exception {
+        Float[] f1  = {0.0f, 0.0f, 0.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, f1);
+
+        Float[] f2  = {0.0f, 0.0f, 1.0f};
+        addKnnDoc(INDEX_NAME, "2", FIELD_NAME, f2);
+
+        Float[] f3  = {1.0f, 1.0f, 0.0f};
+        addKnnDoc(INDEX_NAME, "3", FIELD_NAME, f3);
+
+        Float[] f4  = {0.f, 1.0f, 1.0f};
+        addKnnDoc(INDEX_NAME, "4", FIELD_NAME, f4);
+    }
     public void testKNNResultsWithForceMerge() throws Exception {
         createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
         addTestData();
@@ -145,6 +158,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         assertArrayEquals(actualDocids.toArray(), expectedDocids.toArray());
     }
     public void testKNNResultsWithNonOptimizedBitHammingIndexAndForceMerge() throws Exception {
+
         Settings settings = Settings.builder()
                 .put(getKNNDefaultIndexSettings())
                 .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.bit_hamming.getValue())
@@ -173,6 +187,7 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         assertEquals(actualDocids.size(), k);
         assertArrayEquals(actualDocids.toArray(), expectedDocids.toArray());
     }
+
     public void testKNNResultsWithNewDoc() throws Exception {
         createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
         addTestData();
@@ -216,7 +231,6 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
             assertEquals("7", result.getDocId());
         }
     }
-
     public void testKNNResultsWithNonOptimizedIndexAndNewDoc() throws Exception {
         Settings settings = Settings.builder()
                 .put(getKNNDefaultIndexSettings())
@@ -264,6 +278,53 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
             assertEquals("7", result.getDocId());
         }
     }
+    public void testKNNResultsWithNonOptimizedBitHammingIndexAndNewDoc() throws Exception {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.bit_hamming.getValue())
+                .build();
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 3));
+        addBitTestData();
+
+        float[] queryVector = {1.0f, 1.0f, 1.0f}; // vector to be queried
+        int k = 1; //  nearest 1 neighbor
+
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+
+        assertEquals(results.size(), k);
+        for(KNNResult result : results) {
+            assertEquals("3", result.getDocId()); //Vector of DocId 3 is closest to the query
+        }
+
+        /**
+         * Add new doc with vector not nearest than doc 3
+         */
+        Float[] newVector  = {1.0f, 0.0f, 0.0f};
+        addKnnDoc(INDEX_NAME, "6", FIELD_NAME, newVector);
+        response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
+        results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+
+        assertEquals(results.size(), k);
+        for(KNNResult result : results) {
+            assertEquals("3", result.getDocId());
+        }
+
+
+        /**
+         * Add new doc with vector nearest than doc 1 to queryVector
+         */
+        Float[] newVector1  = {1.0f, 1.0f, 1.0f};
+        addKnnDoc(INDEX_NAME, "7", FIELD_NAME, newVector1);
+        response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
+        results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+
+        assertEquals(results.size(), k);
+        for(KNNResult result : results) {
+            assertEquals("7", result.getDocId());
+        }
+    }
 
     public void testKNNResultsWithUpdateDoc() throws Exception {
         createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
@@ -291,6 +352,70 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         assertEquals(results.size(), k);
         for(KNNResult result : results) {
             assertEquals("3", result.getDocId()); //Vector of DocId 3 is closest to the query
+        }
+    }
+    public void testKNNResultsWithNonOptimizedIndexAndUpdateDoc() throws Exception {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.negdotprod.getValue())
+                .build();
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 2));
+        addTestData();
+
+        float[] queryVector = {1.0f, 1.0f}; // vector to be queried
+        int k = 1; //  nearest 1 neighbor
+
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+
+        assertEquals(results.size(), k);
+        for(KNNResult result : results) {
+            assertEquals("1", result.getDocId()); //Vector of DocId 1 is closest to the query
+        }
+
+        /**
+         * update doc 3 to the nearest
+         */
+        Float[] updatedVector  = {6.0f, 7.0f};
+        updateKnnDoc(INDEX_NAME, "3", FIELD_NAME, updatedVector);
+        response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
+        results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        assertEquals(results.size(), k);
+        for(KNNResult result : results) {
+            assertEquals("3", result.getDocId()); //Vector of DocId 3 is closest to the query
+        }
+    }
+    public void testKNNResultsWithNonOptimizedBitHammingIndexAndUpdateDoc() throws Exception {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.bit_hamming.getValue())
+                .build();
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 3));
+        addBitTestData();
+
+        float[] queryVector = {0.0f, 1.0f, 0.0f}; // vector to be queried
+        int k = 1; //  nearest 1 neighbor
+
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+
+        assertEquals(results.size(), k);
+        for(KNNResult result : results) {
+            assertEquals("1", result.getDocId()); //Vector of DocId 1 is closest to the query
+        }
+
+        /**
+         * update doc 2 to the nearest
+         */
+        Float[] updatedVector  = {0.0f, 1.0f, 0.0f};
+        updateKnnDoc(INDEX_NAME, "2", FIELD_NAME, updatedVector);
+        response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
+        results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        assertEquals(results.size(), k);
+        for(KNNResult result : results) {
+            assertEquals("2", result.getDocId()); //Vector of DocId 3 is closest to the query
         }
     }
 
@@ -324,7 +449,6 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
             assertEquals("4", result.getDocId()); //Vector of DocId 4 is closest to the query
         }
     }
-
     public void testKNNResultsWithNonOptimizedIndexAndDeleteDoc() throws Exception {
         Settings settings = Settings.builder()
                 .put(getKNNDefaultIndexSettings())
@@ -357,6 +481,40 @@ public class KNNMapperSearcherIT extends KNNRestTestCase {
         assertEquals(results.size(), k);
         for(KNNResult result : results) {
             assertEquals("3", result.getDocId()); //Vector of DocId 3 is closest to the query
+        }
+    }
+    public void testKNNResultsWithNonOptimizedBitHammingIndexAndDeleteDoc() throws Exception {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.bit_hamming.getValue())
+                .build();
+        createKnnIndex(INDEX_NAME, settings, createKnnIndexMapping(FIELD_NAME, 3));
+        addBitTestData();
+
+        float[] queryVector = {0.0f, 0.0f, 1.0f}; // vector to be queried
+        int k = 1; //  nearest 2 neighbor
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k);
+        Response response = searchKNNIndex(INDEX_NAME, knnQueryBuilder, k);
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+
+        assertEquals(results.size(), k);
+        for(KNNResult result : results) {
+            assertEquals("2", result.getDocId()); //Vector of DocId 1 is closest to the query
+        }
+
+
+        /**
+         * delete the nearest doc (doc2)
+         */
+        deleteKnnDoc(INDEX_NAME, "2");
+
+        knnQueryBuilder = new KNNQueryBuilder(FIELD_NAME, queryVector, k+1);
+        response = searchKNNIndex(INDEX_NAME, knnQueryBuilder,k);
+        results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+
+        assertEquals(results.size(), k);
+        for(KNNResult result : results) {
+            assertEquals("1", result.getDocId()); //Vector of DocId 3 is closest to the query
         }
     }
 
