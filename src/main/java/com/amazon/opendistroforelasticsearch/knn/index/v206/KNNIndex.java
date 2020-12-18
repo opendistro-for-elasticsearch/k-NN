@@ -149,18 +149,20 @@ public class KNNIndex implements AutoCloseable {
 
     // Builds index and writes to disk (no index pointer escapes).
     public static void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams, String spaceType) {
-        //default use optimized index so do not need load index
+        //default use optimized index so do not need store Data, but others need store dataset
         boolean saveData = !SpaceTypes.getOptimizedValues().contains(spaceType);
         saveIndex(ids, data, indexPath, algoParams, spaceType, saveData);
 
     }
     public static void saveIndex(int[] ids, int[][] data, String indexPath, String[] algoParams, String spaceType) {
-        //default use optimized index so do not need load index
-        saveIndexI(ids, data, indexPath, algoParams, spaceType, true);
+        //default use optimized index so do not need store Data, but others need store dataset
+        boolean saveData = !SpaceTypes.getOptimizedValues().contains(spaceType);
+        saveIndexI(ids, data, indexPath, algoParams, spaceType, saveData);
     }
     public static void saveIndex(int[] ids, String[] data, String indexPath, String[] algoParams, String spaceType) {
-        //default use optimized index so do not need load index
-        saveIndexB(ids, data, indexPath, algoParams, spaceType, true);
+        //default use optimized index so do not need store Data, but others need store dataset
+        boolean saveData = !SpaceTypes.getOptimizedValues().contains(spaceType);
+        saveIndexB(ids, data, indexPath, algoParams, spaceType, saveData);
     }
     @Override
     public void close() {
