@@ -17,13 +17,13 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import org.apache.lucene.index.BinaryDocValues;
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.index.fielddata.ScriptDocValues;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
-// This class is thread safe, since docExists is synchronized at an instance level
 public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
 
     private final BinaryDocValues binaryDocValues;
@@ -35,24 +35,24 @@ public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
 
     @Override
     public void setNextDocId(int docId) throws IOException {
-        synchronized (this) {
             if (binaryDocValues.advanceExact(docId)) {
                 docExists = true;
                 return;
             }
             docExists = false;
-        }
     }
 
-    public synchronized float[] getValue() throws IOException {
+    public float[] getValue() {
         if (!docExists) {
-            throw new IllegalStateException("no value found for the corresponding doc ID");
+            throw new IllegalStateException("no value found for the vector field");
         }
-        BytesRef value = binaryDocValues.binaryValue();
-        ByteArrayInputStream byteStream = new ByteArrayInputStream(value.bytes, value.offset, value.length);
-        ObjectInputStream objectStream = new ObjectInputStream(byteStream);
         try {
+            BytesRef value = binaryDocValues.binaryValue();
+            ByteArrayInputStream byteStream = new ByteArrayInputStream(value.bytes, value.offset, value.length);
+            ObjectInputStream objectStream = new ObjectInputStream(byteStream);
             return (float[]) objectStream.readObject();
+        } catch (IOException e) {
+            throw ExceptionsHelper.convertToElastic(e);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException((e));
         }
@@ -60,9 +60,7 @@ public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
 
     @Override
     public int size() {
-        synchronized (this) {
             return docExists ? 1 : 0;
-        }
     }
 
     @Override

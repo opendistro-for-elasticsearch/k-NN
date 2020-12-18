@@ -17,22 +17,55 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
 import com.amazon.opendistroforelasticsearch.knn.KNNResult;
+import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
+import org.elasticsearch.client.ResponseException;
+import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PainlessScriptScoringIT extends KNNRestTestCase {
 
+    private static String NUMERIC_INDEX_FIELD_NAME = "price";
+
+    /**
+     * Utility to create a Index Mapping with multiple fields
+     */
+    protected String createMapping(List<MappingProperty> properties) throws IOException {
+        Objects.requireNonNull(properties);
+        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject().startObject("properties");
+        for (MappingProperty property : properties) {
+            XContentBuilder builder = xContentBuilder.startObject(property.getName())
+                    .field("type", property.getType());
+            if (property.getDimension() != null) {
+                builder.field("dimension", property.getDimension());
+            }
+            builder.endObject();
+        }
+        xContentBuilder.endObject().endObject();
+        return Strings.toString(xContentBuilder);
+    }
+
+    /*
+     creates KnnIndex based on properties, we add single non-knn vector documents to verify whether actions
+     works on non-knn vector documents as well
+     */
+    private void buildTestIndex(Map<String, Float[]> knnDocuments) throws Exception {
+        List<MappingProperty> properties = buildMappingProperties();
+        createKnnIndex(INDEX_NAME, createMapping(properties));
+        for (Map.Entry<String, Float[]> data : knnDocuments.entrySet()) {
+            addKnnDoc(INDEX_NAME, data.getKey(), FIELD_NAME, data.getValue());
+        }
+    }
 
     private Map<String, Float[]> getL2TestData() {
         Map<String, Float[]> data = new HashMap<>();
@@ -51,11 +84,22 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
         return data;
     }
 
-    private void buildTestIndex(Map<String, Float[]> documents) throws IOException {
-        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
-        for (Map.Entry<String, Float[]> data : documents.entrySet()) {
-            addKnnDoc(INDEX_NAME, data.getKey(), FIELD_NAME, data.getValue());
-        }
+    /*
+     The doc['field'] will throw an error if field is missing from the mappings.
+     */
+    private List<MappingProperty> buildMappingProperties() {
+        List<MappingProperty> properties = new ArrayList<>();
+        properties.add(new MappingProperty(FIELD_NAME, KNNVectorFieldMapper.CONTENT_TYPE).dimension("2"));
+        properties.add(new MappingProperty(NUMERIC_INDEX_FIELD_NAME, "integer"));
+        return properties;
+    }
+
+    public void testL2ScriptScoreFails() throws Exception {
+        String source = String.format("1/(1 + l2Squared([1.0f, 1.0f], doc['%s']))", FIELD_NAME);
+        Request request = buildPainlessScriptRequest(source, 3, getL2TestData());
+        addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
+        expectThrows(ResponseException.class, () -> client().performRequest(request));
+        deleteKNNIndex(INDEX_NAME);
     }
 
     private Request buildPainlessScriptRequest(
@@ -86,8 +130,15 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
         deleteKNNIndex(INDEX_NAME);
     }
 
+    public void testCosineSimilarityScriptScoreFails() throws Exception {
+        String source = String.format("1 + cosineSimilarity([2.0f, -2.0f], doc['%s'])", FIELD_NAME);
+        Request request = buildPainlessScriptRequest(source, 3, getCosineTestData());
+        addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
+        expectThrows(ResponseException.class, () -> client().performRequest(request));
+        deleteKNNIndex(INDEX_NAME);
+    }
+
     public void testCosineSimilarityScriptScore() throws Exception {
-        float[] queryVector = {2.0f, -2.0f};
         String source = String.format("1 + cosineSimilarity([2.0f, -2.0f], doc['%s'])", FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getCosineTestData());
         Response response = client().performRequest(request);
@@ -104,8 +155,15 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
         deleteKNNIndex(INDEX_NAME);
     }
 
+    public void testCosineSimilarityNormalizedScriptScoreFails() throws Exception {
+        String source = String.format("1 + cosineSimilarity([2.0f, -2.0f], doc['%s'], 3.0f)", FIELD_NAME);
+        Request request = buildPainlessScriptRequest(source, 3, getCosineTestData());
+        addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
+        expectThrows(ResponseException.class, () -> client().performRequest(request));
+        deleteKNNIndex(INDEX_NAME);
+    }
+
     public void testCosineSimilarityNormalizedScriptScore() throws Exception {
-        float[] queryVector = {2.0f, -2.0f};
         String source = String.format("1 + cosineSimilarity([2.0f, -2.0f], doc['%s'], 3.0f)", FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getCosineTestData());
         Response response = client().performRequest(request);
@@ -121,4 +179,34 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
         }
         deleteKNNIndex(INDEX_NAME);
     }
+
+    class MappingProperty {
+
+        private String name;
+        private String type;
+        private String dimension;
+
+        MappingProperty(String name, String type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        MappingProperty dimension(String dimension) {
+            this.dimension = dimension;
+            return this;
+        }
+
+        String getDimension() {
+            return dimension;
+        }
+
+        String getName() {
+            return name;
+        }
+
+        String getType() {
+            return type;
+        }
+    }
 }
+

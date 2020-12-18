@@ -27,6 +27,23 @@ public class KNNScoringUtil {
     private static Logger logger = LogManager.getLogger(KNNScoringUtil.class);
 
     /**
+     * checks both query vector and input vector has equal dimension
+     *
+     * @param queryVector query vector
+     * @param inputVector input vector
+     * @throws IllegalArgumentException if query vector and input vector has different dimensions
+     */
+    private static void requireEqualDimension(final float[] queryVector, final float[] inputVector) {
+        Objects.requireNonNull(queryVector);
+        Objects.requireNonNull(inputVector);
+        if (queryVector.length != inputVector.length) {
+            String errorMessage = String.format("query vector dimension mismatch. Expected: %d, Given: %d",
+                    inputVector.length, queryVector.length);
+            throw new IllegalArgumentException(errorMessage);
+        }
+    }
+
+    /**
      * This method calculates L2 squared distance between query vector
      * and input vector
      *
@@ -35,6 +52,7 @@ public class KNNScoringUtil {
      * @return L2 score
      */
     public static float l2Squared(float[] queryVector, float[] inputVector) {
+        requireEqualDimension(queryVector, inputVector);
         float squaredDistance = 0;
         for (int i = 0; i < inputVector.length; i++) {
             float diff = queryVector[i] - inputVector[i];
@@ -70,14 +88,7 @@ public class KNNScoringUtil {
      * @return L2 score
      */
     public static float l2Squared(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
-        float[] knnDocVector;
-        try {
-            knnDocVector = docValues.getValue();
-        } catch (Exception e) {
-            logger.debug("Failed to get vector from doc. Returning minimum score to put this result to end", e);
-            return Float.MIN_VALUE;
-        }
-        return l2Squared(toFloat(queryVector), knnDocVector);
+        return l2Squared(toFloat(queryVector), docValues.getValue());
     }
 
     /**
@@ -90,6 +101,7 @@ public class KNNScoringUtil {
      * @return cosine score
      */
     public static float cosinesimilOptimized(float[] queryVector, float[] inputVector, float normQueryVector) {
+        requireEqualDimension(queryVector, inputVector);
         float dotProduct = 0.0f;
         float normInputVector = 0.0f;
         for (int i = 0; i < queryVector.length; i++) {
@@ -123,14 +135,7 @@ public class KNNScoringUtil {
      */
     public static float cosineSimilarity(
             List<Number> queryVector, KNNVectorScriptDocValues docValues, Number queryVectorMagnitude) {
-        float[] knnDocVector;
-        try {
-            knnDocVector = docValues.getValue();
-        } catch (Exception e) {
-            logger.debug("Failed to get vector from doc. Returning minimum score to put this result to end", e);
-            return Float.MIN_VALUE;
-        }
-        return cosinesimilOptimized(toFloat(queryVector), knnDocVector, queryVectorMagnitude.floatValue());
+        return cosinesimilOptimized(toFloat(queryVector), docValues.getValue(), queryVectorMagnitude.floatValue());
     }
 
     /**
@@ -141,6 +146,7 @@ public class KNNScoringUtil {
      * @return cosine score
      */
     public static float cosinesimil(float[] queryVector, float[] inputVector) {
+        requireEqualDimension(queryVector, inputVector);
         float dotProduct = 0.0f;
         float normQueryVector = 0.0f;
         float normInputVector = 0.0f;
@@ -174,14 +180,7 @@ public class KNNScoringUtil {
      * @return cosine score
      */
     public static float cosineSimilarity(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
-        float[] knnDocVector;
-        try {
-            knnDocVector = docValues.getValue();
-        } catch (Exception e) {
-            logger.debug("Failed to get vector from doc. Returning minimum score to put this result to end", e);
-            return Float.MIN_VALUE;
-        }
-        return cosinesimil(toFloat(queryVector), knnDocVector);
+        return cosinesimil(toFloat(queryVector), docValues.getValue());
     }
 
 
