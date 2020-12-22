@@ -19,6 +19,7 @@ import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.document.BinaryDocValuesField;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldType;
+import org.apache.lucene.document.NumericDocValuesField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -53,6 +54,7 @@ public class KNNVectorDVLeafFieldDataTests extends KNNTestCase {
                 new BinaryDocValuesField(
                         MOCK_INDEX_FIELD_NAME,
                         new VectorField(MOCK_INDEX_FIELD_NAME, new float[]{1.0f, 2.0f}, new FieldType()).binaryValue()));
+        knnDocument.add(new NumericDocValuesField("price", 1000));
         writer.addDocument(knnDocument);
         writer.commit();
         writer.close();
@@ -73,9 +75,16 @@ public class KNNVectorDVLeafFieldDataTests extends KNNTestCase {
     }
 
     public void testGetScriptValuesWrongFieldName() {
-        KNNVectorDVLeafFieldData leafFieldData = new KNNVectorDVLeafFieldData(leafReaderContext.reader(), "");
-        expectThrows(IllegalStateException.class,
-                () -> leafFieldData.getScriptValues());
+        KNNVectorDVLeafFieldData leafFieldData = new KNNVectorDVLeafFieldData(
+                leafReaderContext.reader(), "invalid");
+        ScriptDocValues<float[]> scriptValues = leafFieldData.getScriptValues();
+        assertNotNull(scriptValues);
+    }
+
+    public void testGetScriptValuesWrongFieldType() {
+        KNNVectorDVLeafFieldData leafFieldData = new KNNVectorDVLeafFieldData(
+                leafReaderContext.reader(), "price");
+        expectThrows(IllegalStateException.class, ()->leafFieldData.getScriptValues());
     }
 
     public void testRamBytesUsed() {

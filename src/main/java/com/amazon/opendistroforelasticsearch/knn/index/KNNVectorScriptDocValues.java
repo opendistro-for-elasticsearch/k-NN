@@ -28,6 +28,7 @@ public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
 
     private final BinaryDocValues binaryDocValues;
     private boolean docExists;
+    private int docId;
 
     public KNNVectorScriptDocValues(BinaryDocValues binaryDocValues) {
         this.binaryDocValues = binaryDocValues;
@@ -35,16 +36,17 @@ public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
 
     @Override
     public void setNextDocId(int docId) throws IOException {
-            if (binaryDocValues.advanceExact(docId)) {
-                docExists = true;
-                return;
-            }
-            docExists = false;
+        this.docId = docId;
+        if (binaryDocValues.advanceExact(docId)) {
+            docExists = true;
+            return;
+        }
+        docExists = false;
     }
 
     public float[] getValue() {
         if (!docExists) {
-            throw new IllegalStateException("no value found for the vector field");
+            throw new IllegalStateException("Document with id " + docId + "doesn't have a value for a vector field");
         }
         try {
             BytesRef value = binaryDocValues.binaryValue();
@@ -60,7 +62,7 @@ public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
 
     @Override
     public int size() {
-            return docExists ? 1 : 0;
+        return docExists ? 1 : 0;
     }
 
     @Override

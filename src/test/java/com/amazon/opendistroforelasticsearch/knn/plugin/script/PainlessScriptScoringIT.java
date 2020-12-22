@@ -135,6 +135,27 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
         deleteKNNIndex(INDEX_NAME);
     }
 
+    public void testL2ScriptScoreWithNumericField() throws Exception {
+
+        String source = String.format(
+                "doc['%s'].size() == 0 ? 0 : 1/(1 + l2Squared([1.0f, 1.0f], doc['%s']))", FIELD_NAME, FIELD_NAME);
+        Request request = buildPainlessScriptRequest(source, 3, getL2TestData());
+        addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        assertEquals(3, results.size());
+
+
+        String[] expectedDocIDs = {"2", "4", "3", "1"};
+        for (int i = 0; i < results.size(); i++) {
+            assertEquals(expectedDocIDs[i], results.get(i).getDocId());
+        }
+        deleteKNNIndex(INDEX_NAME);
+    }
+
     public void testCosineSimilarityScriptScoreFails() throws Exception {
         String source = String.format("1 + cosineSimilarity([2.0f, -2.0f], doc['%s'])", FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getCosineTestData());
@@ -160,6 +181,26 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
         deleteKNNIndex(INDEX_NAME);
     }
 
+    public void testCosineSimilarityScriptScoreWithNumericField() throws Exception {
+        String source = String.format(
+                "doc['%s'].size() == 0 ? 0 : 1 + cosineSimilarity([2.0f, -2.0f], doc['%s'])", FIELD_NAME, FIELD_NAME);
+        Request request = buildPainlessScriptRequest(source, 3, getCosineTestData());
+        addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        assertEquals(3, results.size());
+
+        String[] expectedDocIDs = {"0", "1", "2"};
+        for (int i = 0; i < results.size(); i++) {
+            assertEquals(expectedDocIDs[i], results.get(i).getDocId());
+        }
+        deleteKNNIndex(INDEX_NAME);
+    }
+
+    // test fails without size check before executing method
     public void testCosineSimilarityNormalizedScriptScoreFails() throws Exception {
         String source = String.format("1 + cosineSimilarity([2.0f, -2.0f], doc['%s'], 3.0f)", FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getCosineTestData());
@@ -171,6 +212,26 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
     public void testCosineSimilarityNormalizedScriptScore() throws Exception {
         String source = String.format("1 + cosineSimilarity([2.0f, -2.0f], doc['%s'], 3.0f)", FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getCosineTestData());
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        assertEquals(3, results.size());
+
+        String[] expectedDocIDs = {"0", "1", "2"};
+        for (int i = 0; i < results.size(); i++) {
+            assertEquals(expectedDocIDs[i], results.get(i).getDocId());
+        }
+        deleteKNNIndex(INDEX_NAME);
+    }
+
+    public void testCosineSimilarityNormalizedScriptScoreWithNumericField() throws Exception {
+        String source = String.format(
+                "doc['%s'].size() == 0 ? 0 : 1 + cosineSimilarity([2.0f, -2.0f], doc['%s'], 3.0f)",
+                FIELD_NAME, FIELD_NAME);
+        Request request = buildPainlessScriptRequest(source, 3, getCosineTestData());
+        addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
                 RestStatus.fromCode(response.getStatusLine().getStatusCode()));

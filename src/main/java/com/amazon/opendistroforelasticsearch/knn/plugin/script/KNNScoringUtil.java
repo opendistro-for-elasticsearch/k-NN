@@ -43,6 +43,8 @@ public class KNNScoringUtil {
         }
     }
 
+
+
     /**
      * This method calculates L2 squared distance between query vector
      * and input vector

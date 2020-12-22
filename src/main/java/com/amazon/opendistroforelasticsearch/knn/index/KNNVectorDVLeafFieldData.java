@@ -1,6 +1,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import org.apache.lucene.index.BinaryDocValues;
+import org.apache.lucene.index.DocValues;
 import org.apache.lucene.index.LeafReader;
 import org.elasticsearch.index.fielddata.LeafFieldData;
 import org.elasticsearch.index.fielddata.ScriptDocValues;
@@ -31,11 +32,7 @@ public class KNNVectorDVLeafFieldData implements LeafFieldData {
     @Override
     public ScriptDocValues<float[]> getScriptValues() {
         try {
-            final BinaryDocValues values = reader.getBinaryDocValues(fieldName);
-            if (values == null) {
-                throw new IllegalStateException("Binary Doc values not enabled for the field " + fieldName
-                        + " Please ensure the field type is knn_vector in mappings for this field");
-            }
+            BinaryDocValues values = DocValues.getBinary(reader, fieldName);
             return new KNNVectorScriptDocValues(values);
         } catch (IOException e) {
             throw new IllegalStateException("Cannot load doc values for vector field!", e);
