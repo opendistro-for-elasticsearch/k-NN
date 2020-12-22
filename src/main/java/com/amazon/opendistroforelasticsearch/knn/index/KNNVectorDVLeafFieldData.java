@@ -33,7 +33,7 @@ public class KNNVectorDVLeafFieldData implements LeafFieldData {
     public ScriptDocValues<float[]> getScriptValues() {
         try {
             BinaryDocValues values = DocValues.getBinary(reader, fieldName);
-            return new KNNVectorScriptDocValues(values);
+            return new KNNVectorScriptDocValues(values, fieldName);
         } catch (IOException e) {
             throw new IllegalStateException("Cannot load doc values for vector field!", e);
         }

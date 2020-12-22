@@ -27,16 +27,16 @@ import java.io.ObjectInputStream;
 public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
 
     private final BinaryDocValues binaryDocValues;
+    private final String fieldName;
     private boolean docExists;
-    private int docId;
 
-    public KNNVectorScriptDocValues(BinaryDocValues binaryDocValues) {
+    public KNNVectorScriptDocValues(BinaryDocValues binaryDocValues, String fieldName) {
         this.binaryDocValues = binaryDocValues;
+        this.fieldName = fieldName;
     }
 
     @Override
     public void setNextDocId(int docId) throws IOException {
-        this.docId = docId;
         if (binaryDocValues.advanceExact(docId)) {
             docExists = true;
             return;
@@ -46,7 +46,11 @@ public final class KNNVectorScriptDocValues extends ScriptDocValues<float[]> {
 
     public float[] getValue() {
         if (!docExists) {
-            throw new IllegalStateException("Document with id " + docId + "doesn't have a value for a vector field");
+            String errorMessage = String.format(
+                "One of the document doesn't have a value for field '%s'. " +
+                "This can be avoided by checking if a document has a value for the field or not " +
+                "by doc['%s'].size() == 0 ? 0 : {your script}",fieldName,fieldName);
+            throw new IllegalStateException(errorMessage);
         }
         try {
             BytesRef value = binaryDocValues.binaryValue();

@@ -44,7 +44,8 @@ public class KNNVectorScriptDocValuesTests extends KNNTestCase {
         createKNNVectorDocument(directory);
         reader = DirectoryReader.open(directory);
         LeafReaderContext leafReaderContext = reader.getContext().leaves().get(0);
-        scriptDocValues = new KNNVectorScriptDocValues(leafReaderContext.reader().getBinaryDocValues(MOCK_INDEX_FIELD_NAME));
+        scriptDocValues = new KNNVectorScriptDocValues(
+                leafReaderContext.reader().getBinaryDocValues(MOCK_INDEX_FIELD_NAME), MOCK_INDEX_FIELD_NAME);
     }
 
     private void createKNNVectorDocument(Directory directory) throws IOException {
@@ -75,8 +76,7 @@ public class KNNVectorScriptDocValuesTests extends KNNTestCase {
 
     //Test getValue without calling setNextDocId
     public void testGetValueFails() throws IOException {
-        expectThrows(IllegalStateException.class,
-                () -> scriptDocValues.getValue());
+        expectThrows(IllegalStateException.class, () -> scriptDocValues.getValue());
     }
 
     public void testSize() throws IOException {
@@ -86,7 +86,6 @@ public class KNNVectorScriptDocValuesTests extends KNNTestCase {
     }
 
     public void testGet() throws IOException {
-        expectThrows(UnsupportedOperationException.class,
-                () -> scriptDocValues.get(0));
+        expectThrows(UnsupportedOperationException.class, () -> scriptDocValues.get(0));
     }
 }

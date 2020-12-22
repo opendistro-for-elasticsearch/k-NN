@@ -257,7 +257,7 @@ public class KNNScoringUtilTests extends KNNTestCase {
             if (scriptDocValues == null) {
                 reader = DirectoryReader.open(directory);
                 LeafReaderContext leafReaderContext = reader.getContext().leaves().get(0);
-                scriptDocValues = new KNNVectorScriptDocValues(leafReaderContext.reader().getBinaryDocValues(fieldName));
+                scriptDocValues = new KNNVectorScriptDocValues(leafReaderContext.reader().getBinaryDocValues(fieldName),fieldName );
             }
             return scriptDocValues;
         }
