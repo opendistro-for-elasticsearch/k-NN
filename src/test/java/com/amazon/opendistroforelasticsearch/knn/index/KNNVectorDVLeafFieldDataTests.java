@@ -33,6 +33,7 @@ import java.io.IOException;
 public class KNNVectorDVLeafFieldDataTests extends KNNTestCase {
 
     private static final String MOCK_INDEX_FIELD_NAME = "test-index-field-name";
+    private static final String MOCK_NUMERIC_INDEX_FIELD_NAME = "test-index-price";
     private LeafReaderContext leafReaderContext;
     private Directory directory;
     private DirectoryReader reader;
@@ -54,7 +55,7 @@ public class KNNVectorDVLeafFieldDataTests extends KNNTestCase {
                 new BinaryDocValuesField(
                         MOCK_INDEX_FIELD_NAME,
                         new VectorField(MOCK_INDEX_FIELD_NAME, new float[]{1.0f, 2.0f}, new FieldType()).binaryValue()));
-        knnDocument.add(new NumericDocValuesField("price", 1000));
+        knnDocument.add(new NumericDocValuesField(MOCK_NUMERIC_INDEX_FIELD_NAME, 1000));
         writer.addDocument(knnDocument);
         writer.commit();
         writer.close();
@@ -83,7 +84,7 @@ public class KNNVectorDVLeafFieldDataTests extends KNNTestCase {
 
     public void testGetScriptValuesWrongFieldType() {
         KNNVectorDVLeafFieldData leafFieldData = new KNNVectorDVLeafFieldData(
-                leafReaderContext.reader(), "price");
+                leafReaderContext.reader(), MOCK_NUMERIC_INDEX_FIELD_NAME);
         expectThrows(IllegalStateException.class, ()->leafFieldData.getScriptValues());
     }
 
