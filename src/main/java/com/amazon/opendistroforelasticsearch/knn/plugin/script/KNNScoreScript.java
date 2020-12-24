@@ -121,7 +121,6 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
          */
         @Override
         public double execute(ScoreScript.ExplanationHolder explanationHolder) {
-
             KNNVectorScriptDocValues scriptDocValues = (KNNVectorScriptDocValues) getDoc().get(this.field);
             if (scriptDocValues.isEmpty()) {
                 return Float.MIN_VALUE;
