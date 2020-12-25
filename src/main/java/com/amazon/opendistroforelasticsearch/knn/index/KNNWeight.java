@@ -102,14 +102,14 @@ public class KNNWeight extends Weight {
             Path indexPath = PathUtils.get(directory, hnswFiles.get(0));
             final KNNQueryResult[] results;
 
-            if (fieldAttributes.containsValue(NmsLibVersion.VFaiss.getBuildVersion())) {
-                final KNNFIndex index = knnIndexCache.getFIndex(indexPath.toString(), knnQuery.getIndexName());
+            if (fieldAttributes.containsValue(NmsLibVersion.V206.getBuildVersion())) {
+                final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
                 results = index.queryIndex(
                         knnQuery.getQueryVector(),
                         knnQuery.getK()
                 );
             } else {
-                final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
+                final KNNFIndex index = knnIndexCache.getFIndex(indexPath.toString(), knnQuery.getIndexName());
                 results = index.queryIndex(
                         knnQuery.getQueryVector(),
                         knnQuery.getK()
