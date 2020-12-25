@@ -15,6 +15,9 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.util;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public enum NmsLibVersion {
 
     /**
@@ -33,7 +36,9 @@ public enum NmsLibVersion {
         }
     };
 
-    public static final NmsLibVersion LATEST = V206;
+
+    //FIXME
+    public static final NmsLibVersion LATEST = VFaiss;
 
     public String buildVersion;
 
@@ -46,4 +51,17 @@ public enum NmsLibVersion {
      * @return nmslib name
      */
     public abstract String indexLibraryVersion();
+
+
+
+
+    public String getBuildVersion() { return buildVersion; }
+
+    public static Set<String> getValues() {
+        Set<String> values = new HashSet<>();
+        for (NmsLibVersion libVersion : NmsLibVersion.values()) {
+            values.add(libVersion.getBuildVersion());
+        }
+        return values;
+    }
 }

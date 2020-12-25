@@ -53,7 +53,9 @@ import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ENGINE;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_SPACE_TYPE;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ENGINE;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_SPACE_TYPE;
 
 /**
@@ -122,7 +124,19 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
             return new KNNVectorFieldMapper(name, new KNNVectorFieldType(buildFullName(context), meta.getValue(),
                     dimension.getValue()), multiFieldsBuilder.build(this, context),
                     ignoreMalformed(context), getSpaceType(context.indexSettings()), getM(context.indexSettings()),
-                    getEfConstruction(context.indexSettings()), copyTo.build(), this);
+                    getEfConstruction(context.indexSettings()), copyTo.build(), this,
+                    getKnnEngine(context.indexSettings()));
+        }
+
+        private String getKnnEngine(Settings indexSettings) {
+            String knnEngine = indexSettings.get(INDEX_KNN_ENGINE.getKey());
+            if(knnEngine == null) {
+                logger.info("[KNN] The settings \"" + KNNConstants.KNNEngine + "\" was not set for the index. " +
+                        "Likely caused by recent version upgrade. Setting the setting to the default value="
+                        + INDEX_KNN_DEFAULT_ENGINE);
+                return INDEX_KNN_DEFAULT_ENGINE;
+            }
+            return knnEngine;
         }
 
         private String getSpaceType(Settings indexSettings) {
@@ -216,10 +230,11 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
     protected final String m;
     protected final String efConstruction;
     private final Integer dimension;
+    protected final String knnEngine;
 
     public KNNVectorFieldMapper(String simpleName, MappedFieldType mappedFieldType, MultiFields multiFields,
                                 Explicit<Boolean> ignoreMalformed, String spaceType, String m, String efConstruction,
-                                CopyTo copyTo, Builder builder) {
+                                CopyTo copyTo, Builder builder, String knnEngine) {
         super(simpleName, mappedFieldType,  multiFields, copyTo);
         this.stored = builder.stored.getValue();
         this.hasDocValues = builder.hasDocValues.getValue();
@@ -228,10 +243,12 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         this.spaceType = spaceType;
         this.m = m;
         this.efConstruction = efConstruction;
+        this.knnEngine = knnEngine;
         this.fieldType = new FieldType(Defaults.FIELD_TYPE);
         this.fieldType.putAttribute(KNNConstants.SPACE_TYPE, spaceType);
         this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_M, m);
         this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, efConstruction);
+        this.fieldType.putAttribute(KNNConstants.KNNEngine, knnEngine);
         this.fieldType.freeze();
     }
 

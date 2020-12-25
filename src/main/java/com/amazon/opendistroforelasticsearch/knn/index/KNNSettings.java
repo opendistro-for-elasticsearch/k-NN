@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchParseException;
@@ -66,6 +67,7 @@ public class KNNSettings {
     /**
      * Settings name
      */
+    public static final String KNN_ENGINE = "index.knn.knnEngine";
     public static final String KNN_SPACE_TYPE = "index.knn.space_type";
     public static final String KNN_ALGO_PARAM_M = "index.knn.algo_param.m";
     public static final String KNN_ALGO_PARAM_EF_CONSTRUCTION = "index.knn.algo_param.ef_construction";
@@ -83,6 +85,7 @@ public class KNNSettings {
     /**
      * Default setting values
      */
+    public static final String INDEX_KNN_DEFAULT_ENGINE = "Faiss"; // nmslib, faiss
     public static final String INDEX_KNN_DEFAULT_SPACE_TYPE = "l2";
     public static final Integer INDEX_KNN_DEFAULT_ALGO_PARAM_M = 16;
     public static final Integer INDEX_KNN_DEFAULT_ALGO_PARAM_EF_SEARCH = 512;
@@ -94,6 +97,14 @@ public class KNNSettings {
      * Settings Definition
      */
 
+    public static final Setting<String> INDEX_KNN_ENGINE = Setting.simpleString(KNN_ENGINE,
+            INDEX_KNN_DEFAULT_ENGINE,
+            new KnnEngineValidator(),
+            IndexScope);
+
+    /**
+     * Settings Space Type
+     */
     public static final Setting<String> INDEX_KNN_SPACE_TYPE = Setting.simpleString(KNN_SPACE_TYPE,
             INDEX_KNN_DEFAULT_SPACE_TYPE,
         new SpaceTypeValidator(),
@@ -272,7 +283,9 @@ public class KNNSettings {
     }
 
     public List<Setting<?>> getSettings() {
-        List<Setting<?>> settings =  Arrays.asList(INDEX_KNN_SPACE_TYPE,
+        List<Setting<?>> settings =  Arrays.asList(
+                INDEX_KNN_ENGINE,
+                INDEX_KNN_SPACE_TYPE,
                 INDEX_KNN_ALGO_PARAM_M_SETTING,
                 INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING,
                 INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING,
@@ -379,6 +392,14 @@ public class KNNSettings {
     }
 
     /**
+     * @param index Name of the index
+     * @return knnEngine vale
+     */
+    public static String getKnnEngine(String index) {
+        return KNNSettings.state().clusterService.state().getMetadata()
+                .index(index).getSettings().get(KNN_ENGINE, INDEX_KNN_DEFAULT_ENGINE);
+    }
+    /**
      *
      * @param index Name of the index
      * @return spaceType value
@@ -409,6 +430,16 @@ public class KNNSettings {
         }
     }
 
+    static class KnnEngineValidator implements Setting.Validator<String> {
+        private Set<String> libVersions = NmsLibVersion.getValues();
+        @Override
+        public void validate(String value) {
+            if(value == null || !value.contains(value)) {
+                throw new InvalidParameterException(String.format("Unsupported engine type: %s", value));
+            }
+        }
+    }
+
     public void onIndexModule(IndexModule module) {
         module.addSettingsUpdateConsumer(
                 INDEX_KNN_ALGO_PARAM_EF_SEARCH_SETTING,
@@ -419,4 +450,5 @@ public class KNNSettings {
                     KNNWeight.knnIndexCache.rebuild();
                 });
     }
+
 }
