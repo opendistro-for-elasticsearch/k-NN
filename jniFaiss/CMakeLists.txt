@@ -51,11 +51,6 @@ find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
 # ---- OPENMP BEGIN ----
-set(CMAKE_C_COMPILER "/usr/local/Cellar/llvm/11.0.0/bin/clang")
-set(CMAKE_CXX_COMPILER "/usr/local/Cellar/llvm/11.0.0/bin/clang++")
-set(OPENMP_LIBRARIES "/usr/local/Cellar/llvm/11.0.0/lib")
-set(OPENMP_INCLUDES "/usr/local/Cellar/llvm/11.0.0/include")
-
 OPTION (USE_OpenMP "Use OpenMP to enamble <omp.h>" ON)
 
 # Find OpenMP
