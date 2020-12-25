@@ -25,6 +25,12 @@ public enum NmsLibVersion {
         public String indexLibraryVersion() {
             return "KNNIndexV2_0_6";
         }
+    },
+    VFaiss("Faiss") {
+        @Override
+        public String indexLibraryVersion() {
+            return "KNNIndexVFaiss";
+        }
     };
 
     public static final NmsLibVersion LATEST = V206;

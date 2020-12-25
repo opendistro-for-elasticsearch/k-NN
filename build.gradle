@@ -121,20 +121,20 @@ def es_tmp_dir = rootProject.file('build/private/es_tmp').absoluteFile
 es_tmp_dir.mkdirs()
 
 task cmakeJniLib(type:Exec) {
-    workingDir 'jni'
+    workingDir 'jniFaiss'
     commandLine 'cmake', '.'
 }
 
 task buildJniLib(type:Exec) {
     dependsOn cmakeJniLib
-    workingDir 'jni'
+    workingDir 'jniFaiss'
     commandLine 'make'
 }
 
 test {
     dependsOn buildJniLib
     systemProperty 'tests.security.manager', 'false'
-    systemProperty "java.library.path", "$rootDir/jni/release"
+    systemProperty "java.library.path", "$rootDir/jniFaiss/release"
 }
 
 def _numNodes = findProperty('numNodes') as Integer ?: 1
@@ -144,7 +144,7 @@ integTest {
     }
     systemProperty 'tests.security.manager', 'false'
     systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
-    systemProperty "java.library.path", "$rootDir/jni/release"
+    systemProperty "java.library.path", "$rootDir/jniFaiss/release"
     // allows integration test classes to access test resource from project root path
     systemProperty('project.root', project.rootDir.absolutePath)
 
@@ -183,7 +183,7 @@ testClusters.integTest {
                 debugPort += 1
             }
         }
-        systemProperty("java.library.path", "$rootDir/jni/release")
+        systemProperty("java.library.path", "$rootDir/jniFaiss/release")
 }
 
 run {
