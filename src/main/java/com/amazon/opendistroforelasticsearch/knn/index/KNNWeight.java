@@ -16,6 +16,8 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
+import com.amazon.opendistroforelasticsearch.knn.index.faiss.KNNFIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
 import com.amazon.opendistroforelasticsearch.knn.index.v206.KNNIndex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -89,6 +91,7 @@ public class KNNWeight extends Weight {
             }
 
             FieldInfo queryFieldInfo = reader.getFieldInfos().fieldInfo(knnQuery.getField());
+            Map<String, String> fieldAttributes = queryFieldInfo.attributes();
 
             /**
              * TODO Add logic to pick up the right nmslib version based on the version
@@ -97,11 +100,21 @@ public class KNNWeight extends Weight {
              */
 
             Path indexPath = PathUtils.get(directory, hnswFiles.get(0));
-            final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
-            final KNNQueryResult[] results = index.queryIndex(
-                    knnQuery.getQueryVector(),
-                    knnQuery.getK()
-            );
+            final KNNQueryResult[] results;
+
+            if (fieldAttributes.containsValue(NmsLibVersion.VFaiss.getBuildVersion())) {
+                final KNNFIndex index = knnIndexCache.getFIndex(indexPath.toString(), knnQuery.getIndexName());
+                results = index.queryIndex(
+                        knnQuery.getQueryVector(),
+                        knnQuery.getK()
+                );
+            } else {
+                final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
+                results = index.queryIndex(
+                        knnQuery.getQueryVector(),
+                        knnQuery.getK()
+                );
+            }
 
             /**
              * Scores represent the distance of the documents with respect to given query vector.

@@ -106,14 +106,16 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_fais
             jstring param = (jstring) (env->GetObjectArrayElement(algoParams, i));
             const char *rawString = env->GetStringUTFChars(param, 0);
             paramsList.push_back(rawString);
+
+            int M = 32;
+            if (sscanf(rawString, "M=%d", &M) == 1) {
+                indexDescription="HNSW"+std::to_string(M);
+            }
             env->ReleaseStringUTFChars(param, rawString);
+
         }
 		has_exception_in_stack(env);
-		//Faiss IndexFactory Descp, Default We use HNSW32,
-		if(paramsCount > 0) {
-			//algoParams[0] as index description
-			indexDescription = paramsList[0];
-		}
+
 
 		//---- space
 		const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, 0);
@@ -136,7 +138,6 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_fais
 		        const string& param = paramsList[i];
 		        int efConstruction = 40; //default
 		        int efSearch = 16;//default
-
 		        if(param.find("efConstruction") != std::string::npos &&
 		            sscanf(param.data(), "efConstruction=%d", &efConstruction) == 1) {
                         faiss::IndexHNSW* ihp = reinterpret_cast<faiss::IndexHNSW*>(indexWriter.get());
