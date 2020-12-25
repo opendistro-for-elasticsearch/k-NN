@@ -30,9 +30,17 @@ set(KNN_PACKAGE_NAME opendistro-knnlib)
 # --- NMSLIB END ---
 
 # --- FAISS BEGIN ---
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/faiss)
-set(FIASSLIB ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/libfaiss.a)
-set(FIASSLIBDIR ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss)
+# Check if faiss search exists
+find_path(NMS_REPO_DIR NAMES faiss PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss)
+
+# If not, pull the updated submodule
+if (NOT EXISTS ${NMS_REPO_DIR})
+    message(STATUS "Could not find faiss. Pulling updated submodule.")
+    execute_process(COMMAND git submodule update --init -- external/faiss WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif ()
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/)
+set(FIASSLIB ${CMAKE_CURRENT_SOURCE_DIR}/external/libfaiss.a)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_COMPILER "/usr/bin/gcc")
