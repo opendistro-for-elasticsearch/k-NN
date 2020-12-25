@@ -153,7 +153,7 @@ public class KNNIndexCache implements Closeable {
      */
     public KNNIndex getIndex(String key, final String indexName) {
         try {
-            //FIXME if Type Not consistent
+            //TODO if Type Not consistent
             final KNNIndexCacheEntry knnIndexCacheEntry = cache.get(key, () -> loadIndex(key, indexName));
             return knnIndexCacheEntry.getKnnIndex();
         } catch (ExecutionException e) {
@@ -162,7 +162,7 @@ public class KNNIndexCache implements Closeable {
     }
     public KNNFIndex getFIndex(String key, final String indexName) {
         try {
-            //FIXME if Type Not consistent
+            //TODO if Type Not consistent
             final KNNIndexCacheEntry knnIndexCacheEntry = cache.get(key, () -> loadIndex(key, indexName));
             return knnIndexCacheEntry.getKnnFindex();
         } catch (ExecutionException e) {
@@ -225,7 +225,6 @@ public class KNNIndexCache implements Closeable {
      * @return Weight of the cache in kilobytes
      */
     public Long getWeightInKilobytes() {
-        //FIXME getIndexSize
         return cache.asMap().values().stream().mapToLong(KNNIndexCacheEntry::getIndexSize).sum();
     }
 
@@ -236,7 +235,6 @@ public class KNNIndexCache implements Closeable {
      * @return Weight of the index in the cache in kilobytes
      */
     public Long getWeightInKilobytes(final String indexName) {
-        //FIXME getIndexSize
         return cache.asMap().values().stream()
                 .filter(knnIndexCacheEntry -> indexName.equals(knnIndexCacheEntry.getEsIndexName()))
                 .mapToLong(KNNIndexCacheEntry::getIndexSize).sum();
