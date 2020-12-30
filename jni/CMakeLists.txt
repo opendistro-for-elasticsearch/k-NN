@@ -31,7 +31,7 @@ set(KNN_INDEX KNNIndexV2_0_6)
 set(KNN_PACKAGE_NAME opendistro-knnlib)
 
 # Check if similarity search exists
-find_path(NMS_REPO_DIR NAMES similarity_search PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib REQUIRED)
+find_path(NMS_REPO_DIR NAMES similarity_search PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib)
 
 # If not, pull the updated submodule
 if (NOT EXISTS ${NMS_REPO_DIR})
