@@ -15,7 +15,7 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-project(KNNIndexV2_0_7)
+project(KNNIndexV2_0_8)
 
 # Corner case. For CMake 2.8, there is no option to specify set(CMAKE_CXX_STANDARD 11). Instead, the flag manually needs
 # to be set.
@@ -27,7 +27,7 @@ else()
 endif()
 
 # Target Library to be built
-set(KNN_INDEX KNNIndexV2_0_7)
+set(KNN_INDEX KNNIndexV2_0_8)
 set(KNN_PACKAGE_NAME opendistro-knnlib)
 
 # Check if similarity search exists
