@@ -43,8 +43,18 @@ plugins {
     id 'jacoco'
 }
 
+
 apply plugin: 'elasticsearch.esplugin'
 apply plugin: 'elasticsearch.rest-test'
+
+
+checkstyle {
+    toolVersion = '8.24'
+    configFile file("checkstyle/checkstyle.xml")
+}
+
+checkstyleMain.ignoreFailures = true
+checkstyleTest.ignoreFailures = true
 
 def usingRemoteCluster = System.properties.containsKey('tests.rest.cluster') || System.properties.containsKey('tests.cluster')
 def usingMultiNode = project.properties.containsKey('numNodes')
@@ -112,6 +122,11 @@ dependencies {
     compile group: 'com.google.guava', name: 'failureaccess', version:'1.0.1'
     compile group: 'com.google.guava', name: 'guava', version:'29.0-jre'
     testImplementation "org.elasticsearch.test:framework:${es_version}"
+    configurations.all {
+        resolutionStrategy {
+            force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
+        }
+    }
 }
 
 licenseHeaders.enabled = false
