@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import com.amazon.opendistroforelasticsearch.knn.index.nmslib.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.v208.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;

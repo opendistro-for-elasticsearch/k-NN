@@ -37,7 +37,7 @@ import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
-import com.amazon.opendistroforelasticsearch.knn.index.nmslib.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.v208.KNNIndex;
 
 import java.io.Closeable;
 import java.io.IOException;
