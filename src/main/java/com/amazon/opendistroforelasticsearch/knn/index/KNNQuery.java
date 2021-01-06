@@ -47,6 +47,25 @@ public class KNNQuery extends Query {
         return this.queryVector;
     }
 
+    public int[] getQueryVectorInt() {
+        int[] queryVectorI = new int[queryVector.length];
+        for(int i = 0; i < queryVector.length; ++i) {
+            queryVectorI[i] = (int)queryVector[i];
+        }
+        return queryVectorI;
+    }
+//    public String getQueryVectorStr() {
+//
+//        //[1,0,1,0,1] --> "1 0 1 0 1"
+//        char[] charArray = new char[this.queryVector.length*2];
+//        for (int bit = 0; bit < this.queryVector.length; ++bit) {
+//            int oneBit = ((int)(this.queryVector[bit]))%2;
+//            charArray[bit*2] = (char) ('0' + oneBit);
+//            charArray[bit*2+1] = ' ';
+//        }
+//        return String.valueOf(charArray);
+//    }
+
     public int getK() {
         return this.k;
     }

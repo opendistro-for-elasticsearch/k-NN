@@ -10,10 +10,26 @@ extern "C" {
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex
  * Method:    saveIndex
- * Signature: ([I[[FLjava/lang/String;[Ljava/lang/String;Ljava/lang/String;)V
+ * Signature: ([I[[FLjava/lang/String;[Ljava/lang/String;Ljava/lang/String;Z)V
  */
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_saveIndex
-  (JNIEnv *, jclass, jintArray, jobjectArray, jstring, jobjectArray, jstring);
+  (JNIEnv *, jclass, jintArray, jobjectArray, jstring, jobjectArray, jstring, jboolean);
+
+/*
+ * Class:     com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex
+ * Method:    saveIndexI
+ * Signature: ([I[[ILjava/lang/String;[Ljava/lang/String;Ljava/lang/String;Z)V
+ */
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_saveIndexI
+  (JNIEnv *, jclass, jintArray, jobjectArray, jstring, jobjectArray, jstring, jboolean);
+
+/*
+ * Class:     com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex
+ * Method:    saveIndexB
+ * Signature: ([I[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Z)V
+ */
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_saveIndexB
+  (JNIEnv *, jclass, jintArray, jobjectArray, jstring, jobjectArray, jstring, jboolean);
 
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex
@@ -25,11 +41,35 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
 
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex
+ * Method:    queryIndexI
+ * Signature: (J[II)[Lcom/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult;
+ */
+JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_queryIndexI
+  (JNIEnv *, jclass, jlong, jintArray, jint);
+
+/*
+ * Class:     com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex
+ * Method:    queryIndexB
+ * Signature: (JLjava/lang/String;I)[Lcom/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult;
+ */
+JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_queryIndexB
+  (JNIEnv *, jclass, jlong, jstring, jint);
+
+/*
+ * Class:     com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex
  * Method:    init
- * Signature: (Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)J
+ * Signature: (Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Z)J
  */
 JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_init
-  (JNIEnv *, jclass, jstring, jobjectArray, jstring);
+  (JNIEnv *, jclass, jstring, jobjectArray, jstring, jboolean);
+
+/*
+ * Class:     com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex
+ * Method:    initI
+ * Signature: (Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;Z)J
+ */
+JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_initI
+  (JNIEnv *, jclass, jstring, jobjectArray, jstring, jboolean);
 
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex
@@ -37,6 +77,14 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v20
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_gc
+  (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex
+ * Method:    gcI
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_gcI
   (JNIEnv *, jclass, jlong);
 
 /*

@@ -34,10 +34,16 @@ public class KNNCodecUtil {
         public Pair(int[] docs, float[][] vectors) {
             this.docs = docs;
             this.vectors = vectors;
+            this.vectorsInt = new int[0][0];
         }
-
+        public Pair(int[] docs, int[][] vectorsInt) {
+            this.docs = docs;
+            this.vectorsInt = vectorsInt;
+            this.vectors = new float[0][0];
+        }
         public int[] docs;
         public float[][] vectors;
+        public int[][] vectorsInt;
     }
 
     public static KNNCodecUtil.Pair getFloats(BinaryDocValues values) throws IOException {
@@ -55,5 +61,25 @@ public class KNNCodecUtil {
             docIdList.add(doc);
         }
         return new KNNCodecUtil.Pair(docIdList.stream().mapToInt(Integer::intValue).toArray(), vectorList.toArray(new float[][]{}));
+    }
+    public static KNNCodecUtil.Pair getInts(BinaryDocValues values) throws IOException {
+        ArrayList<int[]> vectorList = new ArrayList<>();
+        ArrayList<Integer> docIdList = new ArrayList<>();
+        for (int doc = values.nextDoc(); doc != DocIdSetIterator.NO_MORE_DOCS; doc = values.nextDoc()) {
+            BytesRef bytesref = values.binaryValue();
+            try (ByteArrayInputStream byteStream = new ByteArrayInputStream(bytesref.bytes, bytesref.offset, bytesref.length);
+                 ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
+                float[] vector = (float[]) objectStream.readObject();
+                int[] vectorInt = new int[vector.length];
+                for(int i = 0; i < vector.length; ++i) {
+                    vectorInt[i] = (int) vector[i];
+                }
+                vectorList.add(vectorInt);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            docIdList.add(doc);
+        }
+        return new KNNCodecUtil.Pair(docIdList.stream().mapToInt(Integer::intValue).toArray(), vectorList.toArray(new int[][]{}));
     }
 }

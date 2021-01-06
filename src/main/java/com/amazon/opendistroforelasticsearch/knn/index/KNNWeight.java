@@ -98,10 +98,20 @@ public class KNNWeight extends Weight {
 
             Path indexPath = PathUtils.get(directory, hnswFiles.get(0));
             final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
-            final KNNQueryResult[] results = index.queryIndex(
-                    knnQuery.getQueryVector(),
-                    knnQuery.getK()
-            );
+            final KNNQueryResult[] results;
+            boolean intSpaces = SpaceTypes.getIntSpaces().contains(index.getSpaceType());
+
+            if (intSpaces) {
+                results = index.queryIndex(
+                        knnQuery.getQueryVectorInt(),
+                        knnQuery.getK()
+                );
+            } else {
+                results = index.queryIndex(
+                        knnQuery.getQueryVector(),
+                        knnQuery.getK()
+                );
+            }
 
             /**
              * Scores represent the distance of the documents with respect to given query vector.
@@ -110,7 +120,7 @@ public class KNNWeight extends Weight {
              * neighbors we are inverting the scores.
              */
             Map<Integer, Float> scores = Arrays.stream(results).collect(
-                    Collectors.toMap(result -> result.getId(), result -> 1/(1 + result.getScore())));
+                    Collectors.toMap(result -> result.getId(), result -> scoreFunc(result.getScore())));
             int maxDoc = Collections.max(scores.keySet()) + 1;
             DocIdSetBuilder docIdSetBuilder = new DocIdSetBuilder(maxDoc);
             DocIdSetBuilder.BulkAdder setAdder = docIdSetBuilder.grow(maxDoc);
@@ -122,6 +132,14 @@ public class KNNWeight extends Weight {
     @Override
     public boolean isCacheable(LeafReaderContext context) {
         return true;
+    }
+
+    public static float scoreFunc(float score) {
+        if (score >= 0) {
+            return 1 / (1 + score);
+        } else {
+            return 2 + 1 / (score - 1);
+        }
     }
 }
 
