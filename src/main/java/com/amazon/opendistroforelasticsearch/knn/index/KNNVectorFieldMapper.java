@@ -85,9 +85,16 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                                 throw new IllegalArgumentException("Dimension cannot be null");
                             }
                             int value = XContentMapValues.nodeIntegerValue(o);
-                            if (value > MAX_DIMENSION) {
-                                throw new IllegalArgumentException("Dimension value cannot be greater than " +
-                                    MAX_DIMENSION + " for vector: " + name);
+                            if(SpaceTypes.getIntSpaces().contains(getSpaceType(c.getSettings()))) {
+                                if (value > MAX_DIMENSION * 32) {
+                                    throw new IllegalArgumentException("Bit Dimension value cannot be greater than " +
+                                            MAX_DIMENSION * 32 + " for vector: " + name);
+                                }
+                            } else {
+                                if (value > MAX_DIMENSION) {
+                                    throw new IllegalArgumentException("Dimension value cannot be greater than " +
+                                            MAX_DIMENSION + " for vector: " + name);
+                                }
                             }
 
                             if (value <= 0) {
@@ -309,10 +316,20 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
             context.parser().nextToken();
         }
 
-        if (fieldType().dimension != vector.size()) {
-            String errorMessage = String.format("Vector dimension mismatch. Expected: %d, Given: %d",
-                    fieldType().dimension, vector.size());
-            throw new IllegalArgumentException(errorMessage);
+        //BitHamming Or L2 vector Size verify is different
+        boolean intSpaces = SpaceTypes.getIntSpaces().contains(spaceType);
+        if (intSpaces) {
+            if ((fieldType().dimension + 31)/32 != vector.size()) {
+                String errorMessage = String.format("Vector in Space:%s dimension mismatch. Expected: %d, Given: %d",
+                        spaceType, fieldType().dimension, vector.size() * 32);
+                throw new IllegalArgumentException(errorMessage);
+            }
+        } else {
+            if (fieldType().dimension != vector.size()) {
+                String errorMessage = String.format("Vector dimension mismatch. Expected: %d, Given: %d",
+                        fieldType().dimension, vector.size());
+                throw new IllegalArgumentException(errorMessage);
+            }
         }
 
         float[] array = new float[vector.size()];

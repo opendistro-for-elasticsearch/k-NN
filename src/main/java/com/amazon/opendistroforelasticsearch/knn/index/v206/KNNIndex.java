@@ -174,7 +174,12 @@ public class KNNIndex implements AutoCloseable {
             return;
         }
         try {
-            gc(this.indexPointer);
+            boolean intSpaces = SpaceTypes.getIntSpaces().contains(spaceType);
+            if(intSpaces) {
+                gcI(this.indexPointer);
+            } else {
+                gc(this.indexPointer);
+            }
         } finally {
             this.isClosed = true;
             writeLock.unlock();
@@ -191,10 +196,10 @@ public class KNNIndex implements AutoCloseable {
      */
     public static KNNIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
         long fileSize = computeFileSize(indexPath);
-        boolean stringSapces = SpaceTypes.getStringSpaces().contains(spaceType);
+        boolean intSpaces = SpaceTypes.getIntSpaces().contains(spaceType);
         boolean loadData = !SpaceTypes.getOptimizedValues().contains(spaceType);
         long indexPointer;
-        if (stringSapces) {
+        if (intSpaces) {
             indexPointer = initI(indexPath, algoParams, spaceType, loadData);
         } else {
             indexPointer = init(indexPath, algoParams, spaceType, loadData);

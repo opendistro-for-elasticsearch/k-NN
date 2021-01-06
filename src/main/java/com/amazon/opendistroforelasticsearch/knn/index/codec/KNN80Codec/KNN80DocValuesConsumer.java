@@ -90,30 +90,28 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(state.directory))).getDirectory().toString(),
                     hnswFileName).toString();
 
-
             // Pass the path for the nms library to save the file
             String tempIndexPath = indexPath + TEMP_SUFFIX;
             Map<String, String> fieldAttributes = field.attributes();
             String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceTypes.l2.getValue());
             String[] algoParams = getKNNIndexParams(fieldAttributes);
             KNNCodecUtil.Pair pair;
-            boolean stringSapces = SpaceTypes.getStringSpaces().contains(spaceType);
+            boolean intSpaces = SpaceTypes.getIntSpaces().contains(spaceType);
 
-            if (stringSapces) {
-                pair = KNNCodecUtil.getStrings(values);
+            if (intSpaces) {
+                pair = KNNCodecUtil.getInts(values);
             } else {
                 pair = KNNCodecUtil.getFloats(values);
             }
-            if (pair == null || (pair.vectors.length == 0 && pair.vectorsStr.length == 0) || pair.docs.length == 0) {
+            if (pair == null || (pair.vectors.length == 0 && pair.vectorsInt.length == 0) || pair.docs.length == 0) {
                 logger.info("Skipping hnsw index creation as there are no vectors or docs in the documents");
                 return;
             }
-
             AccessController.doPrivileged(
                     new PrivilegedAction<Void>() {
                         public Void run() {
-                            if (stringSapces) {
-                                KNNIndex.saveIndex(pair.docs, pair.vectorsStr, tempIndexPath, algoParams, spaceType);
+                            if (intSpaces) {
+                                KNNIndex.saveIndex(pair.docs, pair.vectorsInt, tempIndexPath, algoParams, spaceType);
                             } else {
                                 KNNIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
                             }
