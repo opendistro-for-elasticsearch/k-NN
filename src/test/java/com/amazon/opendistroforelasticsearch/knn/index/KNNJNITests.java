@@ -284,7 +284,7 @@ public class KNNJNITests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex.saveIndexB(docs, vectors, indexPath, algoParams, "bit_hamming", true);
+                        KNNIndex.saveIndex(docs, vectors, indexPath, algoParams, "bit_hamming");
                         return null;
                     }
                 }

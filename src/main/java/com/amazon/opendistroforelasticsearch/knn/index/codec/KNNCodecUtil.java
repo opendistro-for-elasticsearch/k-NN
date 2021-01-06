@@ -34,25 +34,16 @@ public class KNNCodecUtil {
         public Pair(int[] docs, float[][] vectors) {
             this.docs = docs;
             this.vectors = vectors;
-            this.vectorsStr = new String[0];
             this.vectorsInt = new int[0][0];
         }
         public Pair(int[] docs, int[][] vectorsInt) {
             this.docs = docs;
             this.vectorsInt = vectorsInt;
             this.vectors = new float[0][0];
-            this.vectorsStr = new String[0];
-        }
-        public Pair(int[] docs, String[] vectorsStr) {
-            this.docs = docs;
-            this.vectorsStr = vectorsStr;
-            this.vectors = new float[0][0];
-            this.vectorsInt = new int[0][0];
         }
         public int[] docs;
         public float[][] vectors;
         public int[][] vectorsInt;
-        public String[] vectorsStr;
     }
 
     public static KNNCodecUtil.Pair getFloats(BinaryDocValues values) throws IOException {
@@ -90,28 +81,5 @@ public class KNNCodecUtil {
             docIdList.add(doc);
         }
         return new KNNCodecUtil.Pair(docIdList.stream().mapToInt(Integer::intValue).toArray(), vectorList.toArray(new int[][]{}));
-    }
-    public static KNNCodecUtil.Pair getStrings(BinaryDocValues values) throws IOException {
-        ArrayList<String> vectorList = new ArrayList<>();
-        ArrayList<Integer> docIdList = new ArrayList<>();
-        for (int doc = values.nextDoc(); doc != DocIdSetIterator.NO_MORE_DOCS; doc = values.nextDoc()) {
-            BytesRef bytesref = values.binaryValue();
-            try (ByteArrayInputStream byteStream = new ByteArrayInputStream(bytesref.bytes, bytesref.offset, bytesref.length);
-                 ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
-                float[] vector = (float[]) objectStream.readObject();
-                //[1,0,1,0,1] --> "1 0 1 0 1"
-                char[] charArray = new char[vector.length*2];
-                for (int bit = 0; bit < vector.length; ++bit) {
-                    int oneBit = ((int)(vector[bit]))%2;
-                    charArray[bit*2] = (char) ('0' + oneBit);
-                    charArray[bit*2+1] = ' ';
-                }
-                vectorList.add(String.valueOf(charArray));
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            docIdList.add(doc);
-        }
-        return new KNNCodecUtil.Pair(docIdList.stream().mapToInt(Integer::intValue).toArray(), vectorList.toArray(new String[]{}));
     }
 }
