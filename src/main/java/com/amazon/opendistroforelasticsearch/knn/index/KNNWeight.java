@@ -99,11 +99,11 @@ public class KNNWeight extends Weight {
             Path indexPath = PathUtils.get(directory, hnswFiles.get(0));
             final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
             final KNNQueryResult[] results;
-            boolean stringSapces = SpaceTypes.getStringSpaces().contains(index.getSpaceType());
+            boolean intSpaces = SpaceTypes.getIntSpaces().contains(index.getSpaceType());
 
-            if (stringSapces) {
+            if (intSpaces) {
                 results = index.queryIndex(
-                        knnQuery.getQueryVectorStr(),
+                        knnQuery.getQueryVectorInt(),
                         knnQuery.getK()
                 );
             } else {

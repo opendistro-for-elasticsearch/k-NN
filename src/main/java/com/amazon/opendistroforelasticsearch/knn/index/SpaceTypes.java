@@ -62,7 +62,7 @@ public enum SpaceTypes {
     return new HashSet<>(Arrays.asList(cosinesimil.getValue(), l2.getValue()));
   }
 
-  public static Set<String> getStringSpaces() {
+  public static Set<String> getIntSpaces() {
     return new HashSet<>(Arrays.asList(bit_hamming.getValue()));
   }
 }

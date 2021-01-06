@@ -236,7 +236,18 @@ public class KNNESIT extends KNNRestTestCase {
         assertThat(ex.getMessage(), containsString("Dimension value cannot be greater than " +
                 KNNVectorFieldMapper.MAX_DIMENSION + " for vector: " + FIELD_NAME));
     }
+    public void testVectorMappingValidationInvalidBitDimension() {
+        Settings settings = Settings.builder()
+                .put(getKNNDefaultIndexSettings())
+                .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.bit_hamming.getValue())
+                .build();
 
+        Exception ex = expectThrows(ResponseException.class, () -> createKnnIndex(INDEX_NAME, settings,
+                createKnnIndexMapping(FIELD_NAME, KNNVectorFieldMapper.MAX_DIMENSION * 32+ 1)));
+
+        assertThat(ex.getMessage(), containsString("Bit Dimension value cannot be greater than " +
+                KNNVectorFieldMapper.MAX_DIMENSION * 32 + " for vector: " + FIELD_NAME));
+    }
     public void testVectorMappingValidationInvalidVectorNaN() throws IOException {
         Settings settings = Settings.builder()
                 .put(getKNNDefaultIndexSettings())

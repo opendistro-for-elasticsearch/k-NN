@@ -180,8 +180,14 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206
         for (int i = 0; i < env->GetArrayLength(vectors); i++) {
             jintArray vectorArray = (jintArray)env->GetObjectArrayElement(vectors, i);
             int* vector = env->GetIntArrayElements(vectorArray, 0);
-            dataset.push_back(new Object(object_ids[i], -1, env->GetArrayLength(vectorArray)*sizeof(int), vector));
+			int jintArrayLen = env->GetArrayLength(vectorArray);
+			std::vector<int> vecWithSize(vector, vector + jintArrayLen);
             env->ReleaseIntArrayElements(vectorArray, vector, 0);
+
+			//As space_bit_vector.h shows, we need Put the number of elements in the end
+			vecWithSize.push_back(vecWithSize.size());	
+
+            dataset.push_back(new Object(object_ids[i], -1, vecWithSize.size()*sizeof(int), vecWithSize.data()));
         }
         // free up memory
         env->ReleaseIntArrayElements(ids, object_ids, 0);
@@ -330,7 +336,13 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
         IndexWrapper<int> *indexWrapper = reinterpret_cast<IndexWrapper<int>*>(indexPointer);
 
         int* rawQueryvector = env->GetIntArrayElements(queryVector, 0);
-        std::unique_ptr<const Object> queryObject(new Object(-1, -1, env->GetArrayLength(queryVector)*sizeof(int), rawQueryvector));
+		int  jintArrayLen = env->GetArrayLength(queryVector);
+		vector<int> vecRawQueryVector(rawQueryvector, rawQueryvector+jintArrayLen );
+
+		//As space_bit_vector.h shows, we need Put the number of elements in the end
+		vecRawQueryVector.push_back(vecRawQueryVector.size());
+
+        std::unique_ptr<const Object> queryObject(new Object(-1, -1, vecRawQueryVector.size()*sizeof(int), vecRawQueryVector.data()));
         env->ReleaseIntArrayElements(queryVector, rawQueryvector, 0);
         has_exception_in_stack(env);
 
