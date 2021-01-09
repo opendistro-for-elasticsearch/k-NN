@@ -151,7 +151,7 @@ jobs:
 
       # Arm64 is not supported by setup-java actions as of now
       # Placeholder in case it adds support later
-      # Using pre-installed jdk14 on arm64 self-hosted runners now
+      # Using pre-installed jdk on arm64 self-hosted runners now
       #- name: Setup Java ${{ matrix.java }}
       #  uses: actions/setup-java@v1
       #  with:
