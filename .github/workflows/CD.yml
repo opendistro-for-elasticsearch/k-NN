@@ -65,7 +65,7 @@ jobs:
           aws cloudfront create-invalidation --distribution-id E1VG5HMIWI4SA2 --paths "/*"
 
   library-build-and-ship-artifacts-x64:
-    name: library-build-and-ship-artifacts-x64
+    name: Build and release JNI library artifacts x64
     runs-on: ubuntu-18.04
     container:
       image: centos:7
@@ -131,7 +131,7 @@ jobs:
   library-build-and-ship-artifacts-arm64:
     needs: [Provision-Runners]
     runs-on: [self-hosted, Linux, ARM64, odfe-knnlib-build-arm64]
-    name: library-build-and-ship-artifacts-arm64
+    name: Build and release JNI library artifacts arm64
     strategy:
       matrix:
         java: [14]
