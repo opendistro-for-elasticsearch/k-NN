@@ -74,7 +74,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
     public static class Builder extends ParametrizedFieldMapper.Builder {
         protected Boolean ignoreMalformed;
-
+        protected String SpaceType;
         private final Parameter<Boolean> stored = Parameter.boolParam("store", false,
                 m -> toType(m).stored, false);
         private final Parameter<Boolean> hasDocValues = Parameter.boolParam("doc_values", false,
@@ -105,8 +105,9 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                 }, m -> toType(m).dimension);
         private final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
-        public Builder(String name) {
+        public Builder(String name, String SpaceType) {
             super(name);
+            this.SpaceType = SpaceType;
         }
 
         @Override
@@ -126,9 +127,13 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         @Override
         public KNNVectorFieldMapper build(BuilderContext context) {
+            //When a anonymous field create, in ParametrizedFieldMapper.merge using Settings.EMPTY in context
+            //this may cause one field error when a new anonymouse create with will set the SpaceType to default value.
+            //So in TypeParser to init spaceType
+
             return new KNNVectorFieldMapper(name, new KNNVectorFieldType(buildFullName(context), meta.getValue(),
                     dimension.getValue()), multiFieldsBuilder.build(this, context),
-                    ignoreMalformed(context), getSpaceType(context.indexSettings()), getM(context.indexSettings()),
+                    ignoreMalformed(context), this.SpaceType, getM(context.indexSettings()),
                     getEfConstruction(context.indexSettings()), copyTo.build(), this);
         }
 
@@ -170,7 +175,9 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         @Override
         public Mapper.Builder<?> parse(String name, Map<String, Object> node, ParserContext parserContext)
                 throws MapperParsingException {
-            Builder builder = new KNNVectorFieldMapper.Builder(name);
+
+            Builder builder = new KNNVectorFieldMapper.Builder(name,
+                    parserContext.getSettings().get(INDEX_KNN_SPACE_TYPE.getKey()));
             builder.parse(name, parserContext, node);
 
             if (builder.dimension.getValue() == -1) {
@@ -317,17 +324,20 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         }
 
         //BitHamming Or L2 vector Size verify is different
-        boolean intSpaces = SpaceTypes.getIntSpaces().contains(spaceType);
+        boolean intSpaces = SpaceTypes.getIntSpaces().contains(this.spaceType);
+
         if (intSpaces) {
             if ((fieldType().dimension + 31)/32 != vector.size()) {
-                String errorMessage = String.format("Vector in Space:%s dimension mismatch. Expected: %d, Given: %d",
-                        spaceType, fieldType().dimension, vector.size() * 32);
+                String errorMessage = String.format("Field: %s Vector in Space: %s dimension mismatch. " +
+                                "Expected: %d, Given: %d",
+                        simpleName(), this.spaceType, fieldType().dimension, vector.size() * 32);
                 throw new IllegalArgumentException(errorMessage);
             }
         } else {
             if (fieldType().dimension != vector.size()) {
-                String errorMessage = String.format("Vector dimension mismatch. Expected: %d, Given: %d",
-                        fieldType().dimension, vector.size());
+                String errorMessage = String.format("Field: %s Vector in Space: %s dimension mismatch. " +
+                                "Expected: %d, Given: %d",
+                        simpleName(), this.spaceType, fieldType().dimension, vector.size());
                 throw new IllegalArgumentException(errorMessage);
             }
         }
@@ -354,7 +364,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
-        return new KNNVectorFieldMapper.Builder(simpleName()).init(this);
+        return new KNNVectorFieldMapper.Builder(simpleName(), this.spaceType).init(this);
     }
 
     @Override
