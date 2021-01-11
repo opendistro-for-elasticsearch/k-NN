@@ -51,6 +51,13 @@ struct IndexWrapper {
     space.reset(SpaceFactoryRegistry<dist_t>::Instance().CreateSpace(spaceType, AnyParams()));
     index.reset(MethodFactoryRegistry<dist_t>::Instance().CreateMethod(false, "hnsw", spaceType, *space, data));
   }
+  virtual ~IndexWrapper() {
+    for(auto it = data.begin(); it != data.end(); ++it) {
+        if(*it != nullptr) {
+            delete *it;
+        }
+    }
+  }
   std::unique_ptr<Space<dist_t>> space;
   std::unique_ptr<Index<dist_t>> index;
   // Index gets constructed with a reference to data (see above) but is otherwise unused
