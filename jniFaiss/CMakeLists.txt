@@ -16,10 +16,7 @@ set(KNN_INDEX KNNIndexVFaiss)
 set(KNN_PACKAGE_NAME opendistro-knnlib)
 
 # --- FAISS BEGIN ---
-set(CMAKE_C_COMPILER "/usr/local/Cellar/llvm/11.0.0/bin/clang")
-set(CMAKE_CXX_COMPILER "/usr/local/Cellar/llvm/11.0.0/bin/clang++")
-set(OPENMP_LIBRARIES "/usr/local/Cellar/llvm/11.0.0/lib")
-set(OPENMP_INCLUDES "/usr/local/Cellar/llvm/11.0.0/include")
+
 set(OpenMP_C_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument")
 set(OpenMP_C_LIB_NAMES "libomp" "libgomp" "libiomp5")
 set(OpenMP_CXX_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument")
