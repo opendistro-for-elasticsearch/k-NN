@@ -30,6 +30,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.index.fielddata.IndexFieldData;
 import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
@@ -41,6 +42,7 @@ import org.elasticsearch.index.mapper.TextSearchInfo;
 import org.elasticsearch.index.mapper.ValueFetcher;
 import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.index.query.QueryShardException;
+import org.elasticsearch.search.aggregations.support.CoreValuesSourceType;
 import org.elasticsearch.search.lookup.SearchLookup;
 
 import java.io.IOException;
@@ -48,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
@@ -98,8 +101,19 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                 }, m -> toType(m).dimension);
         private final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
+        private String spaceType;
+        private String m;
+        private String efConstruction;
+
         public Builder(String name) {
             super(name);
+        }
+
+        public Builder(String name, String spaceType, String m, String efConstruction) {
+            super(name);
+            this.spaceType = spaceType;
+            this.m = m;
+            this.efConstruction = efConstruction;
         }
 
         @Override
@@ -119,10 +133,21 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         @Override
         public KNNVectorFieldMapper build(BuilderContext context) {
+            if (this.spaceType == null) {
+                this.spaceType = getSpaceType(context.indexSettings());
+            }
+
+            if (this.m == null) {
+                this.m = getM(context.indexSettings());
+            }
+
+            if (this.efConstruction == null) {
+                this.efConstruction = getEfConstruction(context.indexSettings());
+            }
+
             return new KNNVectorFieldMapper(name, new KNNVectorFieldType(buildFullName(context), meta.getValue(),
                     dimension.getValue()), multiFieldsBuilder.build(this, context),
-                    ignoreMalformed(context), getSpaceType(context.indexSettings()), getM(context.indexSettings()),
-                    getEfConstruction(context.indexSettings()), copyTo.build(), this);
+                    ignoreMalformed(context), this.spaceType, this.m, this.efConstruction, copyTo.build(), this);
         }
 
         private String getSpaceType(Settings indexSettings) {
@@ -206,6 +231,12 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         public int getDimension() {
             return dimension;
+        }
+
+        @Override
+        public IndexFieldData.Builder fielddataBuilder(String fullyQualifiedIndexName, Supplier<SearchLookup> searchLookup) {
+            failIfNoDocValues();
+            return new KNNVectorIndexFieldData.Builder(name(), CoreValuesSourceType.BYTES);
         }
     }
 
@@ -337,7 +368,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
-        return new KNNVectorFieldMapper.Builder(simpleName()).init(this);
+        return new KNNVectorFieldMapper.Builder(simpleName(), this.spaceType, this.m, this.efConstruction).init(this);
     }
 
     @Override
