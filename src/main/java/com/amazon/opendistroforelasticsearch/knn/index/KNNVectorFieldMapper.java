@@ -83,25 +83,36 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                 m -> toType(m).hasDocValues,  true);
         private final Parameter<Integer> dimension = new Parameter<>(KNNConstants.DIMENSION, false, () -> -1,
                 (n, c, o) -> {
-                            if (o == null) {
-                                throw new IllegalArgumentException("Dimension cannot be null");
-                            }
-                            int value = XContentMapValues.nodeIntegerValue(o);
-                            if (value > MAX_DIMENSION) {
-                                throw new IllegalArgumentException("Dimension value cannot be greater than " +
-                                    MAX_DIMENSION + " for vector: " + name);
-                            }
+                    if (o == null) {
+                        throw new IllegalArgumentException("Dimension cannot be null");
+                    }
+                    int value = XContentMapValues.nodeIntegerValue(o);
+                    if (value > MAX_DIMENSION) {
+                        throw new IllegalArgumentException("Dimension value cannot be greater than " +
+                                MAX_DIMENSION + " for vector: " + name);
+                    }
 
-                            if (value <= 0) {
-                                throw new IllegalArgumentException("Dimension value must be greater than 0 " +
-                                        "for vector: " + name);
-                            }
-                            return value;
+                    if (value <= 0) {
+                        throw new IllegalArgumentException("Dimension value must be greater than 0 " +
+                                "for vector: " + name);
+                    }
+                    return value;
                 }, m -> toType(m).dimension);
         private final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
+        private String spaceType;
+        private String m;
+        private String efConstruction;
+
         public Builder(String name) {
             super(name);
+        }
+
+        public Builder(String name, String spaceType, String m, String efConstruction) {
+            super(name);
+            this.spaceType = spaceType;
+            this.m = m;
+            this.efConstruction = efConstruction;
         }
 
         @Override
@@ -121,10 +132,20 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         @Override
         public KNNVectorFieldMapper build(BuilderContext context) {
+            if (this.spaceType == null) {
+                this.spaceType = getSpaceType(context.indexSettings());
+            }
+
+            if (this.m == null) {
+                this.m = getM(context.indexSettings());
+            }
+            if (this.efConstruction == null) {
+                this.efConstruction = getEfConstruction(context.indexSettings());
+            }
+
             return new KNNVectorFieldMapper(name, new KNNVectorFieldType(buildFullName(context), meta.getValue(),
                     dimension.getValue()), multiFieldsBuilder.build(this, context),
-                    ignoreMalformed(context), getSpaceType(context.indexSettings()), getM(context.indexSettings()),
-                    getEfConstruction(context.indexSettings()), copyTo.build(), this,
+                    ignoreMalformed(context), this.spaceType, this.m, this.efConstruction, copyTo.build(), this,
                     getKnnEngine(context.indexSettings()));
         }
 
@@ -236,6 +257,8 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                                 Explicit<Boolean> ignoreMalformed, String spaceType, String m, String efConstruction,
                                 CopyTo copyTo, Builder builder, String knnEngine) {
         super(simpleName, mappedFieldType,  multiFields, copyTo);
+
+        logger.info("luyuncheng space Type:" + spaceType + "name:" + simpleName);
         this.stored = builder.stored.getValue();
         this.hasDocValues = builder.hasDocValues.getValue();
         this.dimension = builder.dimension.getValue();
@@ -354,7 +377,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
-        return new KNNVectorFieldMapper.Builder(simpleName()).init(this);
+        return new KNNVectorFieldMapper.Builder(simpleName(), this.spaceType, this.m, this.efConstruction).init(this);
     }
 
     @Override

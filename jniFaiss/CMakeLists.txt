@@ -15,21 +15,16 @@ endif()
 set(KNN_INDEX KNNIndexVFaiss)
 set(KNN_PACKAGE_NAME opendistro-knnlib)
 
-# --- NMSLIB BEGIN ---
-# Check if similarity search exists
-#find_path(NMS_REPO_DIR NAMES similarity_search PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib)
-
-# If not, pull the updated submodule
-#if (NOT EXISTS ${NMS_REPO_DIR})
-#    message(STATUS "Could not find nmslib. Pulling updated submodule.")
-#    execute_process(COMMAND git submodule update --init -- external/nmslib WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-#endif ()
-
-# Add the subdirectory so it is possible to use its targets
-#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search EXCLUDE_FROM_ALL)
-# --- NMSLIB END ---
-
 # --- FAISS BEGIN ---
+
+OPTION (USE_OpenMP "Use OpenMP to enable <omp.h>" ON)
+if(USE_OpenMP)
+    find_package(OpenMP REQUIRED)
+endif(USE_OpenMP)
+find_package(ZLIB REQUIRED)
+find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
+
 # Check if faiss search exists
 find_path(NMS_REPO_DIR NAMES faiss PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss)
 
@@ -39,52 +34,21 @@ if (NOT EXISTS ${NMS_REPO_DIR})
     execute_process(COMMAND git submodule update --init -- external/faiss WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif ()
 
+# Add the subdirectory so it is possible to use its targets
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/faiss EXCLUDE_FROM_ALL)
+message("mkdir build")
+execute_process(COMMAND mkdir build WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss)
+message("cmake")
+execute_process(COMMAND cmake . -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=OFF WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/)
+message("make")
+execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/)
+
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/)
-set(FIASSLIB ${CMAKE_CURRENT_SOURCE_DIR}/external/libfaiss.a)
+set(FIASSLIB ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/faiss/libfaiss.a)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_COMPILER "/usr/bin/gcc")
-set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -fpermissive -std=c++11 -Wall -pthread -O3 -g")
-find_package(ZLIB REQUIRED)
-find_package(BLAS REQUIRED)
-find_package(LAPACK REQUIRED)
-
-# ---- OPENMP BEGIN ----
-OPTION (USE_OpenMP "Use OpenMP to enamble <omp.h>" ON)
-
-# Find OpenMP
-if(APPLE AND USE_OpenMP)
-    if(CMAKE_C_COMPILER_ID MATCHES "Clang")
-        set(OpenMP_C "${CMAKE_C_COMPILER}")
-        set(OpenMP_C_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument")
-        set(OpenMP_C_LIB_NAMES "libomp" "libgomp" "libiomp5")
-        set(OpenMP_libomp_LIBRARY ${OpenMP_C_LIB_NAMES})
-        set(OpenMP_libgomp_LIBRARY ${OpenMP_C_LIB_NAMES})
-        set(OpenMP_libiomp5_LIBRARY ${OpenMP_C_LIB_NAMES})
-    endif()
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(OpenMP_CXX "${CMAKE_CXX_COMPILER}")
-        set(OpenMP_CXX_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument")
-        set(OpenMP_CXX_LIB_NAMES "libomp" "libgomp" "libiomp5")
-        set(OpenMP_libomp_LIBRARY ${OpenMP_CXX_LIB_NAMES})
-        set(OpenMP_libgomp_LIBRARY ${OpenMP_CXX_LIB_NAMES})
-        set(OpenMP_libiomp5_LIBRARY ${OpenMP_CXX_LIB_NAMES})
-    endif()
-endif()
-
-if(USE_OpenMP)
-    find_package(OpenMP REQUIRED)
-endif(USE_OpenMP)
-
-if (OPENMP_FOUND)
-    #include_directories("${OPENMP_INCLUDES}")
-    link_directories("${OPENMP_LIBRARIES}")
-    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    # set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-endif(OPENMP_FOUND)
-# ---- OPENMP END   ----
 # --- FAISS END
 
 # Set OS specific variables
@@ -101,7 +65,7 @@ endif()
 
 # Compile the library
 add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opendistroforelasticsearch_knn_index_faiss_KNNFIndex.cpp)
-target_link_libraries(${KNN_INDEX} ${FIASSLIB} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries(${KNN_INDEX} ${FIASSLIB} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} OpenMP::OpenMP_CXX)
 target_include_directories(${KNN_INDEX} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external )
 
 set_target_properties(${KNN_INDEX} PROPERTIES SUFFIX ${LIB_EXT})
