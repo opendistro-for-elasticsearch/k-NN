@@ -38,7 +38,7 @@ public class KNNIndex implements AutoCloseable {
     static {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-                System.loadLibrary(NmsLibVersion.LATEST.indexLibraryVersion());
+                System.loadLibrary(NmsLibVersion.V208.indexLibraryVersion());
                 return null;
             }
         });
