@@ -87,6 +87,7 @@ esplugin {
     // zip file name and plugin name in ${elasticsearch.plugin.name} read by ES when plugin loading
     description 'Open Distro for Elasticsearch KNN'
     classname 'com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin'
+    extendedPlugins = ['lang-painless']
 }
 
 tasks.named("integTest").configure {
@@ -107,6 +108,7 @@ task release(type: Copy, group: 'build') {
 //****************************************************************************/
 dependencies {
     compileOnly "org.elasticsearch:elasticsearch:${es_version}"
+    compileOnly "org.elasticsearch.plugin:elasticsearch-scripting-painless-spi:${es_version}"
     compile group: 'com.google.guava', name: 'failureaccess', version:'1.0.1'
     compile group: 'com.google.guava', name: 'guava', version:'29.0-jre'
     testImplementation "org.elasticsearch.test:framework:${es_version}"

@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
+
 import com.amazon.opendistroforelasticsearch.knn.index.faiss.KNNFIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
 import com.amazon.opendistroforelasticsearch.knn.index.v206.KNNIndex;

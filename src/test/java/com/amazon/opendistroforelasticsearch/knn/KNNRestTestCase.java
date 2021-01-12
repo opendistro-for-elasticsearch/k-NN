@@ -24,14 +24,13 @@ import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
-
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.ExistsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.functionscore.ScriptScoreQueryBuilder;
-import org.elasticsearch.index.query.ExistsQueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.test.rest.ESRestTestCase;
@@ -71,12 +70,14 @@ public class KNNRestTestCase extends ESRestTestCase {
      * The new internal testing framework removed some of the gradle tasks we were listening to
      * to choose a good time to do it. This will dump the executionData to file after each test.
      * TODO: This is also currently just overwriting integTest.exec with the updated execData without
-     *   resetting after writing each time. This can be improved to either write an exec file per test
-     *   or by letting jacoco append to the file
+     * resetting after writing each time. This can be improved to either write an exec file per test
+     * or by letting jacoco append to the file
      */
     public interface IProxy {
         byte[] getExecutionData(boolean reset);
+
         void dump(boolean reset);
+
         void reset();
     }
 
@@ -90,7 +91,7 @@ public class KNNRestTestCase extends ESRestTestCase {
             return;
         }
 
-        String  serverUrl = "service:jmx:rmi:///jndi/rmi://127.0.0.1:7777/jmxrmi";
+        String serverUrl = "service:jmx:rmi:///jndi/rmi://127.0.0.1:7777/jmxrmi";
         try (JMXConnector connector = JMXConnectorFactory.connect(new JMXServiceURL(serverUrl))) {
             IProxy proxy = MBeanServerInvocationHandler.newProxyInstance(
                     connector.getMBeanServerConnection(), new ObjectName("org.jacoco:type=Runtime"), IProxy.class,
@@ -181,7 +182,7 @@ public class KNNRestTestCase extends ESRestTestCase {
      */
     protected List<KNNResult> parseSearchResponse(String responseBody, String fieldName) throws IOException {
         @SuppressWarnings("unchecked")
-        List<Object> hits = (List<Object>) ((Map<String, Object>)createParser(XContentType.JSON.xContent(),
+        List<Object> hits = (List<Object>) ((Map<String, Object>) createParser(XContentType.JSON.xContent(),
                 responseBody).map().get("hits")).get("hits");
 
         @SuppressWarnings("unchecked")
@@ -418,15 +419,15 @@ public class KNNRestTestCase extends ESRestTestCase {
      */
     protected void updateClusterSettings(String settingKey, Object value) throws Exception {
         XContentBuilder builder = XContentFactory.jsonBuilder()
-                       .startObject()
-                       .startObject("persistent")
-                       .field(settingKey, value)
-                       .endObject()
-                       .endObject();
+                .startObject()
+                .startObject("persistent")
+                .field(settingKey, value)
+                .endObject()
+                .endObject();
         Request request = new Request("PUT", "_cluster/settings");
         request.setJsonEntity(Strings.toString(builder));
         Response response = client().performRequest(request);
-        assertEquals(RestStatus.OK,  RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+        assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
     }
 
     /**
@@ -460,7 +461,7 @@ public class KNNRestTestCase extends ESRestTestCase {
         );
 
         Response response = client().performRequest(request);
-        assertEquals(RestStatus.OK,  RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+        assertEquals(RestStatus.OK, RestStatus.fromCode(response.getStatusLine().getStatusCode()));
         return response;
     }
 
@@ -495,12 +496,12 @@ public class KNNRestTestCase extends ESRestTestCase {
      */
     protected List<Map<String, Object>> parseNodeStatsResponse(String responseBody) throws IOException {
         @SuppressWarnings("unchecked")
-        Map<String, Object> responseMap = (Map<String, Object>)createParser(XContentType.JSON.xContent(),
+        Map<String, Object> responseMap = (Map<String, Object>) createParser(XContentType.JSON.xContent(),
                 responseBody).map().get("nodes");
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> nodeResponses = responseMap.keySet().stream().map(key ->
-            (Map<String, Object>) responseMap.get(key)
+                (Map<String, Object>) responseMap.get(key)
         ).collect(Collectors.toList());
 
         return nodeResponses;
@@ -511,12 +512,12 @@ public class KNNRestTestCase extends ESRestTestCase {
      */
     @SuppressWarnings("unchecked")
     protected int parseTotalSearchHits(String searchResponseBody) throws IOException {
-        Map<String, Object> responseMap = (Map<String, Object>)createParser(
+        Map<String, Object> responseMap = (Map<String, Object>) createParser(
                 XContentType.JSON.xContent(),
                 searchResponseBody
         ).map().get("hits");
 
-        return (int) ((Map<String, Object>)responseMap.get("total")).get("value");
+        return (int) ((Map<String, Object>) responseMap.get("total")).get("value");
     }
 
     /**
@@ -550,12 +551,12 @@ public class KNNRestTestCase extends ESRestTestCase {
         Map<String, Object> settings =
                 (Map<String, Object>) ((Map<String, Object>) getIndexSettings(indexName).get(indexName))
                         .get("settings");
-        return (String)settings.get(settingName);
+        return (String) settings.get(settingName);
     }
 
     /**
      * Clear cache
-     *
+     * <p>
      * This function is a temporary workaround. Right now, we do not have a way of clearing the cache except by deleting
      * an index or changing k-NN settings. That being said, this function bounces a random k-NN setting in order to
      * clear the cache.
@@ -567,12 +568,36 @@ public class KNNRestTestCase extends ESRestTestCase {
 
     /**
      * Clear script cache
-     *
+     * <p>
      * Remove k-NN script from script cache so that it has to be recompiled
      */
     protected void clearScriptCache() throws Exception {
         updateClusterSettings("script.context.score.cache_expire", "0");
         updateClusterSettings("script.context.score.cache_expire", null);
+    }
+
+
+    protected Request constructScriptQueryRequest(
+            String indexName, QueryBuilder qb, Map<String, Object> params, String language, String source, int size)
+            throws Exception {
+        Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, language, source, params);
+        ScriptScoreQueryBuilder sc = new ScriptScoreQueryBuilder(qb, script);
+        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
+                .field("size", size)
+                .startObject("query");
+        builder.startObject("script_score");
+        builder.field("query");
+        sc.query().toXContent(builder, ToXContent.EMPTY_PARAMS);
+        builder.field("script", script);
+        builder.endObject();
+        builder.endObject();
+        builder.endObject();
+        Request request = new Request(
+                "POST",
+                "/" + indexName + "/_search"
+        );
+        request.setJsonEntity(Strings.toString(builder));
+        return request;
     }
 
     protected Request constructKNNScriptQueryRequest(String indexName, QueryBuilder qb, Map<String, Object> params)
@@ -597,23 +622,6 @@ public class KNNRestTestCase extends ESRestTestCase {
 
     protected Request constructKNNScriptQueryRequest(String indexName, QueryBuilder qb, Map<String, Object> params,
                                                      int size) throws Exception {
-        Script script = new Script(Script.DEFAULT_SCRIPT_TYPE, KNNScoringScriptEngine.NAME, KNNScoringScriptEngine.SCRIPT_SOURCE, params);
-        ScriptScoreQueryBuilder sc = new ScriptScoreQueryBuilder(qb, script);
-        XContentBuilder builder = XContentFactory.jsonBuilder().startObject()
-                .field("size", size)
-                .startObject("query");
-        builder.startObject("script_score");
-        builder.field("query");
-        sc.query().toXContent(builder, ToXContent.EMPTY_PARAMS);
-        builder.field("script", script);
-        builder.endObject();
-        builder.endObject();
-        builder.endObject();
-        Request request = new Request(
-                "POST",
-                "/" + indexName + "/_search"
-        );
-        request.setJsonEntity(Strings.toString(builder));
-        return request;
+        return constructScriptQueryRequest(indexName, qb, params, KNNScoringScriptEngine.NAME, KNNScoringScriptEngine.SCRIPT_SOURCE, size);
     }
 }

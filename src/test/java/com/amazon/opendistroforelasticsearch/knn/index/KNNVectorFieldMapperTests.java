@@ -26,18 +26,21 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.index.IndexSettings;
+import org.elasticsearch.index.fielddata.IndexFieldData;
 import org.elasticsearch.index.mapper.ContentPath;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperService;
+import org.elasticsearch.search.aggregations.support.CoreValuesSourceType;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
-import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_SPACE_TYPE;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
 import static org.elasticsearch.Version.CURRENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -57,7 +60,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
     }
 
     public Map<String, Object> buildKnnNodeMap(int dimension) throws IOException {
-        XContentBuilder xContentBuilder =  XContentFactory.jsonBuilder().startObject()
+        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject()
                 .field("type", "knn_vector")
                 .field("dimension", dimension)
                 .endObject();
@@ -97,7 +100,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         KNNVectorFieldMapper.TypeParser typeParser = new KNNVectorFieldMapper.TypeParser();
 
         Map<String, Object> knnNodeMap = buildKnnNodeMap(dimension);
-        KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder)typeParser.parse(fieldName, knnNodeMap,
+        KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder) typeParser.parse(fieldName, knnNodeMap,
                 context);
 
         Mapper.BuilderContext builderContext = new Mapper.BuilderContext(settings, new ContentPath());
@@ -128,7 +131,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         KNNVectorFieldMapper.TypeParser typeParser = new KNNVectorFieldMapper.TypeParser();
 
         Map<String, Object> knnNodeMap = buildKnnNodeMap(dimension);
-        KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder)typeParser.parse(fieldName, knnNodeMap,
+        KNNVectorFieldMapper.Builder builder = (KNNVectorFieldMapper.Builder) typeParser.parse(fieldName, knnNodeMap,
                 context);
 
         Mapper.BuilderContext builderContext = new Mapper.BuilderContext(settings, new ContentPath());
@@ -138,5 +141,20 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         assertEquals(KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M.toString(), knnVectorFieldMapper.m);
         assertEquals(KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION.toString(),
                 knnVectorFieldMapper.efConstruction);
+    }
+
+    public void testVectorFieldMapperTypeFieldDataBuilder() {
+
+        String mockIndexFieldName = "test-field-name";
+        KNNVectorFieldMapper.KNNVectorFieldType vectorFieldType = new KNNVectorFieldMapper.KNNVectorFieldType(
+                mockIndexFieldName, Collections.<String, String>emptyMap(), 10
+        );
+        IndexFieldData.Builder builder = vectorFieldType.fielddataBuilder(mockIndexFieldName, null);
+        IndexFieldData<?> knnVectorIndexField = builder.build(null, null);
+        assertNotNull(knnVectorIndexField);
+        assertTrue(knnVectorIndexField instanceof KNNVectorIndexFieldData);
+        assertEquals(mockIndexFieldName, knnVectorIndexField.getFieldName());
+        assertEquals(CoreValuesSourceType.BYTES, knnVectorIndexField.getValuesSourceType());
+
     }
 }
