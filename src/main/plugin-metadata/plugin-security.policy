@@ -1,5 +1,5 @@
 grant {
-    permission java.lang.RuntimePermission "loadLibrary.KNNIndexV2_0_6";
+    permission java.lang.RuntimePermission "loadLibrary.KNNIndexV2_0_8";
     permission java.lang.RuntimePermission "loadLibrary.KNNIndexVFaiss";
 
 };
