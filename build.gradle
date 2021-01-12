@@ -128,10 +128,6 @@ task cmakeJniFaissLib(type:Exec) {
     workingDir 'jniFaiss'
     commandLine 'cmake', '.'
 }
-task cmakeJniLib() {
-    dependsOn cmakeJniNmsLib
-    dependsOn cmakeJniFaissLib
-}
 task buildJniNmsLib(type:Exec) {
     dependsOn cmakeJniNmsLib
     workingDir 'jni'
@@ -142,13 +138,10 @@ task buildJniFaissLib(type:Exec) {
     workingDir 'jniFaiss'
     commandLine 'make'
 }
-task buildJniLib() {
-    dependsOn cmakeJniLib
+
+test {
     dependsOn buildJniNmsLib
     dependsOn buildJniFaissLib
-}
-test {
-    dependsOn buildJniLib
     systemProperty 'tests.security.manager', 'false'
     systemProperty "java.library.path", "$rootDir/jniFaiss/release:$rootDir/jni/release"
 }
@@ -156,7 +149,8 @@ test {
 def _numNodes = findProperty('numNodes') as Integer ?: 1
 integTest {
     if (integTestDependOnJniLib) {
-        dependsOn buildJniLib
+        dependsOn buildJniNmsLib
+        dependsOn buildJniFaissLib
     }
     systemProperty 'tests.security.manager', 'false'
     systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
@@ -204,7 +198,8 @@ testClusters.integTest {
 
 run {
     useCluster project.testClusters.integTest
-    dependsOn buildJniLib
+    dependsOn buildJniNmsLib
+    dependsOn buildJniFaissLib
     doFirst {
         // There seems to be an issue when running multi node run or integ tasks with unicast_hosts
         // not being written, the waitForAllConditions ensures it's written
