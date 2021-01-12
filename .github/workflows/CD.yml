@@ -1,11 +1,8 @@
 name: Build and Release k-NN
 on:
-  # push:
-  #   tags:
-  #     - v*
   push:
-    branches:
-      - "release-workflow-patch"
+    tags:
+      - v*
 
 jobs:
   Provision-Runners:
