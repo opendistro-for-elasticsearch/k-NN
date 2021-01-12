@@ -56,7 +56,7 @@ jobs:
         run: |
           ./gradlew buildPackages --console=plain -Dbuild.snapshot=false
 
-      - name: Upload to S3
+      - name: Upload plugin artifacts to S3
         shell: bash
         run: |
           zip=`ls build/distributions/*.zip`
@@ -133,7 +133,7 @@ jobs:
           cp ../release/*.so $folder_name
           zip -r $zip_name $folder_name/*
 
-      - name: Upload to S3
+      - name: Upload JNI library x64 artifacts to S3
         shell: bash
         run: |
           zip=`ls jni/packages/*.zip`
@@ -196,7 +196,7 @@ jobs:
           sudo ./aws/install
           aws --version
 
-      - name: Build and ship library artifacts
+      - name: Build
         env:
           CXX: ${{ matrix.compiler }}
         run: |
@@ -215,7 +215,7 @@ jobs:
           cp ../release/*.so $folder_name
           zip -r $zip_name $folder_name/*
 
-      - name: Upload to S3
+      - name: Upload JNI library arm64 artifacts to S3
         shell: bash
         run: |
           zip=`ls jni/packages/*.zip`
