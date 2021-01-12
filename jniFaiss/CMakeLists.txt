@@ -17,13 +17,13 @@ set(KNN_PACKAGE_NAME opendistro-knnlib)
 
 # --- FAISS BEGIN ---
 
-set(OpenMP_C_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument")
-set(OpenMP_C_LIB_NAMES "libomp" "libgomp" "libiomp5")
-set(OpenMP_CXX_FLAGS "-fopenmp=libomp -Wno-unused-command-line-argument")
-set(OpenMP_CXX_LIB_NAMES "libomp" "libgomp" "libiomp5")
-set(OpenMP_libomp_LIBRARY ${OpenMP_C_LIB_NAMES})
-set(OpenMP_libgomp_LIBRARY ${OpenMP_C_LIB_NAMES})
-set(OpenMP_libiomp5_LIBRARY ${OpenMP_C_LIB_NAMES})
+OPTION (USE_OpenMP "Use OpenMP to enable <omp.h>" ON)
+if(USE_OpenMP)
+    find_package(OpenMP REQUIRED)
+endif(USE_OpenMP)
+find_package(ZLIB REQUIRED)
+find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
 
 # Check if faiss search exists
 find_path(NMS_REPO_DIR NAMES faiss PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss)
@@ -65,7 +65,7 @@ endif()
 
 # Compile the library
 add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opendistroforelasticsearch_knn_index_faiss_KNNFIndex.cpp)
-target_link_libraries(${KNN_INDEX} ${FIASSLIB} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries(${KNN_INDEX} ${FIASSLIB} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} OpenMP::OpenMP_CXX)
 target_include_directories(${KNN_INDEX} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external )
 
 set_target_properties(${KNN_INDEX} PROPERTIES SUFFIX ${LIB_EXT})
