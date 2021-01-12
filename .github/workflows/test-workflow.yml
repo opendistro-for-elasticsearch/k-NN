@@ -5,10 +5,12 @@ on:
     branches:
       - master
       - opendistro-*
+      - faiss*
   push:
     branches:
       - master
       - opendistro-*
+      - faiss*
 jobs:
   build:
     strategy:
