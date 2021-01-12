@@ -39,7 +39,7 @@ endif ()
 message("mkdir build")
 execute_process(COMMAND mkdir build WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss)
 message("cmake")
-execute_process(COMMAND cmake -B build . -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=OFF WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/)
+execute_process(COMMAND cmake . -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=OFF WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/)
 message("make")
 execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/)
 
