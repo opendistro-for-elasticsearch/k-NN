@@ -268,5 +268,5 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_fais
 {
 	//set thread 1 cause ES has Search thread
 	//TODO make it different at search and write
-	omp_set_num_threads(1);
+//	omp_set_num_threads(1);
 }
