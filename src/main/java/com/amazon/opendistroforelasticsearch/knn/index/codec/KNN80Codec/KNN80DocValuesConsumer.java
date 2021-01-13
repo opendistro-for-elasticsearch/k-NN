@@ -102,26 +102,19 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             String knnEngine = fieldAttributes.getOrDefault(KNNConstants.KNNEngine, KNNSettings.INDEX_KNN_DEFAULT_ENGINE);
             String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceTypes.l2.getValue());
             String[] algoParams = getKNNIndexParams(fieldAttributes);
-
-            if(knnEngine.contains(NmsLibVersion.VFaiss.getBuildVersion())) {
-                AccessController.doPrivileged(
-                        new PrivilegedAction<Void>() {
-                            public Void run() {
+            boolean faissindex = knnEngine.contains(NmsLibVersion.VFaiss.getBuildVersion());
+            AccessController.doPrivileged(
+                    new PrivilegedAction<Void>() {
+                        public Void run() {
+                            if(faissindex) {
                                 KNNFIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
-                                return null;
-                            }
-                        }
-                );
-            } else {
-                AccessController.doPrivileged(
-                        new PrivilegedAction<Void>() {
-                            public Void run() {
+                            } else {
                                 KNNIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
-                                return null;
                             }
+                            return null;
                         }
-                );
-            }
+                    }
+            );
 
             String hsnwTempFileName = hnswFileName + TEMP_SUFFIX;
 
