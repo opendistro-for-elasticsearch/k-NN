@@ -26,3 +26,42 @@ jobs:
       - name: Run build
         run: |
           ./gradlew build
+
+
+
+      - name: Pull and Run Docker for security tests
+        run: |
+          plugin=`ls build/distributions/*.zip`
+          version=`echo $plugin|awk -F- '{print $4}'| cut -d. -f 1-3`
+          plugin_version=`echo $plugin|awk -F- '{print $4}'| cut -d. -f 1-4`
+          echo $version
+          cd ..
+          if docker pull opendistroforelasticsearch/opendistroforelasticsearch:$version
+          then
+            echo "FROM opendistroforelasticsearch/opendistroforelasticsearch:$version" >> Dockerfile
+            echo "RUN if [ -d /usr/share/elasticsearch/plugins/opendistro-knn ]; then /usr/share/elasticsearch/bin/elasticsearch-plugin remove opendistro-knn; fi" >> Dockerfile
+            echo "ADD k-NN/build/distributions/opendistro-knn-$plugin_version.zip /tmp/" >> Dockerfile
+            echo "RUN /usr/share/elasticsearch/bin/elasticsearch-plugin install --batch file:/tmp/opendistro-knn-$plugin_version.zip" >> Dockerfile
+            docker build -t odfe-knn:test .
+            echo "imagePresent=true" >> $GITHUB_ENV
+          else
+            echo "imagePresent=false" >> $GITHUB_ENV
+          fi
+      - name: Run Docker Image
+        if: env.imagePresent == 'true'
+        run: |
+          cd ..
+          docker run -p 9200:9200 -d -p 9600:9600 -e "discovery.type=single-node" odfe-knn:test
+          sleep 90
+      - name: Run kNN Test
+        if: env.imagePresent == 'true'
+        run: |
+          security=`curl -XGET https://localhost:9200/_cat/plugins?v -u admin:admin --insecure |grep opendistro_security|wc -l`
+          if [ $security -gt 0 ]
+          then
+            echo "Security plugin is available"
+            ./gradlew integTest -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster" -Dhttps=true -Duser=admin -Dpassword=admin
+          else
+            echo "Security plugin is NOT available"
+            ./gradlew integTest -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster"
+          fi
