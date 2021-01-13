@@ -61,7 +61,7 @@ import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames.I
 /**
  * Base class for integration tests for KNN plugin. Contains several methods for testing KNN ES functionality.
  */
-public class KNNRestTestCase extends ESRestTestCase {
+public class KNNRestTestCase extends ODFERestTestCase {
     public static final String INDEX_NAME = "test_index";
     public static final String FIELD_NAME = "test_field";
 
