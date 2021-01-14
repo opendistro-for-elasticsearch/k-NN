@@ -27,8 +27,6 @@ jobs:
         run: |
           ./gradlew build
 
-
-
       - name: Pull and Run Docker for security tests
         run: |
           plugin=`ls build/distributions/*.zip`
@@ -60,8 +58,8 @@ jobs:
           if [ $security -gt 0 ]
           then
             echo "Security plugin is available"
-            ./gradlew integTest -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster" -Dhttps=true -Duser=admin -Dpassword=admin
+            ./gradlew :integTestRunner --tests "com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase"  -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster" -Dhttps=true -Duser=admin -Dpassword=admin
           else
             echo "Security plugin is NOT available"
-            ./gradlew integTest -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster"
+            ./gradlew :integTestRunner --tests "com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase"  -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster"
           fi

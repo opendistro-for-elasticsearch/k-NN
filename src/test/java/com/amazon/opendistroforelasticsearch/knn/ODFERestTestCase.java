@@ -15,9 +15,18 @@
 
 package com.amazon.opendistroforelasticsearch.knn;
 
+//import static com.amazon.opendistroforelasticsearch.commons.ConfigConstants.OPENDISTRO_SECURITY_SSL_HTTP_ENABLED;
+//import static com.amazon.opendistroforelasticsearch.commons.ConfigConstants.OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_FILEPATH;
+//import static com.amazon.opendistroforelasticsearch.commons.ConfigConstants.OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_KEYPASSWORD;
+//import static com.amazon.opendistroforelasticsearch.commons.ConfigConstants.OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_PASSWORD;
+//import static com.amazon.opendistroforelasticsearch.commons.ConfigConstants.OPENDISTRO_SECURITY_SSL_HTTP_PEMCERT_FILEPATH;
+
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
@@ -28,12 +37,19 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContextBuilder;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.common.xcontent.DeprecationHandler;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
+import org.elasticsearch.common.xcontent.XContentParser;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.test.rest.ESRestTestCase;
+import org.junit.After;
 
 /**
  * ODFE integration test base class to support both security disabled and enabled ODFE cluster.
@@ -56,6 +72,27 @@ public abstract class ODFERestTestCase extends ESRestTestCase {
     protected String getProtocol() {
         return isHttps() ? "https" : "http";
     }
+
+//    @Override
+//    protected Settings restAdminSettings() {
+//        return Settings
+//                .builder()
+//                // disable the warning exception for admin client since it's only used for cleanup.
+//                .put("strictDeprecationMode", false)
+//                .put("http.port", 9200)
+//                .put(OPENDISTRO_SECURITY_SSL_HTTP_ENABLED, true)
+//                .put(OPENDISTRO_SECURITY_SSL_HTTP_PEMCERT_FILEPATH, "sample.pem")
+//                .put(OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_FILEPATH, "test-kirk.jks")
+//                .put(OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_PASSWORD, "changeit")
+//                .put(OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_KEYPASSWORD, "changeit")
+//                .build();
+//    }
+
+    protected static void deleteIndexWithAdminClient(String name) throws IOException {
+        Request request = new Request("DELETE", "/" + name);
+        adminClient().performRequest(request);
+    }
+
 
     @Override
     protected RestClient buildClient(Settings settings, HttpHost[] hosts) throws IOException {
@@ -114,5 +151,38 @@ public abstract class ODFERestTestCase extends ESRestTestCase {
     protected boolean preserveIndicesUponCompletion() {
         return false;
     }
+
+
+//    @SuppressWarnings("unchecked")
+//    @After
+//    protected void wipeAllODFEIndices() throws IOException {
+//        Response response = client().performRequest(new Request("GET", "/_cat/indices?format=json&expand_wildcards=all"));
+//        XContentType xContentType = XContentType.fromMediaTypeOrFormat(response.getEntity().getContentType().getValue());
+//        try (
+//                XContentParser parser = xContentType
+//                        .xContent()
+//                        .createParser(
+//                                NamedXContentRegistry.EMPTY,
+//                                DeprecationHandler.THROW_UNSUPPORTED_OPERATION,
+//                                response.getEntity().getContent()
+//                        )
+//        ) {
+//            XContentParser.Token token = parser.nextToken();
+//            List<Map<String, Object>> parserList = null;
+//            if (token == XContentParser.Token.START_ARRAY) {
+//                parserList = parser.listOrderedMap().stream().map(obj -> (Map<String, Object>) obj).collect(Collectors.toList());
+//            } else {
+//                parserList = Collections.singletonList(parser.mapOrdered());
+//            }
+//
+//            for (Map<String, Object> index : parserList) {
+//                String indexName = (String) index.get("index");
+//                if (indexName != null && !".opendistro_security".equals(indexName)) {
+//                    client().performRequest(new Request("DELETE", "/" + indexName));
+//                }
+//            }
+//        }
+//    }
+
 }
 
