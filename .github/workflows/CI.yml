@@ -57,9 +57,8 @@ jobs:
           security=`curl -XGET https://localhost:9200/_cat/plugins?v -u admin:admin --insecure |grep opendistro_security|wc -l`
           if [ $security -gt 0 ]
           then
-            echo "Security plugin is available"
-            ./gradlew :integTestRunner --tests "com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase"  -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster" -Dhttps=true -Duser=admin -Dpassword=admin
+            echo "Security plugin is available. Running tests in security mode"
+            ./gradlew :integTest -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster" -Dhttps=true -Duser=admin -Dpassword=admin
           else
-            echo "Security plugin is NOT available"
-            ./gradlew :integTestRunner --tests "com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase"  -Dtests.rest.cluster=localhost:9200 -Dtests.cluster=localhost:9200 -Dtests.clustername="docker-cluster"
+            echo "Security plugin is NOT available. Skipping tests as they are already ran part of ./gradlew build"
           fi

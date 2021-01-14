@@ -15,12 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.knn;
 
-//import static com.amazon.opendistroforelasticsearch.commons.ConfigConstants.OPENDISTRO_SECURITY_SSL_HTTP_ENABLED;
-//import static com.amazon.opendistroforelasticsearch.commons.ConfigConstants.OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_FILEPATH;
-//import static com.amazon.opendistroforelasticsearch.commons.ConfigConstants.OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_KEYPASSWORD;
-//import static com.amazon.opendistroforelasticsearch.commons.ConfigConstants.OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_PASSWORD;
-//import static com.amazon.opendistroforelasticsearch.commons.ConfigConstants.OPENDISTRO_SECURITY_SSL_HTTP_PEMCERT_FILEPATH;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -72,27 +66,6 @@ public abstract class ODFERestTestCase extends ESRestTestCase {
     protected String getProtocol() {
         return isHttps() ? "https" : "http";
     }
-
-//    @Override
-//    protected Settings restAdminSettings() {
-//        return Settings
-//                .builder()
-//                // disable the warning exception for admin client since it's only used for cleanup.
-//                .put("strictDeprecationMode", false)
-//                .put("http.port", 9200)
-//                .put(OPENDISTRO_SECURITY_SSL_HTTP_ENABLED, true)
-//                .put(OPENDISTRO_SECURITY_SSL_HTTP_PEMCERT_FILEPATH, "sample.pem")
-//                .put(OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_FILEPATH, "test-kirk.jks")
-//                .put(OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_PASSWORD, "changeit")
-//                .put(OPENDISTRO_SECURITY_SSL_HTTP_KEYSTORE_KEYPASSWORD, "changeit")
-//                .build();
-//    }
-
-    protected static void deleteIndexWithAdminClient(String name) throws IOException {
-        Request request = new Request("DELETE", "/" + name);
-        adminClient().performRequest(request);
-    }
-
 
     @Override
     protected RestClient buildClient(Settings settings, HttpHost[] hosts) throws IOException {
@@ -149,40 +122,38 @@ public abstract class ODFERestTestCase extends ESRestTestCase {
      */
     @Override
     protected boolean preserveIndicesUponCompletion() {
-        return false;
+        return true;
     }
 
+    @SuppressWarnings("unchecked")
+    @After
+    protected void wipeAllODFEIndices() throws IOException {
+        Response response = client().performRequest(new Request("GET", "/_cat/indices?format=json&expand_wildcards=all"));
+        XContentType xContentType = XContentType.fromMediaTypeOrFormat(response.getEntity().getContentType().getValue());
+        try (
+                XContentParser parser = xContentType
+                        .xContent()
+                        .createParser(
+                                NamedXContentRegistry.EMPTY,
+                                DeprecationHandler.THROW_UNSUPPORTED_OPERATION,
+                                response.getEntity().getContent()
+                        )
+        ) {
+            XContentParser.Token token = parser.nextToken();
+            List<Map<String, Object>> parserList = null;
+            if (token == XContentParser.Token.START_ARRAY) {
+                parserList = parser.listOrderedMap().stream().map(obj -> (Map<String, Object>) obj).collect(Collectors.toList());
+            } else {
+                parserList = Collections.singletonList(parser.mapOrdered());
+            }
 
-//    @SuppressWarnings("unchecked")
-//    @After
-//    protected void wipeAllODFEIndices() throws IOException {
-//        Response response = client().performRequest(new Request("GET", "/_cat/indices?format=json&expand_wildcards=all"));
-//        XContentType xContentType = XContentType.fromMediaTypeOrFormat(response.getEntity().getContentType().getValue());
-//        try (
-//                XContentParser parser = xContentType
-//                        .xContent()
-//                        .createParser(
-//                                NamedXContentRegistry.EMPTY,
-//                                DeprecationHandler.THROW_UNSUPPORTED_OPERATION,
-//                                response.getEntity().getContent()
-//                        )
-//        ) {
-//            XContentParser.Token token = parser.nextToken();
-//            List<Map<String, Object>> parserList = null;
-//            if (token == XContentParser.Token.START_ARRAY) {
-//                parserList = parser.listOrderedMap().stream().map(obj -> (Map<String, Object>) obj).collect(Collectors.toList());
-//            } else {
-//                parserList = Collections.singletonList(parser.mapOrdered());
-//            }
-//
-//            for (Map<String, Object> index : parserList) {
-//                String indexName = (String) index.get("index");
-//                if (indexName != null && !".opendistro_security".equals(indexName)) {
-//                    client().performRequest(new Request("DELETE", "/" + indexName));
-//                }
-//            }
-//        }
-//    }
-
+            for (Map<String, Object> index : parserList) {
+                String indexName = (String) index.get("index");
+                if (indexName != null && !".opendistro_security".equals(indexName)) {
+                    client().performRequest(new Request("DELETE", "/" + indexName));
+                }
+            }
+        }
+    }
 }
 
