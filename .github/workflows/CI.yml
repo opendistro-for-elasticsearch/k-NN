@@ -39,8 +39,8 @@ jobs:
             echo "FROM opendistroforelasticsearch/opendistroforelasticsearch:$version" >> Dockerfile
             echo "RUN if [ -d /usr/share/elasticsearch/plugins/opendistro-knn ]; then /usr/share/elasticsearch/bin/elasticsearch-plugin remove opendistro-knn; fi" >> Dockerfile
             echo "RUN yum -y update \ && yum -y groupinstall "Development Tools" \ && yum install -y unzip glibc.x86_64 cmake \ && yum clean all" >> Dockerfile
-            echo "RUN git clone --recursive --branch ${GITHUB_REF##*/} https://github.com/opendistro-for-elasticsearch/k-NN.git /usr/share/elasticsearch/k-NN \" >> Dockerfile
-            echo "&& cd /usr/share/elasticsearch/k-NN/jni \ && sed -i 's/-march=native/-march=x86-64/g' external/nmslib/similarity_search/CMakeLists.txt \ && cmake . \ && make \" >> Dockerfile
+            echo "RUN git clone --recursive --branch ${GITHUB_REF##*/} https://github.com/opendistro-for-elasticsearch/k-NN.git /usr/share/elasticsearch/k-NN \ " >> Dockerfile
+            echo "&& cd /usr/share/elasticsearch/k-NN/jni \ && sed -i 's/-march=native/-march=x86-64/g' external/nmslib/similarity_search/CMakeLists.txt \ && cmake . \ && make \ " >> Dockerfile
             echo "&& mkdir /tmp/jni/ && cp release/*.so /tmp/jni/ && ls -ltr /tmp/jni/ \ && cp /tmp/jni/libKNNIndex*.so /usr/lib \ && rm -rf /usr/share/elasticsearch/k-NN" >> Dockerfile
             echo "RUN cd /usr/share/elasticsearch/" >> Dockerfile
             echo "ADD k-NN/build/distributions/opendistro-knn-$plugin_version.zip /tmp/" >> Dockerfile

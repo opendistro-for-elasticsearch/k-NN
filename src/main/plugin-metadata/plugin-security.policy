@@ -1,7 +1,4 @@
 grant {
     permission java.lang.RuntimePermission "loadLibrary.KNNIndexV2_0_11";
-    permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
-    permission java.lang.RuntimePermission "accessDeclaredMembers";
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.misc";
     permission java.net.SocketPermission "*", "connect,resolve";
 };

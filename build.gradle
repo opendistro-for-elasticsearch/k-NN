@@ -154,13 +154,6 @@ integTest {
     systemProperty "user", System.getProperty("user")
     systemProperty "password", System.getProperty("password")
 
-    // Only rest case can run with remote cluster
-    if (System.getProperty("tests.rest.cluster") != null) {
-        filter {
-            includeTestsMatching "com.amazon.opendistroforelasticsearch.knn.index.*IT"
-        }
-    }
-
     doFirst {
         // Tell the test JVM if the cluster JVM is running under a debugger so that tests can
         // use longer timeouts for requests.
