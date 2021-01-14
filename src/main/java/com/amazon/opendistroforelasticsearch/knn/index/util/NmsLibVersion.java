@@ -20,14 +20,14 @@ public enum NmsLibVersion {
     /**
      * Latest available nmslib version
      */
-    V208("208"){
+    V2011("2011"){
         @Override
         public String indexLibraryVersion() {
-            return "KNNIndexV2_0_8";
+            return "KNNIndexV2_0_11";
         }
     };
 
-    public static final NmsLibVersion LATEST = V208;
+    public static final NmsLibVersion LATEST = V2011;
 
     public String buildVersion;
 
