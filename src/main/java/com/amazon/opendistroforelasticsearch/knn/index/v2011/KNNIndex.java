@@ -13,7 +13,7 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.v208;
+package com.amazon.opendistroforelasticsearch.knn.index.v2011;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
@@ -29,11 +29,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * JNI layer to communicate with the nmslib
- * This class refers to the nms library build with version tag 2.0.8
- * See <a href="https://github.com/nmslib/nmslib/tree/v2.0.8">tag2.0.8</a>
+ * This class refers to the nms library build with version tag 2.0.11
+ * See <a href="https://github.com/nmslib/nmslib/tree/v2.0.11">tag2.0.11</a>
  */
 public class KNNIndex implements AutoCloseable {
-    public static NmsLibVersion VERSION = NmsLibVersion.V208;
+    public static NmsLibVersion VERSION = NmsLibVersion.V2011;
 
     static {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
@@ -153,6 +153,6 @@ public class KNNIndex implements AutoCloseable {
     // Deletes memory pointed to by index pointer (needs write lock)
     private static native void gc(long indexPointer);
 
-    // Calls nmslib's initLibrary function: https://github.com/nmslib/nmslib/blob/v2.0.8/similarity_search/include/init.h#L27
+    // Calls nmslib's initLibrary function: https://github.com/nmslib/nmslib/blob/v2.0.11/similarity_search/include/init.h#L27
     private static native void initLibrary();
 }
