@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
-import com.amazon.opendistroforelasticsearch.knn.index.v206.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.v2011.KNNIndex;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -102,12 +102,12 @@ public class KNNJNITests extends KNNTestCase {
         /*
          * scores are evaluated using Euclidean distance. Distance of the documents with
          * respect to query vector are as follows
-         * doc0 = 11.224972, doc1 = 3.7416575,  doc2 = 19.131126
+         * doc0 = 126, doc1 = 14,  doc2 = 366
          * Nearest neighbor is doc1 then doc0 then doc2
          */
-        assertEquals(scores.get(0), 11.224972, 0.1);
-        assertEquals(scores.get(1), 3.7416575, 0.1);
-        assertEquals(scores.get(2), 19.131126, 0.1);
+        assertEquals(126.0, scores.get(0), 0.001);
+        assertEquals(14.0, scores.get(1), 0.001);
+        assertEquals(366.0, scores.get(2), 0.001);
         dir.close();
     }
 
@@ -225,12 +225,12 @@ public class KNNJNITests extends KNNTestCase {
         /*
          * scores are evaluated using Euclidean distance. Distance of the documents with
          * respect to query vector are as follows
-         * doc0 = 11.224972, doc1 = 3.7416575,  doc2 = 19.131126
+         * doc0 = 126, doc1 = 14,  doc2 = 366
          * Nearest neighbor is doc1 then doc0 then doc2
          */
-        assertEquals(scores.get(0), 11.224972, 0.1);
-        assertEquals(scores.get(1), 3.7416575, 0.1);
-        assertEquals(scores.get(2), 19.131126, 0.1);
+        assertEquals(126.0, scores.get(0), 0.001);
+        assertEquals(14.0, scores.get(1), 0.001);
+        assertEquals(366.0, scores.get(2), 0.001);
         dir.close();
     }
 

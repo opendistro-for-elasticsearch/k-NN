@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *   permissions and limitations under the License.
  */
 
-#include "com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex.h"
+#include "com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex.h"
 
 #include "init.h"
 #include "index.h"
@@ -85,7 +85,7 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
     }
 }
 
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_saveIndex(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams, jstring spaceType)
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_saveIndex(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams, jstring spaceType)
 {
     Space<float>* space = NULL;
     ObjectVector dataset;
@@ -144,7 +144,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206
     }
 }
 
-JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_queryIndex(JNIEnv* env, jclass cls, jlong indexPointer, jfloatArray queryVector, jint k)
+JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_queryIndex(JNIEnv* env, jclass cls, jlong indexPointer, jfloatArray queryVector, jint k)
 {
     try {
         IndexWrapper *indexWrapper = reinterpret_cast<IndexWrapper*>(indexPointer);
@@ -175,7 +175,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
     return NULL;
 }
 
-JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_init(JNIEnv* env, jclass cls,  jstring indexPath, jobjectArray algoParams, jstring spaceType)
+JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_init(JNIEnv* env, jclass cls,  jstring indexPath, jobjectArray algoParams, jstring spaceType)
 {
     IndexWrapper *indexWrapper = NULL;
     try {
@@ -215,7 +215,7 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v20
     return NULL;
 }
 
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_gc(JNIEnv* env, jclass cls,  jlong indexPointer)
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_gc(JNIEnv* env, jclass cls,  jlong indexPointer)
 {
     try {
         IndexWrapper *indexWrapper = reinterpret_cast<IndexWrapper*>(indexPointer);
@@ -228,7 +228,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206
     }
 }
 
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v206_KNNIndex_initLibrary(JNIEnv *, jclass)
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_initLibrary(JNIEnv *, jclass)
 {
     initLibrary();
 
