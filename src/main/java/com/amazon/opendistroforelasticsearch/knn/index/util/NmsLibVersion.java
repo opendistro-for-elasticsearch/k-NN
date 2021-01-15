@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ public enum NmsLibVersion {
     /**
      * Latest available nmslib version
      */
-    V206("206"){
+    V2011("2011"){
         @Override
         public String indexLibraryVersion() {
-            return "KNNIndexV2_0_6";
+            return "KNNIndexV2_0_11";
         }
     };
 
-    public static final NmsLibVersion LATEST = V206;
+    public static final NmsLibVersion LATEST = V2011;
 
     public String buildVersion;
 
