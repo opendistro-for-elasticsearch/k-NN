@@ -35,7 +35,7 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
      * multiple segments may or may not be created, we will force merge each index into a single segment before
      * searching.
      */
-    private void tripCb() throws Exception {
+    private void  tripLibHnswCb() throws Exception {
         // Make sure that Cb is intially not tripped
         assertFalse(isCbTripped());
 
@@ -48,6 +48,7 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", numNodes - 1)
                 .put("index.knn", true)
+                .put("index.knn.knnEngine", "208")
                 .build();
 
         String indexName1 = INDEX_NAME + "1";
@@ -82,6 +83,53 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
         assertTrue(isCbTripped());
     }
 
+    private void  tripFaissCb() throws Exception {
+        // Make sure that Cb is intially not tripped
+        assertFalse(isCbTripped());
+
+        // Set circuit breaker limit to 1 KB
+        updateClusterSettings("knn.memory.circuit_breaker.limit", "2kb");
+
+        // Create index with 1 primary and numNodes-1 replicas so that the data will be on every node in the cluster
+        int numNodes = Integer.parseInt(System.getProperty("cluster.number_of_nodes"));
+        Settings settings = Settings.builder()
+                .put("number_of_shards", 1)
+                .put("number_of_replicas", numNodes - 1)
+                .put("index.knn", true)
+                .put("index.knn.knnEngine", "Faiss")
+                .build();
+
+        String indexName1 = INDEX_NAME + "1";
+        String indexName2 = INDEX_NAME + "2";
+
+        createKnnIndex(indexName1, settings, createKnnIndexMapping(FIELD_NAME, 2));
+        createKnnIndex(indexName2, settings, createKnnIndexMapping(FIELD_NAME, 2));
+
+        Float[] vector = {1.3f, 2.2f};
+        int docsInIndex = 5; // through testing, 7 is minimum number of docs to trip circuit breaker at 2kb
+
+        for (int i = 0; i < docsInIndex; i++) {
+            addKnnDoc(indexName1, Integer.toString(i), FIELD_NAME, vector);
+            addKnnDoc(indexName2, Integer.toString(i), FIELD_NAME, vector);
+        }
+
+        forceMergeKnnIndex(indexName1);
+        forceMergeKnnIndex(indexName2);
+
+        // Execute search on both indices - will cause eviction
+        float[] qvector = {1.9f, 2.4f};
+        int k = 10;
+
+        // Ensure that each shard is searched over so that each Lucene segment gets loaded into memory
+        for (int i = 0; i < 15; i++) {
+            searchKNNIndex(indexName1, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
+            searchKNNIndex(indexName2, new KNNQueryBuilder(FIELD_NAME, qvector, k), k);
+        }
+
+        // Give cluster 5 seconds to update settings and then assert that Cb get triggered
+        Thread.sleep(5*1000); // seconds
+        assertTrue(isCbTripped());
+    }
     public boolean isCbTripped() throws Exception {
         Response response = getKnnStats(Collections.emptyList(),
                 Collections.singletonList("circuit_breaker_triggered"));
@@ -90,8 +138,11 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
         return Boolean.parseBoolean(clusterStats.get("circuit_breaker_triggered").toString());
     }
 
-    public void testCbTripped() throws Exception {
-        //tripCb();
+    public void testCbLibHnswTripped() throws Exception {
+        tripLibHnswCb();
+    }
+    public void testCbFaissTripped() throws Exception {
+        tripFaissCb();
     }
 
     public void testCbUntrips() throws Exception {
