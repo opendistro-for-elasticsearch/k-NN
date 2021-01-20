@@ -2,7 +2,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 
-import com.amazon.opendistroforelasticsearch.knn.index.faiss.KNNFIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.faiss.v164.KNNFIndex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.Directory;
@@ -103,15 +103,14 @@ public class KNNJNIFaissTests extends KNNTestCase {
         String segmentName = "_dummy1";
         String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
                 String.format("%s.hnsw", segmentName)).toString();
-        /***
-         * Trying to load index which did not exist. This results in Runtime Error in nmslib.
-         * Making sure c++ exceptions are casted to java Exception to avoid ES process crash
-         */
+
+         //Trying to load index which did not exist. This results in Runtime Error in nmslib.
+         //Making sure c++ exceptions are casted to java Exception to avoid ES process crash
         expectThrows(Exception.class, () ->
                 AccessController.doPrivileged(
                         new PrivilegedAction<Void>() {
                             public Void run() {
-                                KNNFIndex index = KNNFIndex.loadIndex(indexPath.toString(), new String[] {}, "l2");
+                                KNNFIndex index = KNNFIndex.loadIndex(indexPath, new String[] {}, "l2");
                                 return null;
                             }
                         }
@@ -131,9 +130,8 @@ public class KNNJNIFaissTests extends KNNTestCase {
         Directory dir = newFSDirectory(createTempDir());
         String indexPath = getIndexPath(dir);
 
-        /**
-         * Passing valid algo params should not fail the graph construction.
-         */
+
+         //Passing valid algo params should not fail the graph construction.
         String[] algoIndexParams = {"HNSW40","efConstruction=200", "efSearch=100"};
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {

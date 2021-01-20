@@ -1,4 +1,4 @@
-#include "com_amazon_opendistroforelasticsearch_knn_index_faiss_KNNFIndex.h"
+#include "com_amazon_opendistroforelasticsearch_knn_index_faiss_v164_KNNFIndex.h"
 
 #include <cmath>
 #include <cstdio>
@@ -62,7 +62,7 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
  * Method: saveIndex
  *
  */
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_KNNFIndex_saveIndex
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v164_KNNFIndex_saveIndex
 (JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams, jstring spaceType)
 {
 	vector<int64_t> idVector;
@@ -178,7 +178,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_fais
 }
 
 
-JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_KNNFIndex_queryIndex
+JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v164_KNNFIndex_queryIndex
 (JNIEnv* env, jclass cls, jlong indexPointer, jfloatArray queryVector, jint k)
 {
 	faiss::Index *indexReader = nullptr;
@@ -221,7 +221,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
 	return NULL;
 }
 
-JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_KNNFIndex_init
+JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v164_KNNFIndex_init
 (JNIEnv* env, jclass cls,  jstring indexPath, jobjectArray algoParams, jstring spaceType)
 {
 
@@ -246,7 +246,7 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_fai
  * When autoclose class do close, then delete the pointer
  * Method GC pointer
  */
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_KNNFIndex_gc
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v164_KNNFIndex_gc
 (JNIEnv* env, jclass cls,  jlong indexPointer)
 {
 	try {
@@ -264,7 +264,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_fais
  * Method: Global Init
  *
  */
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_KNNFIndex_initLibrary(JNIEnv *, jclass)
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v164_KNNFIndex_initLibrary(JNIEnv *, jclass)
 {
 	//set thread 1 cause ES has Search thread
 	//TODO make it different at search and write
