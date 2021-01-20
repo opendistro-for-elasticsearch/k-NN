@@ -15,7 +15,7 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-project(KNNIndexV2_0_8)
+project(KNNIndex_NMSLIB_V2_0_8)
 
 # Corner case. For CMake 2.8, there is no option to specify set(CMAKE_CXX_STANDARD 11). Instead, the flag manually needs
 # to be set.

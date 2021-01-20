@@ -16,7 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
-import com.amazon.opendistroforelasticsearch.knn.index.v208.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v208.KNNIndex;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -167,15 +167,14 @@ public class KNNJNITests extends KNNTestCase {
         String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
                 String.format("%s.hnsw", segmentName)).toString();
 
-        /***
-         * Trying to load index which did not exist. This results in Runtime Error in nmslib.
-         * Making sure c++ exceptions are casted to java Exception to avoid ES process crash
-         */
+
+         //Trying to load index which did not exist. This results in Runtime Error in nmslib.
+         //Making sure c++ exceptions are casted to java Exception to avoid ES process crash
         expectThrows(Exception.class, () ->
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex index = KNNIndex.loadIndex(indexPath.toString(), new String[] {}, "l2");
+                        KNNIndex index = KNNIndex.loadIndex(indexPath, new String[] {}, "l2");
                         return null;
                     }
                 }
@@ -195,9 +194,8 @@ public class KNNJNITests extends KNNTestCase {
         Directory dir = newFSDirectory(createTempDir());
         String indexPath = getIndexPath(dir);
 
-        /**
-         * Passing valid algo params should not fail the graph construction.
-         */
+
+         //Passing valid algo params should not fail the graph construction.
         String[] algoIndexParams = {"M=32","efConstruction=200"};
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {

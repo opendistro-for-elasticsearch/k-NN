@@ -16,9 +16,9 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 
-import com.amazon.opendistroforelasticsearch.knn.index.faiss.KNNFIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.faiss.v164.KNNFIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
-import com.amazon.opendistroforelasticsearch.knn.index.v208.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v208.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -322,13 +322,12 @@ public class KNNIndexCache implements Closeable {
         // causes us to invalidate an entry before the key has been fully loaded.
         final WatcherHandle<FileWatcher> watcherHandle = resourceWatcherService.add(fileWatcher);
 
-        // loadIndex from faiss
-        if (KNNSettings.getKnnEngine(indexName).contains(NmsLibVersion.VFaiss.getBuildVersion())) {
+        // loadIndex from different library
+        if (KNNSettings.getKnnEngine(indexName).contains(NmsLibVersion.VFAISS_164.getBuildVersion())) {
             final KNNFIndex knnIndex = KNNFIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
             return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
 
         } else {
-
             final KNNIndex knnIndex = KNNIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
             return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
         }
@@ -340,6 +339,7 @@ public class KNNIndexCache implements Closeable {
      * upon expiration of the cache.
      */
     private static class KNNIndexCacheEntry {
+
         private final KNNIndex knnIndex;
         private final KNNFIndex knnFindex;
         private final String indexPathUrl;
@@ -363,10 +363,12 @@ public class KNNIndexCache implements Closeable {
             this.fileWatcherHandle = fileWatcherHandle;
         }
         private void indexClose() {
-            if(knnIndex !=null) {
+            if(knnIndex != null) {
+                logger.debug("knn Index close" + knnIndex.getIndexSize());
                 knnIndex.close();
             }
             if(knnFindex != null) {
+                logger.debug("knn Index close" + knnFindex.getIndexSize());
                 knnFindex.close();
             }
         }
@@ -374,7 +376,10 @@ public class KNNIndexCache implements Closeable {
             if(knnFindex != null) {
                 return knnFindex.getIndexSize();
             }
-            return knnIndex.getIndexSize();
+            if(knnIndex != null) {
+                return knnIndex.getIndexSize();
+            }
+            return -1;
         }
         private KNNIndex getKnnIndex() {
             return knnIndex;

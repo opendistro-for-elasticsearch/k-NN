@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
 import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
-import com.amazon.opendistroforelasticsearch.knn.index.faiss.KNNFIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.faiss.v164.KNNFIndex;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,7 +38,7 @@ import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
-import com.amazon.opendistroforelasticsearch.knn.index.v208.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v208.KNNIndex;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -76,16 +76,30 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
         if (field.attributes().containsKey(KNNVectorFieldMapper.KNN_FIELD)) {
 
             /**
-             * We always write with latest NMS library version
+             * First Get Attribute from field
              */
-            if (!isNmsLibLatest()) {
+            Map<String, String> fieldAttributes = field.attributes();
+            String knnEngine = fieldAttributes.getOrDefault(KNNConstants.KNNEngine, KNNSettings.INDEX_KNN_DEFAULT_ENGINE);
+            String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceTypes.l2.getValue());
+            String[] algoParams = getKNNIndexParams(fieldAttributes);
+            NmsLibVersion libVersion = NmsLibVersion.getNmsLibVersion(knnEngine);
+            boolean faissindex = libVersion == NmsLibVersion.VFAISS_164;
+
+            /**
+             * We always write with latest NMS library version OR Faiss
+             */
+            if (!isKnnLibLatest()) {
                 KNNCounter.GRAPH_INDEX_ERRORS.increment();
-                throw new IllegalStateException("Nms library version mismatch. Correct version: "
-                                                        + NmsLibVersion.LATEST.indexLibraryVersion());
+                throw new IllegalStateException("KNN library version mismatch. Correct version: " +
+                                                "HnswLib: " + NmsLibVersion.VNMSLIB_208.indexLibraryVersion() +
+                                                "Faiss: "   + NmsLibVersion.VFAISS_164.indexLibraryVersion());
             }
 
+            /**
+             * Make Engine Name Into FileName
+             */
             BinaryDocValues values = valuesProducer.getBinary(field);
-            String hnswFileName = String.format("%s_%s_%s%s", state.segmentInfo.name, NmsLibVersion.LATEST.buildVersion,
+            String hnswFileName = String.format("%s_%s_%s%s", state.segmentInfo.name, libVersion.getBuildVersion(),
                     field.name, KNNCodecUtil.HNSW_EXTENSION);
             String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(state.directory))).getDirectory().toString(),
                     hnswFileName).toString();
@@ -98,11 +112,6 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
 
             // Pass the path for the nms library to save the file
             String tempIndexPath = indexPath + TEMP_SUFFIX;
-            Map<String, String> fieldAttributes = field.attributes();
-            String knnEngine = fieldAttributes.getOrDefault(KNNConstants.KNNEngine, KNNSettings.INDEX_KNN_DEFAULT_ENGINE);
-            String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceTypes.l2.getValue());
-            String[] algoParams = getKNNIndexParams(fieldAttributes);
-            boolean faissindex = knnEngine.contains(NmsLibVersion.VFaiss.getBuildVersion());
             AccessController.doPrivileged(
                     new PrivilegedAction<Void>() {
                         public Void run() {
@@ -188,24 +197,22 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
     }
 
     //FIXME add verify faiss
-    private boolean isNmsLibLatest() {
-        //FIXME
-        return true;
-//        return AccessController.doPrivileged(
-//                new PrivilegedAction<Boolean>() {
-//                    public Boolean run() {
-//                        if (!(NmsLibVersion.LATEST.indexLibraryVersion().equals(KNNIndex.VERSION.indexLibraryVersion()) &&
-//                                NmsLibVersion.LATEST.indexLibraryVersion().equals(KNNFIndex.VERSION.indexLibraryVersion()))) {
-//                            String errorMessage = String.format("KNN codec nms library version mis match. Latest version: %s" +
-//                                                                        "Current version: %s, %s",
-//                                    NmsLibVersion.LATEST.indexLibraryVersion(), KNNIndex.VERSION, KNNFIndex.VERSION);
-//                            logger.error(errorMessage);
-//                            return false;
-//                        }
-//                        return true;
-//                    }
-//                }
-//        );
+    private boolean isKnnLibLatest() {
+        return AccessController.doPrivileged(
+                new PrivilegedAction<Boolean>() {
+                    public Boolean run() {
+                        if (!(NmsLibVersion.VNMSLIB_208.indexLibraryVersion().equals(KNNIndex.VERSION.indexLibraryVersion()) &&
+                                NmsLibVersion.VFAISS_164.indexLibraryVersion().equals(KNNFIndex.VERSION.indexLibraryVersion()))) {
+                            String errorMessage = String.format("KNN codec nms library version mis match. Latest version: %s" +
+                                            "Current version: %s, %s",
+                                    NmsLibVersion.VNMSLIB_208.indexLibraryVersion(), KNNIndex.VERSION, KNNFIndex.VERSION);
+                            logger.error(errorMessage);
+                            return false;
+                        }
+                        return true;
+                    }
+                }
+        );
     }
 
     private String[] getKNNIndexParams(Map<String, String> fieldAttributes) {

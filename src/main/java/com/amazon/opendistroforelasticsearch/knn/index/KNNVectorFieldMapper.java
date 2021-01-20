@@ -302,7 +302,9 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
             FIELD_TYPE.setIndexOptions(IndexOptions.NONE);
             FIELD_TYPE.setDocValuesType(DocValuesType.BINARY);
             FIELD_TYPE.putAttribute(KNN_FIELD, "true"); //This attribute helps to determine knn field type
+            FIELD_TYPE.putAttribute(KNNConstants.KNNEngine, INDEX_KNN_DEFAULT_ENGINE);
             FIELD_TYPE.freeze();
+
         }
     }
 
