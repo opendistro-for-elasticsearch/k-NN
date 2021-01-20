@@ -27,7 +27,7 @@ else()
 endif()
 
 # Target Library to be built
-set(KNN_INDEX KNNIndexV2_0_8)
+set(KNN_INDEX KNNIndex_NMSLIB_V2_0_8)
 set(KNN_PACKAGE_NAME opendistro-knnlib)
 
 # Check if similarity search exists
