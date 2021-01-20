@@ -101,8 +101,7 @@ public class KNNWeight extends Weight {
 
             Path indexPath = PathUtils.get(directory, hnswFiles.get(0));
             final KNNQueryResult[] results;
-            logger.info("index FilePath: " + indexPath + "\ngetBuildVersion()):"
-                    + fieldAttributes.toString());
+
             if (fieldAttributes.containsValue(NmsLibVersion.VNMSLIB_208.getBuildVersion())) {
                 final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
                 results = index.queryIndex(
