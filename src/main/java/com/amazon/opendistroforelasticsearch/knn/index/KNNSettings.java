@@ -85,7 +85,7 @@ public class KNNSettings {
     /**
      * Default setting values
      */
-    public static final String INDEX_KNN_DEFAULT_ENGINE = "Faiss"; // nmslib, faiss
+    public static final String INDEX_KNN_DEFAULT_ENGINE = NmsLibVersion.VNMSLIB_208.buildVersion; // nmslib, faiss
     public static final String INDEX_KNN_DEFAULT_SPACE_TYPE = "l2";
     public static final Integer INDEX_KNN_DEFAULT_ALGO_PARAM_M = 16;
     public static final Integer INDEX_KNN_DEFAULT_ALGO_PARAM_EF_SEARCH = 512;

@@ -1,19 +1,4 @@
-/*
- *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License").
- *   You may not use this file except in compliance with the License.
- *   A copy of the License is located at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file. This file is distributed
- *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- *   express or implied. See the License for the specific language governing
- *   permissions and limitations under the License.
- */
-
-package com.amazon.opendistroforelasticsearch.knn.index.v208;
+package com.amazon.opendistroforelasticsearch.knn.index.faiss.v164;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
@@ -27,19 +12,13 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * JNI layer to communicate with the nmslib
- * This class refers to the nms library build with version tag 2.0.8
- * See <a href="https://github.com/nmslib/nmslib/tree/v2.0.8">tag2.0.8</a>
- */
-public class KNNIndex implements AutoCloseable {
-    public static NmsLibVersion VERSION = NmsLibVersion.V208;
+public class KNNFIndex implements AutoCloseable {
 
+    public static NmsLibVersion VERSION = NmsLibVersion.VFAISS_164;
     static {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-
-                System.loadLibrary(NmsLibVersion.V208.indexLibraryVersion());
+                System.loadLibrary(NmsLibVersion.VFAISS_164.indexLibraryVersion());
                 return null;
             }
         });
@@ -52,7 +31,7 @@ public class KNNIndex implements AutoCloseable {
     private final long indexPointer;
     private final long indexSize;
 
-    private KNNIndex(final long indexPointer, final long indexSize) {
+    private KNNFIndex(final long indexPointer, final long indexSize) {
         this.indexPointer = indexPointer;
         this.indexSize = indexSize;
     }
@@ -69,7 +48,7 @@ public class KNNIndex implements AutoCloseable {
         return this.indexSize;
     }
 
-    public KNNQueryResult[] queryIndex(final float[] query, final int k) throws IOException {
+    public KNNQueryResult[] queryIndex(final float[] query, final int k) throws RuntimeException {
         Lock readLock = readWriteLock.readLock();
         readLock.lock();
         KNNCounter.GRAPH_QUERY_REQUESTS.increment();
@@ -99,7 +78,7 @@ public class KNNIndex implements AutoCloseable {
         Lock writeLock = readWriteLock.writeLock();
         writeLock.lock();
         // Autocloseable documentation recommends making close idempotent. We don't expect to doubly close
-        // but this will help prevent a crash in that situation.    
+        // but this will help prevent a crash in that situation.
         if (this.isClosed) {
             return;
         }
@@ -119,10 +98,10 @@ public class KNNIndex implements AutoCloseable {
      * @param spaceType space type of the index
      * @return knn index that can be queried for k nearest neighbours
      */
-    public static KNNIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
+    public static KNNFIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
         long fileSize = computeFileSize(indexPath);
         long indexPointer = init(indexPath, algoParams, spaceType);
-        return new KNNIndex(indexPointer, fileSize);
+        return new KNNFIndex(indexPointer, fileSize);
     }
 
     /**
@@ -148,12 +127,12 @@ public class KNNIndex implements AutoCloseable {
     // Queries index (thread safe with other readers, blocked by write lock)
     private static native KNNQueryResult[] queryIndex(long indexPointer, float[] query, int k);
 
+
     // Loads index and returns pointer to index
     private static native long init(String indexPath, String[] algoParams, String spaceType);
 
     // Deletes memory pointed to by index pointer (needs write lock)
     private static native void gc(long indexPointer);
 
-    // Calls nmslib's initLibrary function: https://github.com/nmslib/nmslib/blob/v2.0.8/similarity_search/include/init.h#L27
     private static native void initLibrary();
 }

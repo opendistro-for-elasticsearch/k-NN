@@ -23,22 +23,25 @@ public enum NmsLibVersion {
     /**
      * Latest available nmslib version
      */
-    V208("208"){
+    VNMSLIB_208("NMSLIB_208"){
         @Override
         public String indexLibraryVersion() {
-            return "KNNIndexV2_0_8";
+            return "KNNIndex_NMSLIB_V2_0_8";
         }
     },
-    VFaiss("Faiss") {
+    /**
+     * Latest available Faiss version
+     */
+    VFAISS_164("FAISS_164") {
         @Override
         public String indexLibraryVersion() {
-            return "KNNIndexVFaiss";
+            return "KNNIndex_FAISS_V1_6_4";
         }
     };
 
-    //FIXME
-    public static final NmsLibVersion LATEST = VFaiss;
-
+    public static final NmsLibVersion DEFAULT = VFAISS_164;
+    public static final NmsLibVersion LATEST_NMSLIB = VNMSLIB_208;
+    public static final NmsLibVersion LATEST_FAISS = VFAISS_164;
     public String buildVersion;
 
     NmsLibVersion(String buildVersion) {
@@ -51,9 +54,6 @@ public enum NmsLibVersion {
      */
     public abstract String indexLibraryVersion();
 
-
-
-
     public String getBuildVersion() { return buildVersion; }
 
     public static Set<String> getValues() {
@@ -62,5 +62,13 @@ public enum NmsLibVersion {
             values.add(libVersion.getBuildVersion());
         }
         return values;
+    }
+
+    public static NmsLibVersion getNmsLibVersion(String knnEngine) {
+        if(VFAISS_164.getBuildVersion().contains(knnEngine)) {
+            return VFAISS_164;
+        } else {
+            return VNMSLIB_208;
+        }
     }
 }
