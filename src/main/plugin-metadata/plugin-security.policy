@@ -1,3 +1,4 @@
 grant {
     permission java.lang.RuntimePermission "loadLibrary.KNNIndexV2_0_11";
+    permission java.net.SocketPermission "*", "connect,resolve";
 };

@@ -165,6 +165,10 @@ integTest {
     // allows integration test classes to access test resource from project root path
     systemProperty('project.root', project.rootDir.absolutePath)
 
+    systemProperty "https", System.getProperty("https")
+    systemProperty "user", System.getProperty("user")
+    systemProperty "password", System.getProperty("password")
+
     doFirst {
         // Tell the test JVM if the cluster JVM is running under a debugger so that tests can
         // use longer timeouts for requests.
