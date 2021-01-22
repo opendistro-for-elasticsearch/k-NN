@@ -18,6 +18,8 @@ package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import com.amazon.opendistroforelasticsearch.knn.index.faiss.v164.KNNFIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.util.FAISSLibVersion;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -79,11 +81,11 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
              * First Get Attribute from field
              */
             Map<String, String> fieldAttributes = field.attributes();
-            String knnEngine = fieldAttributes.getOrDefault(KNNConstants.KNNEngine, KNNSettings.INDEX_KNN_DEFAULT_ENGINE);
+            String engineName = fieldAttributes.getOrDefault(KNNConstants.KNNEngine, KNNSettings.INDEX_KNN_DEFAULT_ENGINE);
             String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceTypes.l2.getValue());
             String[] algoParams = getKNNIndexParams(fieldAttributes);
-            NmsLibVersion libVersion = NmsLibVersion.getNmsLibVersion(knnEngine);
-            boolean faissindex = libVersion == NmsLibVersion.VFAISS_164;
+            KNNEngine knnEngine = KNNEngine.getEngine(engineName);
+            boolean faissindex = knnEngine == KNNEngine.FAISS;
 
             /**
              * We always write with latest NMS library version OR Faiss
@@ -92,14 +94,14 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
                 KNNCounter.GRAPH_INDEX_ERRORS.increment();
                 throw new IllegalStateException("KNN library version mismatch. Correct version: " +
                                                 "HnswLib: " + NmsLibVersion.VNMSLIB_208.indexLibraryVersion() +
-                                                "Faiss: "   + NmsLibVersion.VFAISS_164.indexLibraryVersion());
+                                                "Faiss: "   + FAISSLibVersion.VFAISS_164.indexLibraryVersion());
             }
 
             /**
              * Make Engine Name Into FileName
              */
             BinaryDocValues values = valuesProducer.getBinary(field);
-            String hnswFileName = String.format("%s_%s_%s%s", state.segmentInfo.name, libVersion.getBuildVersion(),
+            String hnswFileName = String.format("%s_%s_%s%s", state.segmentInfo.name, knnEngine.getLatestBuildVersion(),
                     field.name, KNNCodecUtil.HNSW_EXTENSION);
             String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(state.directory))).getDirectory().toString(),
                     hnswFileName).toString();
@@ -202,7 +204,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
                 new PrivilegedAction<Boolean>() {
                     public Boolean run() {
                         if (!(NmsLibVersion.VNMSLIB_208.indexLibraryVersion().equals(KNNIndex.VERSION.indexLibraryVersion()) &&
-                                NmsLibVersion.VFAISS_164.indexLibraryVersion().equals(KNNFIndex.VERSION.indexLibraryVersion()))) {
+                                FAISSLibVersion.VFAISS_164.indexLibraryVersion().equals(KNNFIndex.VERSION.indexLibraryVersion()))) {
                             String errorMessage = String.format("KNN codec nms library version mis match. Latest version: %s" +
                                             "Current version: %s, %s",
                                     NmsLibVersion.VNMSLIB_208.indexLibraryVersion(), KNNIndex.VERSION, KNNFIndex.VERSION);

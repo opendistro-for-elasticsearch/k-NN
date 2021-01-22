@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import com.amazon.opendistroforelasticsearch.knn.index.faiss.v164.KNNFIndex;
-import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v208.KNNIndex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -102,7 +102,7 @@ public class KNNWeight extends Weight {
             Path indexPath = PathUtils.get(directory, hnswFiles.get(0));
             final KNNQueryResult[] results;
 
-            if (fieldAttributes.containsValue(NmsLibVersion.VNMSLIB_208.getBuildVersion())) {
+            if (fieldAttributes.containsValue(KNNEngine.NMSLIB.getKnnEngineName())) {
                 final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
                 results = index.queryIndex(
                         knnQuery.getQueryVector(),

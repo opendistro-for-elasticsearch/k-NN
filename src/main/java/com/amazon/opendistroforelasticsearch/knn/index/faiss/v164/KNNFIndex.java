@@ -1,7 +1,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index.faiss.v164;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
-import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
+import com.amazon.opendistroforelasticsearch.knn.index.util.FAISSLibVersion;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 
 import java.io.File;
@@ -14,11 +14,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class KNNFIndex implements AutoCloseable {
 
-    public static NmsLibVersion VERSION = NmsLibVersion.VFAISS_164;
+    public static FAISSLibVersion VERSION = FAISSLibVersion.VFAISS_164;
     static {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-                System.loadLibrary(NmsLibVersion.VFAISS_164.indexLibraryVersion());
+                System.loadLibrary(FAISSLibVersion.VFAISS_164.indexLibraryVersion());
                 return null;
             }
         });
