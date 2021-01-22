@@ -15,7 +15,7 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-project(KNNIndexV2_0_8)
+project(KNNIndexV2_0_11)
 
 # Corner case. For CMake 2.8, there is no option to specify set(CMAKE_CXX_STANDARD 11). Instead, the flag manually needs
 # to be set.
@@ -27,7 +27,7 @@ else()
 endif()
 
 # Target Library to be built
-set(KNN_INDEX KNNIndexV2_0_8)
+set(KNN_INDEX KNNIndexV2_0_11)
 set(KNN_PACKAGE_NAME opendistro-knnlib)
 
 # Check if similarity search exists
@@ -55,7 +55,7 @@ else()
 endif()
 
 # Compile the library
-add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opendistroforelasticsearch_knn_index_v208_KNNIndex.cpp)
+add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex.cpp)
 target_link_libraries(${KNN_INDEX} NonMetricSpaceLib)
 target_include_directories(${KNN_INDEX} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search/include)
 
@@ -81,7 +81,7 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "KNN JNI library built off of NMSLIB for O
 set(CPACK_PACKAGE_VENDOR "Amazon")
 set(CPACK_PACKAGE_CONTACT "Maintainer: ${KNN_MAINTAINER}")
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}_${JVM_OS_TYPE}.${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${JVM_OS_TYPE}-${CMAKE_SYSTEM_PROCESSOR}")
 
 # RPM Specific variables
 set(CPACK_RPM_PACKAGE_RELEASE ${CPACK_PACKAGE_RELEASE})
