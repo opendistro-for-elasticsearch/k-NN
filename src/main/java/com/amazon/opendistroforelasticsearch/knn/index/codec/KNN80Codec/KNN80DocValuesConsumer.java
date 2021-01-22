@@ -40,7 +40,7 @@ import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
-import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v208.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNIndex;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -93,7 +93,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             if (!isKnnLibLatest()) {
                 KNNCounter.GRAPH_INDEX_ERRORS.increment();
                 throw new IllegalStateException("KNN library version mismatch. Correct version: " +
-                                                "HnswLib: " + NmsLibVersion.VNMSLIB_208.indexLibraryVersion() +
+                                                "HnswLib: " + NmsLibVersion.VNMSLIB_2011.indexLibraryVersion() +
                                                 "Faiss: "   + FAISSLibVersion.VFAISS_164.indexLibraryVersion());
             }
 
@@ -203,11 +203,11 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
         return AccessController.doPrivileged(
                 new PrivilegedAction<Boolean>() {
                     public Boolean run() {
-                        if (!(NmsLibVersion.VNMSLIB_208.indexLibraryVersion().equals(KNNIndex.VERSION.indexLibraryVersion()) &&
+                        if (!(NmsLibVersion.VNMSLIB_2011.indexLibraryVersion().equals(KNNIndex.VERSION.indexLibraryVersion()) &&
                                 FAISSLibVersion.VFAISS_164.indexLibraryVersion().equals(KNNFIndex.VERSION.indexLibraryVersion()))) {
                             String errorMessage = String.format("KNN codec nms library version mis match. Latest version: %s" +
                                             "Current version: %s, %s",
-                                    NmsLibVersion.VNMSLIB_208.indexLibraryVersion(), KNNIndex.VERSION, KNNFIndex.VERSION);
+                                    NmsLibVersion.VNMSLIB_2011.indexLibraryVersion(), KNNIndex.VERSION, KNNFIndex.VERSION);
                             logger.error(errorMessage);
                             return false;
                         }

@@ -15,10 +15,9 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-
 import com.amazon.opendistroforelasticsearch.knn.index.faiss.v164.KNNFIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
-import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v208.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;

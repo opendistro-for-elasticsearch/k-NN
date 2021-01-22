@@ -15,22 +15,19 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.util;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public enum NmsLibVersion {
 
     /**
      * Latest available nmslib version
      */
-    VNMSLIB_208("NMSLIB_208"){
+    VNMSLIB_2011("NMSLIB_2011"){
         @Override
         public String indexLibraryVersion() {
-            return "KNNIndex_NMSLIB_V2_0_8";
+            return "KNNIndex_NMSLIB_V2_0_11";
         }
     };
 
-    public static final NmsLibVersion LATEST = VNMSLIB_208;
+    public static final NmsLibVersion LATEST = VNMSLIB_2011;
 
     public String buildVersion;
 
