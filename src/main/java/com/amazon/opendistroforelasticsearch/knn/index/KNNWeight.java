@@ -94,8 +94,7 @@ public class KNNWeight extends Weight {
             Map<String, String> fieldAttributes = queryFieldInfo.attributes();
 
             /**
-             * TODO Add logic to pick up the right nmslib version based on the version
-             * in the name of the file. As of now we have one version 2.0.11
+             * in the name of the file. As of now we have one version 2.0.11 with NMSLIB and 1.6.5 with FAISS
              * So deferring this to future releases
              */
 

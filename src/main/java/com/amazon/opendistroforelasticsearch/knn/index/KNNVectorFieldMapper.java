@@ -268,7 +268,6 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                                 CopyTo copyTo, Builder builder, String knnEngine) {
         super(simpleName, mappedFieldType,  multiFields, copyTo);
 
-        logger.info("luyuncheng space Type:" + spaceType + "name:" + simpleName);
         this.stored = builder.stored.getValue();
         this.hasDocValues = builder.hasDocValues.getValue();
         this.dimension = builder.dimension.getValue();

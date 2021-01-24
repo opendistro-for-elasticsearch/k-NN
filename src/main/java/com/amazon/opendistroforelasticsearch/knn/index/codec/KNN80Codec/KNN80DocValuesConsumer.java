@@ -198,7 +198,6 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
         delegatee.close();
     }
 
-    //FIXME add verify faiss
     private boolean isKnnLibLatest() {
         return AccessController.doPrivileged(
                 new PrivilegedAction<Boolean>() {
