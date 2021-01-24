@@ -2,7 +2,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 
-import com.amazon.opendistroforelasticsearch.knn.index.faiss.v164.KNNFIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFIndex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.Directory;

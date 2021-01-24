@@ -15,33 +15,20 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.util;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public enum NmsLibVersion {
 
     /**
      * Latest available nmslib version
      */
-    VNMSLIB_208("NMSLIB_208"){
+    VNMSLIB_2011("NMSLIB_2011"){
         @Override
         public String indexLibraryVersion() {
-            return "KNNIndex_NMSLIB_V2_0_8";
-        }
-    },
-    /**
-     * Latest available Faiss version
-     */
-    VFAISS_164("FAISS_164") {
-        @Override
-        public String indexLibraryVersion() {
-            return "KNNIndex_FAISS_V1_6_4";
+            return "KNNIndex_NMSLIB_V2_0_11";
         }
     };
 
-    public static final NmsLibVersion DEFAULT = VFAISS_164;
-    public static final NmsLibVersion LATEST_NMSLIB = VNMSLIB_208;
-    public static final NmsLibVersion LATEST_FAISS = VFAISS_164;
+    public static final NmsLibVersion LATEST = VNMSLIB_2011;
+
     public String buildVersion;
 
     NmsLibVersion(String buildVersion) {
@@ -55,20 +42,4 @@ public enum NmsLibVersion {
     public abstract String indexLibraryVersion();
 
     public String getBuildVersion() { return buildVersion; }
-
-    public static Set<String> getValues() {
-        Set<String> values = new HashSet<>();
-        for (NmsLibVersion libVersion : NmsLibVersion.values()) {
-            values.add(libVersion.getBuildVersion());
-        }
-        return values;
-    }
-
-    public static NmsLibVersion getNmsLibVersion(String knnEngine) {
-        if(VFAISS_164.getBuildVersion().contains(knnEngine)) {
-            return VFAISS_164;
-        } else {
-            return VNMSLIB_208;
-        }
-    }
 }

@@ -48,7 +48,7 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", numNodes - 1)
                 .put("index.knn", true)
-                .put("index.knn.knnEngine", "NMSLIB_208")
+                .put("index.knn.knnEngine", "NMSLIB")
                 .build();
 
         String indexName1 = INDEX_NAME + "1";
@@ -96,7 +96,7 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", numNodes - 1)
                 .put("index.knn", true)
-                .put("index.knn.knnEngine", "FAISS_164")
+                .put("index.knn.knnEngine", "FAISS")
                 .build();
 
         String indexName1 = INDEX_NAME + "1";

@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchParseException;
@@ -85,7 +85,7 @@ public class KNNSettings {
     /**
      * Default setting values
      */
-    public static final String INDEX_KNN_DEFAULT_ENGINE = NmsLibVersion.VNMSLIB_208.buildVersion; // nmslib, faiss
+    public static final String INDEX_KNN_DEFAULT_ENGINE = KNNEngine.DEFAULT.getKnnEngineName(); // NMSLIB, FAISS
     public static final String INDEX_KNN_DEFAULT_SPACE_TYPE = "l2";
     public static final Integer INDEX_KNN_DEFAULT_ALGO_PARAM_M = 16;
     public static final Integer INDEX_KNN_DEFAULT_ALGO_PARAM_EF_SEARCH = 512;
@@ -431,10 +431,10 @@ public class KNNSettings {
     }
 
     static class KnnEngineValidator implements Setting.Validator<String> {
-        private Set<String> libVersions = NmsLibVersion.getValues();
+        private Set<String> knnEngineNames = KNNEngine.getEngines();
         @Override
         public void validate(String value) {
-            if(value == null || !value.contains(value)) {
+            if(value == null || !knnEngineNames.contains(value)) {
                 throw new InvalidParameterException(String.format("Unsupported engine type: %s", value));
             }
         }

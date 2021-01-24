@@ -1,5 +1,5 @@
 grant {
-    permission java.lang.RuntimePermission "loadLibrary.KNNIndex_NMSLIB_V2_0_8";
-    permission java.lang.RuntimePermission "loadLibrary.KNNIndex_FAISS_V1_6_4";
-
+        permission java.lang.RuntimePermission "loadLibrary.KNNIndex_NMSLIB_V2_0_11";
+        permission java.lang.RuntimePermission "loadLibrary.KNNIndex_FAISS_V1_6_5";
+        permission java.net.SocketPermission "*", "connect,resolve";
 };

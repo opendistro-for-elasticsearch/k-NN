@@ -27,7 +27,7 @@ else()
 endif()
 
 # Target Library to be built
-set(KNN_INDEX KNNIndex_NMSLIB_V2_0_8)
+set(KNN_INDEX KNNIndex_NMSLIB_V2_0_11)
 set(KNN_PACKAGE_NAME opendistro-knnlib)
 
 # Check if similarity search exists
@@ -55,7 +55,7 @@ else()
 endif()
 
 # Compile the library
-add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opendistroforelasticsearch_knn_index_nmslib_v208_KNNIndex.cpp)
+add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNIndex.cpp)
 target_link_libraries(${KNN_INDEX} NonMetricSpaceLib)
 target_include_directories(${KNN_INDEX} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib/similarity_search/include)
 

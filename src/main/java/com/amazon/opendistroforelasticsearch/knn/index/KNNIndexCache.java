@@ -15,10 +15,9 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-
-import com.amazon.opendistroforelasticsearch.knn.index.faiss.v164.KNNFIndex;
-import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
-import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v208.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
+import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -323,7 +322,7 @@ public class KNNIndexCache implements Closeable {
         final WatcherHandle<FileWatcher> watcherHandle = resourceWatcherService.add(fileWatcher);
 
         // loadIndex from different library
-        if (KNNSettings.getKnnEngine(indexName).contains(NmsLibVersion.VFAISS_164.getBuildVersion())) {
+        if (KNNSettings.getKnnEngine(indexName).contains(KNNEngine.FAISS.getKnnEngineName())) {
             final KNNFIndex knnIndex = KNNFIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
             return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
 
