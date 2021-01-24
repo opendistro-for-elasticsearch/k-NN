@@ -12,7 +12,7 @@ else()
 endif()
 
 # Target Library to be built
-set(KNN_INDEX KNNIndex_FAISS_V1_6_4)
+set(KNN_INDEX KNNIndex_FAISS_V1_6_5)
 set(KNN_PACKAGE_NAME opendistro-knnlib)
 
 # --- FAISS BEGIN ---
@@ -64,7 +64,7 @@ endif()
 
 # Compile the library
 include_directories($ENV{JAVA_HOME}/include )
-add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opendistroforelasticsearch_knn_index_faiss_v164_KNNFIndex.cpp)
+add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFIndex.cpp)
 target_link_libraries(${KNN_INDEX} faiss ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} OpenMP::OpenMP_CXX)
 target_include_directories(${KNN_INDEX} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/faiss )
 

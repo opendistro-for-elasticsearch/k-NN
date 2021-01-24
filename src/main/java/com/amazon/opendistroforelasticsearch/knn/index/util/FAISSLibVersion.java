@@ -5,14 +5,14 @@ public enum FAISSLibVersion {
     /**
      * Latest available faiss version
      */
-    VFAISS_164("FAISS_164") {
+    VFAISS_165("FAISS_165") {
         @Override
         public String indexLibraryVersion() {
-            return "KNNIndex_FAISS_V1_6_4";
+            return "KNNIndex_FAISS_V1_6_5";
         }
     };
 
-    public static final FAISSLibVersion LATEST = VFAISS_164;
+    public static final FAISSLibVersion LATEST = VFAISS_165;
 
     public String buildVersion;
 
