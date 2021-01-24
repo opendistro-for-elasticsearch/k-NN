@@ -16,39 +16,38 @@ set(KNN_INDEX KNNIndex_FAISS_V1_6_4)
 set(KNN_PACKAGE_NAME opendistro-knnlib)
 
 # --- FAISS BEGIN ---
+if (${CMAKE_SYSTEM_NAME} STREQUAL Darwin)
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang\$")
+        set(OpenMP_C_FLAGS "-Xpreprocessor -fopenmp")
+        set(OpenMP_C_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY /usr/local/opt/libomp/lib/libomp.dylib)
+    endif()
 
-OPTION (USE_OpenMP "Use OpenMP to enable <omp.h>" ON)
-if(USE_OpenMP)
-    find_package(OpenMP REQUIRED)
-endif(USE_OpenMP)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang\$")
+        set(OpenMP_CXX_FLAGS "-Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include")
+        set(OpenMP_CXX_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY /usr/local/opt/libomp/lib/libomp.dylib)
+    endif()
+endif()
+
+find_package(OpenMP REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(BLAS REQUIRED)
 find_package(LAPACK REQUIRED)
 
 # Check if faiss search exists
-find_path(NMS_REPO_DIR NAMES faiss PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss)
+find_path(FAISS_REPO_DIR NAMES faiss PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss)
 
 # If not, pull the updated submodule
-if (NOT EXISTS ${NMS_REPO_DIR})
+if (NOT EXISTS ${FAISS_REPO_DIR})
     message(STATUS "Could not find faiss. Pulling updated submodule.")
     execute_process(COMMAND git submodule update --init -- external/faiss WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif ()
 
 # Add the subdirectory so it is possible to use its targets
-#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/faiss EXCLUDE_FROM_ALL)
-message("mkdir build")
-execute_process(COMMAND mkdir build WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss)
-message("cmake")
-execute_process(COMMAND cmake . -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=OFF WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/)
-message("make")
-execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/)
-
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/)
-set(FIASSLIB ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/faiss/libfaiss.a)
-
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -fpermissive -std=c++11 -Wall -pthread -O3 -g")
+set(FAISS_ENABLE_GPU OFF)
+set(FAISS_ENABLE_PYTHON OFF)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/faiss EXCLUDE_FROM_ALL)
 # --- FAISS END
 
 # Set OS specific variables
@@ -64,9 +63,10 @@ else()
 endif()
 
 # Compile the library
+include_directories($ENV{JAVA_HOME}/include )
 add_library(${KNN_INDEX} SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/com_amazon_opendistroforelasticsearch_knn_index_faiss_v164_KNNFIndex.cpp)
-target_link_libraries(${KNN_INDEX} ${FIASSLIB} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} OpenMP::OpenMP_CXX)
-target_include_directories(${KNN_INDEX} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external )
+target_link_libraries(${KNN_INDEX} faiss ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES} OpenMP::OpenMP_CXX)
+target_include_directories(${KNN_INDEX} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include $ENV{JAVA_HOME}/include $ENV{JAVA_HOME}/include/${JVM_OS_TYPE} ${CMAKE_CURRENT_SOURCE_DIR}/external/faiss/faiss )
 
 set_target_properties(${KNN_INDEX} PROPERTIES SUFFIX ${LIB_EXT})
 set_target_properties(${KNN_INDEX} PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -86,7 +86,7 @@ set(CMAKE_INSTALL_PREFIX /usr)
 set(CPACK_GENERATOR "RPM;DEB")
 SET(CPACK_OUTPUT_FILE_PREFIX packages)
 set(CPACK_PACKAGE_RELEASE 1)
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "KNN JNI library built off of NMSLIB for OpenDistro for Elasticsearch. Reference documentation can be found at https://opendistro.github.io/for-elasticsearch-docs/.")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "KNN JNI library built off of Faiss for OpenDistro for Elasticsearch. Reference documentation can be found at https://opendistro.github.io/for-elasticsearch-docs/.")
 set(CPACK_PACKAGE_VENDOR "Amazon")
 set(CPACK_PACKAGE_CONTACT "Maintainer: ${KNN_MAINTAINER}")
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
@@ -95,7 +95,7 @@ set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CP
 # RPM Specific variables
 set(CPACK_RPM_PACKAGE_RELEASE ${CPACK_PACKAGE_RELEASE})
 set(CPACK_RPM_PACKAGE_URL ${ODFE_DOWNLOAD_URL})
-set(CPACK_RPM_PACKAGE_DESCRIPTION "Open Distro for Elasticsearch KNN JNI Library")
+set(CPACK_RPM_PACKAGE_DESCRIPTION "Open Distro for Elasticsearch KNN Faiss JNI Library")
 set(CPACK_RPM_PACKAGE_LICENSE "ASL-2.0")
 
 # DEB Specific variables
