@@ -4,7 +4,6 @@ on:
     branches:
       - master
       - opendistro-*
-      - faiss*
 
 jobs:
   Build-k-NN:
