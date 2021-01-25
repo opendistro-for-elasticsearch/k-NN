@@ -106,16 +106,18 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         private String spaceType;
         private String m;
         private String efConstruction;
+        private String knnEngine;
 
         public Builder(String name) {
             super(name);
         }
 
-        public Builder(String name, String spaceType, String m, String efConstruction) {
+        public Builder(String name, String spaceType, String m, String efConstruction, String knnEngine) {
             super(name);
             this.spaceType = spaceType;
             this.m = m;
             this.efConstruction = efConstruction;
+            this.knnEngine = knnEngine;
         }
 
         @Override
@@ -147,10 +149,14 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                 this.efConstruction = getEfConstruction(context.indexSettings());
             }
 
+            if (this.knnEngine == null) {
+                this.knnEngine = getKnnEngine(context.indexSettings());
+            }
+
             return new KNNVectorFieldMapper(name, new KNNVectorFieldType(buildFullName(context), meta.getValue(),
                     dimension.getValue()), multiFieldsBuilder.build(this, context),
                     ignoreMalformed(context), this.spaceType, this.m, this.efConstruction, copyTo.build(), this,
-                    getKnnEngine(context.indexSettings()));
+                    this.knnEngine);
         }
 
         private String getKnnEngine(Settings indexSettings) {
@@ -388,7 +394,8 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
-        return new KNNVectorFieldMapper.Builder(simpleName(), this.spaceType, this.m, this.efConstruction).init(this);
+        return new KNNVectorFieldMapper.Builder(simpleName(),
+                this.spaceType, this.m, this.efConstruction, this.knnEngine).init(this);
     }
 
     @Override

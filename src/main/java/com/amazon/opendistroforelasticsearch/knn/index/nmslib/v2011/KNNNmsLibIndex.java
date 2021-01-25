@@ -1,7 +1,24 @@
-package com.amazon.opendistroforelasticsearch.knn.index.faiss.v165;
+/*
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
 
+package com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011;
+
+import com.amazon.opendistroforelasticsearch.knn.index.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
-import com.amazon.opendistroforelasticsearch.knn.index.util.FAISSLibVersion;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
+import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 
 import java.io.File;
@@ -12,13 +29,18 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class KNNFIndex implements AutoCloseable {
+/**
+ * JNI layer to communicate with the nmslib
+ * This class refers to the nms library build with version tag 2.0.11
+ * See <a href="https://github.com/nmslib/nmslib/tree/v2.0.8">tag2.0.11</a>
+ */
+public class KNNNmsLibIndex extends KNNIndex implements AutoCloseable {
+    public static NmsLibVersion VERSION = NmsLibVersion.VNMSLIB_2011;
 
-    public static FAISSLibVersion VERSION = FAISSLibVersion.VFAISS_165;
     static {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-                System.loadLibrary(FAISSLibVersion.VFAISS_165.indexLibraryVersion());
+                System.loadLibrary(NmsLibVersion.VNMSLIB_2011.indexLibraryVersion());
                 return null;
             }
         });
@@ -31,23 +53,21 @@ public class KNNFIndex implements AutoCloseable {
     private final long indexPointer;
     private final long indexSize;
 
-    private KNNFIndex(final long indexPointer, final long indexSize) {
+    private KNNNmsLibIndex(final long indexPointer, final long indexSize) {
         this.indexPointer = indexPointer;
         this.indexSize = indexSize;
     }
+    public KNNNmsLibIndex() {
+        this.indexPointer = 0;
+        this.indexSize = 0;
+    }
 
-    /**
-     * This function is useful in computing the weight for caching. File sizes are stored in KiloBytes to prevent an
-     * Integer Overflow. The Guava Cache weigh method returns an int. The max size of a Java int is 2,147,483,647. So,
-     * a 2GB file, would lead to an overflow. With KB, however, 2,147,483,647 KB = 1.99 TB. So, it would take a 2 TB
-     * file to produce an Integer Overflow.
-     *
-     * @return size of the hnsw index on the disk in KB.
-     */
+    @Override
     public long getIndexSize() {
         return this.indexSize;
     }
 
+    @Override
     public KNNQueryResult[] queryIndex(final float[] query, final int k) throws RuntimeException {
         Lock readLock = readWriteLock.readLock();
         readLock.lock();
@@ -72,13 +92,31 @@ public class KNNFIndex implements AutoCloseable {
             readLock.unlock();
         }
     }
+    @Override
+    public void saveIndex(int[] ids, float[][] data, String indexPath,
+                          String[] algoParams, String spaceType,
+                          KNNEngine engine) throws  RuntimeException{
+        if (engine != KNNEngine.NMSLIB) {
+            throw new RuntimeException("Index Engine: " +
+                    engine.getKnnEngineName() +
+                    " is not support in" + KNNEngine.NMSLIB);
+        }
+        AccessController.doPrivileged(
+                new PrivilegedAction<Void>() {
+                    public Void run() {
+                        saveIndex(ids, data, indexPath, algoParams, spaceType);
+                        return null;
+                    }
+                }
+        );
+    }
 
     @Override
     public void close() {
         Lock writeLock = readWriteLock.writeLock();
         writeLock.lock();
         // Autocloseable documentation recommends making close idempotent. We don't expect to doubly close
-        // but this will help prevent a crash in that situation.
+        // but this will help prevent a crash in that situation.    
         if (this.isClosed) {
             return;
         }
@@ -98,10 +136,10 @@ public class KNNFIndex implements AutoCloseable {
      * @param spaceType space type of the index
      * @return knn index that can be queried for k nearest neighbours
      */
-    public static KNNFIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
+    public static KNNNmsLibIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
         long fileSize = computeFileSize(indexPath);
         long indexPointer = init(indexPath, algoParams, spaceType);
-        return new KNNFIndex(indexPointer, fileSize);
+        return new KNNNmsLibIndex(indexPointer, fileSize);
     }
 
     /**
@@ -127,12 +165,12 @@ public class KNNFIndex implements AutoCloseable {
     // Queries index (thread safe with other readers, blocked by write lock)
     private static native KNNQueryResult[] queryIndex(long indexPointer, float[] query, int k);
 
-
     // Loads index and returns pointer to index
     private static native long init(String indexPath, String[] algoParams, String spaceType);
 
     // Deletes memory pointed to by index pointer (needs write lock)
     private static native void gc(long indexPointer);
 
+    // Calls nmslib's initLibrary function: https://github.com/nmslib/nmslib/blob/v2.0.11/similarity_search/include/init.h#L27
     private static native void initLibrary();
 }
