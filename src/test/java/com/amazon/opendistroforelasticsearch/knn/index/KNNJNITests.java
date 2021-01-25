@@ -1,23 +1,9 @@
-/*
- *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
- *
- *   Licensed under the Apache License, Version 2.0 (the "License").
- *   You may not use this file except in compliance with the License.
- *   A copy of the License is located at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *   or in the "license" file accompanying this file. This file is distributed
- *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- *   express or implied. See the License for the specific language governing
- *   permissions and limitations under the License.
- */
-
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
+import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFaissIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNNmsLibIndex;
-
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.Directory;
@@ -25,16 +11,15 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.FilterDirectory;
 
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class KNNJNITests extends KNNTestCase {
-    private static final Logger logger = LogManager.getLogger(KNNJNITests.class);
 
-    public void testCreateHnswIndex() throws Exception {
+    private static final Logger logger = LogManager.getLogger(KNNJNINmsLibTests.class);
+
+    public void testCreateMixedEngineHnswIndex() throws Exception {
         int[] docs = {0, 1, 2};
 
         float[][] vectors = {
@@ -45,24 +30,28 @@ public class KNNJNITests extends KNNTestCase {
 
         Directory dir = newFSDirectory(createTempDir());
         String segmentName = "_dummy";
-        String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
-                String.format("%s.hnsw", segmentName)).toString();
-
-        String[] algoParams = {};
-                AccessController.doPrivileged(
-                new PrivilegedAction<Void>() {
-                    public Void run() {
-                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, "l2");
-                        return null;
-                    }
-                }
-        );
-
-        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy.hnsw"));
+        KNNEngine faissEngine = KNNEngine.FAISS;
+        KNNEngine nmslibEngine = KNNEngine.NMSLIB;
+        {
+            String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
+                    String.format("%s_%s.hnsw", segmentName, nmslibEngine.knnEngineName)).toString();
+            KNNIndex index = new KNNNmsLibIndex();
+            String[] algoParams = {};
+            index.saveIndex(docs, vectors, indexPath, algoParams, "l2", nmslibEngine);
+        }
+        {
+            String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
+                    String.format("%s_%s.hnsw", segmentName, faissEngine.knnEngineName)).toString();
+            KNNIndex index = new KNNFaissIndex();
+            String[] algoParams = {};
+            index.saveIndex(docs, vectors, indexPath, algoParams, "l2", faissEngine);
+        }
+        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy_NMSLIB.hnsw"));
+        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy_FAISS.hnsw"));
         dir.close();
     }
 
-    public void testQueryHnswIndex() throws Exception {
+    public void testQueryMixedEngineHnswIndex() throws Exception {
         int[] docs = {0, 1, 2};
 
         float[][] vectors = {
@@ -72,117 +61,55 @@ public class KNNJNITests extends KNNTestCase {
         };
 
         Directory dir = newFSDirectory(createTempDir());
-        String segmentName = "_dummy1";
-        String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
-                String.format("%s.hnsw", segmentName)).toString();
+        String segmentName = "_dummy";
+        KNNEngine faissEngine = KNNEngine.FAISS;
+        KNNEngine nmslibEngine = KNNEngine.NMSLIB;
+        String indexNmsLibPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
+                String.format("%s_%s.hnsw", segmentName, nmslibEngine.knnEngineName)).toString();
+        String indexFaissPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
+                String.format("%s_%s.hnsw", segmentName, faissEngine.knnEngineName)).toString();
+        {
 
-        String[] algoParams = {};
-        AccessController.doPrivileged(
-                new PrivilegedAction<Void>() {
-                    public Void run() {
-                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, "l2");
-                        return null;
-                    }
-                }
-        );
-
-        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy1.hnsw"));
+            KNNIndex index = new KNNNmsLibIndex();
+            String[] algoParams = {};
+            index.saveIndex(docs, vectors, indexNmsLibPath, algoParams, "l2", nmslibEngine);
+        }
+        {
+            KNNIndex index = new KNNFaissIndex();
+            String[] algoParams = {};
+            index.saveIndex(docs, vectors, indexFaissPath, algoParams, "l2", faissEngine);
+        }
+        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy_NMSLIB.hnsw"));
+        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy_FAISS.hnsw"));
 
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.loadIndex(indexPath, algoQueryParams, "l2");
-        final KNNQueryResult[] results = knnNmsLibIndex.queryIndex(queryVector, 30);
-
-        Map<Integer, Float> scores = Arrays.stream(results).collect(
-                Collectors.toMap(result -> result.getId(), result -> result.getScore()));
-        logger.info(scores);
-
-        assertEquals(results.length, 3);
-        /*
-         * scores are evaluated using Euclidean distance. Distance of the documents with
-         * respect to query vector are as follows
-         * doc0 = 126, doc1 = 14,  doc2 = 366
-         * Nearest neighbor is doc1 then doc0 then doc2
-         */
-        assertEquals(126.0, scores.get(0), 0.001);
-        assertEquals(14.0, scores.get(1), 0.001);
-        assertEquals(366.0, scores.get(2), 0.001);
+        {
+            final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.loadIndex(indexNmsLibPath, algoQueryParams, "l2");
+            final KNNQueryResult[] results = knnNmsLibIndex.queryIndex(queryVector, 30);
+            Map<Integer, Float> scores = Arrays.stream(results).collect(
+                    Collectors.toMap(result -> result.getId(), result -> result.getScore()));
+            logger.info(scores);
+            assertEquals(results.length, 3);
+            assertEquals(126.0, scores.get(0), 0.001);
+            assertEquals(14.0, scores.get(1), 0.001);
+            assertEquals(366.0, scores.get(2), 0.001);
+        }
+        {
+            final KNNFaissIndex knnFaissLibIndex = KNNFaissIndex.loadIndex(indexFaissPath, algoQueryParams, "l2");
+            final KNNQueryResult[] results = knnFaissLibIndex.queryIndex(queryVector, 30);
+            Map<Integer, Float> scores = Arrays.stream(results).collect(
+                    Collectors.toMap(result -> result.getId(), result -> result.getScore()));
+            logger.info(scores);
+            assertEquals(results.length, 3);
+            assertEquals(126.0, scores.get(0), 0.001);
+            assertEquals(14.0, scores.get(1), 0.001);
+            assertEquals(366.0, scores.get(2), 0.001);
+        }
         dir.close();
     }
-
-    public void testAddAndQueryHnswIndexCosineSimil() throws Exception {
-        int[] docs = {0, 1, 2};
-
-        float[][] vectors = {
-            {1.0f, -1.0f},
-            {1.0f, 0.0f},
-            {1.0f, 1.0f}
-        };
-
-        Directory dir = newFSDirectory(createTempDir());
-        String segmentName = "_dummy1";
-        String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
-            String.format("%s.hnsw", segmentName)).toString();
-
-        String[] algoParams = {};
-        AccessController.doPrivileged(
-            new PrivilegedAction<Void>() {
-                public Void run() {
-                    KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, "cosinesimil");
-                    return null;
-                }
-            }
-        );
-
-        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy1.hnsw"));
-
-        float[] queryVector = {2.0f, -2.0f};
-        String[] algoQueryParams = {"efSearch=20"};
-
-        final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.loadIndex(indexPath, algoQueryParams, "cosinesimil");
-        final KNNQueryResult[] results = knnNmsLibIndex.queryIndex(queryVector, 30);
-
-        Map<Integer, Float> scores = Arrays.stream(results).collect(
-            Collectors.toMap(result -> result.getId(), result -> result.getScore()));
-        logger.info(scores);
-
-        assertEquals(results.length, 3);
-        /*
-         * scores are evaluated using cosine similarity. Distance of the documents with
-         * respect to query vector are as follows
-         * doc0 = 0.0, doc1 = 0.29289,  doc2 = 1.0
-         * Nearest neighbor is doc1 then doc0 then doc2
-         */
-        assertEquals(scores.get(0), 0.0, 1e-4);
-        assertEquals(scores.get(1), 0.292893, 1e-4);
-        assertEquals(scores.get(2), 1.0, 1e-4);
-        dir.close();
-    }
-
-    public void testAssertExceptionFromJni() throws Exception {
-
-        Directory dir = newFSDirectory(createTempDir());
-        String segmentName = "_dummy1";
-        String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
-                String.format("%s.hnsw", segmentName)).toString();
-
-
-         //Trying to load index which did not exist. This results in Runtime Error in nmslib.
-         //Making sure c++ exceptions are casted to java Exception to avoid ES process crash
-        expectThrows(Exception.class, () ->
-        AccessController.doPrivileged(
-                new PrivilegedAction<Void>() {
-                    public Void run() {
-                        KNNNmsLibIndex index = KNNNmsLibIndex.loadIndex(indexPath, new String[] {}, "l2");
-                        return null;
-                    }
-                }
-        ));
-        dir.close();
-    }
-
-    public void testQueryHnswIndexWithValidAlgoParams() throws Exception {
+    public void testQueryMixedEngineHnswIndexWithWrongEngine() throws Exception {
         int[] docs = {0, 1, 2};
 
         float[][] vectors = {
@@ -192,50 +119,63 @@ public class KNNJNITests extends KNNTestCase {
         };
 
         Directory dir = newFSDirectory(createTempDir());
-        String indexPath = getIndexPath(dir);
+        String segmentName = "_dummy";
+        KNNEngine faissEngine = KNNEngine.FAISS;
+        KNNEngine nmslibEngine = KNNEngine.NMSLIB;
+        String indexNmsLibPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
+                String.format("%s_%s.hnsw", segmentName, nmslibEngine.knnEngineName)).toString();
+        String indexFaissPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
+                String.format("%s_%s.hnsw", segmentName, faissEngine.knnEngineName)).toString();
+        {
 
-
-         //Passing valid algo params should not fail the graph construction.
-        String[] algoIndexParams = {"M=32","efConstruction=200"};
-        AccessController.doPrivileged(
-                new PrivilegedAction<Void>() {
-                    public Void run() {
-                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, "l2");
-                        return null;
-                    }
-                }
-        );
-
-
-        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy1.hnsw"));
+            KNNIndex index = new KNNNmsLibIndex();
+            String[] algoParams = {};
+            //Index With Wrong Engine, need throw runtime exception
+            expectThrows(RuntimeException.class,
+                    () -> index.saveIndex(docs, vectors, indexNmsLibPath, algoParams, "l2", faissEngine));
+            index.saveIndex(docs, vectors, indexNmsLibPath, algoParams, "l2", nmslibEngine);
+        }
+        {
+            KNNIndex index = new KNNFaissIndex();
+            String[] algoParams = {};
+            //Index With Wrong Engine, need throw runtime exception
+            expectThrows(RuntimeException.class,
+                    () -> index.saveIndex(docs, vectors, indexNmsLibPath, algoParams, "l2", nmslibEngine));
+            index.saveIndex(docs, vectors, indexFaissPath, algoParams, "l2", faissEngine);
+        }
+        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy_NMSLIB.hnsw"));
+        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy_FAISS.hnsw"));
 
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
-        String[] algoQueryParams = {"efSearch=200"};
+        String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNNmsLibIndex index = KNNNmsLibIndex.loadIndex(indexPath, algoQueryParams, "l2");
-        final KNNQueryResult[] results = index.queryIndex(queryVector, 30);
-
-        Map<Integer, Float> scores = Arrays.stream(results).collect(
-                Collectors.toMap(result -> result.getId(), result -> result.getScore()));
-        logger.info(scores);
-
-        assertEquals(results.length, 3);
-        /*
-         * scores are evaluated using Euclidean distance. Distance of the documents with
-         * respect to query vector are as follows
-         * doc0 = 126, doc1 = 14,  doc2 = 366
-         * Nearest neighbor is doc1 then doc0 then doc2
-         */
-        assertEquals(126.0, scores.get(0), 0.001);
-        assertEquals(14.0, scores.get(1), 0.001);
-        assertEquals(366.0, scores.get(2), 0.001);
+        {
+            //Load Index With Wrong Engine, need throw Exception
+            expectThrows(Exception.class, () -> KNNFaissIndex.loadIndex(indexNmsLibPath, algoQueryParams, "l2"));
+            final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.loadIndex(indexNmsLibPath, algoQueryParams, "l2");
+            final KNNQueryResult[] results = knnNmsLibIndex.queryIndex(queryVector, 30);
+            Map<Integer, Float> scores = Arrays.stream(results).collect(
+                    Collectors.toMap(result -> result.getId(), result -> result.getScore()));
+            logger.info(scores);
+            assertEquals(results.length, 3);
+            assertEquals(126.0, scores.get(0), 0.001);
+            assertEquals(14.0, scores.get(1), 0.001);
+            assertEquals(366.0, scores.get(2), 0.001);
+        }
+        {
+            //Load Index With Wrong Engine, need throw Exception
+            expectThrows(Exception.class, () -> KNNNmsLibIndex.loadIndex(indexFaissPath, algoQueryParams, "l2"));
+            final KNNFaissIndex knnFaissLibIndex = KNNFaissIndex.loadIndex(indexFaissPath, algoQueryParams, "l2");
+            final KNNQueryResult[] results = knnFaissLibIndex.queryIndex(queryVector, 30);
+            Map<Integer, Float> scores = Arrays.stream(results).collect(
+                    Collectors.toMap(result -> result.getId(), result -> result.getScore()));
+            logger.info(scores);
+            assertEquals(results.length, 3);
+            assertEquals(126.0, scores.get(0), 0.001);
+            assertEquals(14.0, scores.get(1), 0.001);
+            assertEquals(366.0, scores.get(2), 0.001);
+        }
         dir.close();
     }
 
-    private String getIndexPath(Directory dir ) {
-        String segmentName = "_dummy1";
-        return Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
-                String.format("%s.hnsw", segmentName)).toString();
-    }
 }
-

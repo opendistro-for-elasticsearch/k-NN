@@ -57,6 +57,10 @@ public class KNNNmsLibIndex extends KNNIndex implements AutoCloseable {
         this.indexPointer = indexPointer;
         this.indexSize = indexSize;
     }
+    public KNNNmsLibIndex() {
+        this.indexPointer = 0;
+        this.indexSize = 0;
+    }
 
     @Override
     public long getIndexSize() {

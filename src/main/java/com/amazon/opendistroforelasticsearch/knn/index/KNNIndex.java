@@ -26,7 +26,8 @@ public abstract class KNNIndex implements AutoCloseable{
      * @param spaceType space type for this index
      * @param engine verify engine
      */
-    public abstract void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams, String spaceType, KNNEngine engine);
+    public abstract void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams,
+                                   String spaceType, KNNEngine engine);
 
 
     /**
