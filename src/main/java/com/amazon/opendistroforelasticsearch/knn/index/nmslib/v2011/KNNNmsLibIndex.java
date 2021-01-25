@@ -15,7 +15,9 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011;
 
+import com.amazon.opendistroforelasticsearch.knn.index.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 
@@ -32,13 +34,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * This class refers to the nms library build with version tag 2.0.11
  * See <a href="https://github.com/nmslib/nmslib/tree/v2.0.8">tag2.0.11</a>
  */
-public class KNNIndex implements AutoCloseable {
+public class KNNNmsLibIndex extends KNNIndex implements AutoCloseable {
     public static NmsLibVersion VERSION = NmsLibVersion.VNMSLIB_2011;
 
     static {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
-
                 System.loadLibrary(NmsLibVersion.VNMSLIB_2011.indexLibraryVersion());
                 return null;
             }
@@ -52,23 +53,17 @@ public class KNNIndex implements AutoCloseable {
     private final long indexPointer;
     private final long indexSize;
 
-    private KNNIndex(final long indexPointer, final long indexSize) {
+    private KNNNmsLibIndex(final long indexPointer, final long indexSize) {
         this.indexPointer = indexPointer;
         this.indexSize = indexSize;
     }
 
-    /**
-     * This function is useful in computing the weight for caching. File sizes are stored in KiloBytes to prevent an
-     * Integer Overflow. The Guava Cache weigh method returns an int. The max size of a Java int is 2,147,483,647. So,
-     * a 2GB file, would lead to an overflow. With KB, however, 2,147,483,647 KB = 1.99 TB. So, it would take a 2 TB
-     * file to produce an Integer Overflow.
-     *
-     * @return size of the hnsw index on the disk in KB.
-     */
+    @Override
     public long getIndexSize() {
         return this.indexSize;
     }
 
+    @Override
     public KNNQueryResult[] queryIndex(final float[] query, final int k) throws RuntimeException {
         Lock readLock = readWriteLock.readLock();
         readLock.lock();
@@ -92,6 +87,24 @@ public class KNNIndex implements AutoCloseable {
         } finally {
             readLock.unlock();
         }
+    }
+    @Override
+    public void saveIndex(int[] ids, float[][] data, String indexPath,
+                          String[] algoParams, String spaceType,
+                          KNNEngine engine) throws  RuntimeException{
+        if (engine != KNNEngine.NMSLIB) {
+            throw new RuntimeException("Index Engine: " +
+                    engine.getKnnEngineName() +
+                    " is not support in" + KNNEngine.NMSLIB);
+        }
+        AccessController.doPrivileged(
+                new PrivilegedAction<Void>() {
+                    public Void run() {
+                        saveIndex(ids, data, indexPath, algoParams, spaceType);
+                        return null;
+                    }
+                }
+        );
     }
 
     @Override
@@ -119,10 +132,10 @@ public class KNNIndex implements AutoCloseable {
      * @param spaceType space type of the index
      * @return knn index that can be queried for k nearest neighbours
      */
-    public static KNNIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
+    public static KNNNmsLibIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
         long fileSize = computeFileSize(indexPath);
         long indexPointer = init(indexPath, algoParams, spaceType);
-        return new KNNIndex(indexPointer, fileSize);
+        return new KNNNmsLibIndex(indexPointer, fileSize);
     }
 
     /**

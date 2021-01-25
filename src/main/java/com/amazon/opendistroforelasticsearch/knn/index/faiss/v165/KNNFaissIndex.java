@@ -1,7 +1,9 @@
 package com.amazon.opendistroforelasticsearch.knn.index.faiss.v165;
 
+import com.amazon.opendistroforelasticsearch.knn.index.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
 import com.amazon.opendistroforelasticsearch.knn.index.util.FAISSLibVersion;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 
 import java.io.File;
@@ -12,7 +14,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class KNNFIndex implements AutoCloseable {
+public class KNNFaissIndex extends KNNIndex implements AutoCloseable {
 
     public static FAISSLibVersion VERSION = FAISSLibVersion.VFAISS_165;
     static {
@@ -31,23 +33,21 @@ public class KNNFIndex implements AutoCloseable {
     private final long indexPointer;
     private final long indexSize;
 
-    private KNNFIndex(final long indexPointer, final long indexSize) {
+    private KNNFaissIndex(final long indexPointer, final long indexSize) {
         this.indexPointer = indexPointer;
         this.indexSize = indexSize;
     }
+    public KNNFaissIndex() {
+        this.indexPointer = 0;
+        this.indexSize = 0;
+    }
 
-    /**
-     * This function is useful in computing the weight for caching. File sizes are stored in KiloBytes to prevent an
-     * Integer Overflow. The Guava Cache weigh method returns an int. The max size of a Java int is 2,147,483,647. So,
-     * a 2GB file, would lead to an overflow. With KB, however, 2,147,483,647 KB = 1.99 TB. So, it would take a 2 TB
-     * file to produce an Integer Overflow.
-     *
-     * @return size of the hnsw index on the disk in KB.
-     */
+    @Override
     public long getIndexSize() {
         return this.indexSize;
     }
 
+    @Override
     public KNNQueryResult[] queryIndex(final float[] query, final int k) throws RuntimeException {
         Lock readLock = readWriteLock.readLock();
         readLock.lock();
@@ -71,6 +71,25 @@ public class KNNFIndex implements AutoCloseable {
         } finally {
             readLock.unlock();
         }
+    }
+
+    @Override
+    public void saveIndex(int[] ids, float[][] data, String indexPath,
+                          String[] algoParams, String spaceType,
+                          KNNEngine engine) throws  RuntimeException{
+        if (engine != KNNEngine.FAISS) {
+            throw new RuntimeException("Index Engine: " +
+                    engine.getKnnEngineName() +
+                    " is not support in" + KNNEngine.FAISS);
+        }
+        AccessController.doPrivileged(
+                new PrivilegedAction<Void>() {
+                    public Void run() {
+                         saveIndex(ids, data, indexPath, algoParams, spaceType);
+                         return null;
+                    }
+                }
+        );
     }
 
     @Override
@@ -98,10 +117,10 @@ public class KNNFIndex implements AutoCloseable {
      * @param spaceType space type of the index
      * @return knn index that can be queried for k nearest neighbours
      */
-    public static KNNFIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
+    public static KNNFaissIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
         long fileSize = computeFileSize(indexPath);
         long indexPointer = init(indexPath, algoParams, spaceType);
-        return new KNNFIndex(indexPointer, fileSize);
+        return new KNNFaissIndex(indexPointer, fileSize);
     }
 
     /**

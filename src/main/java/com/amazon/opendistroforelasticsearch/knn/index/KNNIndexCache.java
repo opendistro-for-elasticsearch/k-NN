@@ -15,9 +15,9 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFaissIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
-import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNNmsLibIndex;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -160,15 +160,7 @@ public class KNNIndexCache implements Closeable {
             throw new RuntimeException(e);
         }
     }
-    public KNNFIndex getFIndex(String key, final String indexName) {
-        try {
-            //TODO if Type Not consistent
-            final KNNIndexCacheEntry knnIndexCacheEntry = cache.get(key, () -> loadIndex(key, indexName));
-            return knnIndexCacheEntry.getKnnFindex();
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-    }
+
 
     /**
      * Loads list of segments for the given index into the cache and returns list of KNNIndex's.
@@ -323,12 +315,12 @@ public class KNNIndexCache implements Closeable {
 
         // loadIndex from different library
         if (KNNSettings.getKnnEngine(indexName).contains(KNNEngine.FAISS.getKnnEngineName())) {
-            final KNNFIndex knnIndex = KNNFIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
+            final KNNFaissIndex knnIndex = KNNFaissIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
             return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
 
         } else {
-            final KNNIndex knnIndex = KNNIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
-            return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
+            final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
+            return new KNNIndexCacheEntry(knnNmsLibIndex, indexPathUrl, indexName, watcherHandle);
         }
     }
 
@@ -340,23 +332,20 @@ public class KNNIndexCache implements Closeable {
     private static class KNNIndexCacheEntry {
 
         private final KNNIndex knnIndex;
-        private final KNNFIndex knnFindex;
         private final String indexPathUrl;
         private final String esIndexName;
         private final WatcherHandle<FileWatcher> fileWatcherHandle;
 
-        private KNNIndexCacheEntry(final KNNIndex knnIndex, final String indexPathUrl, final String esIndexName,
+        private KNNIndexCacheEntry(final KNNNmsLibIndex knnIndex, final String indexPathUrl, final String esIndexName,
                                    final WatcherHandle<FileWatcher> fileWatcherHandle) {
             this.knnIndex = knnIndex;
-            this.knnFindex = null;
             this.indexPathUrl = indexPathUrl;
             this.esIndexName = esIndexName;
             this.fileWatcherHandle = fileWatcherHandle;
         }
-        private KNNIndexCacheEntry(final KNNFIndex knnFindex, final String indexPathUrl, final String esIndexName,
+        private KNNIndexCacheEntry(final KNNFaissIndex knnIndex, final String indexPathUrl, final String esIndexName,
                                    final WatcherHandle<FileWatcher> fileWatcherHandle) {
-            this.knnIndex = null;
-            this.knnFindex = knnFindex;
+            this.knnIndex = knnIndex;
             this.indexPathUrl = indexPathUrl;
             this.esIndexName = esIndexName;
             this.fileWatcherHandle = fileWatcherHandle;
@@ -366,15 +355,8 @@ public class KNNIndexCache implements Closeable {
                 logger.debug("knn Index close" + knnIndex.getIndexSize());
                 knnIndex.close();
             }
-            if(knnFindex != null) {
-                logger.debug("knn Index close" + knnFindex.getIndexSize());
-                knnFindex.close();
-            }
         }
         private long getIndexSize() {
-            if(knnFindex != null) {
-                return knnFindex.getIndexSize();
-            }
             if(knnIndex != null) {
                 return knnIndex.getIndexSize();
             }
@@ -383,7 +365,6 @@ public class KNNIndexCache implements Closeable {
         private KNNIndex getKnnIndex() {
             return knnIndex;
         }
-        private KNNFIndex getKnnFindex() {return knnFindex; }
 
         private String getIndexPathUrl() {
             return indexPathUrl;

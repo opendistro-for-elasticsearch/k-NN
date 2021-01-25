@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
 import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
-import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFaissIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.util.FAISSLibVersion;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
@@ -40,7 +40,7 @@ import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
-import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNNmsLibIndex;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -118,9 +118,9 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
                     new PrivilegedAction<Void>() {
                         public Void run() {
                             if(faissindex) {
-                                KNNFIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
+                                KNNFaissIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
                             } else {
-                                KNNIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
+                                KNNNmsLibIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
                             }
                             return null;
                         }
@@ -202,11 +202,11 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
         return AccessController.doPrivileged(
                 new PrivilegedAction<Boolean>() {
                     public Boolean run() {
-                        if (!(NmsLibVersion.VNMSLIB_2011.indexLibraryVersion().equals(KNNIndex.VERSION.indexLibraryVersion()) &&
-                                FAISSLibVersion.VFAISS_165.indexLibraryVersion().equals(KNNFIndex.VERSION.indexLibraryVersion()))) {
+                        if (!(NmsLibVersion.VNMSLIB_2011.indexLibraryVersion().equals(KNNNmsLibIndex.VERSION.indexLibraryVersion()) &&
+                                FAISSLibVersion.VFAISS_165.indexLibraryVersion().equals(KNNFaissIndex.VERSION.indexLibraryVersion()))) {
                             String errorMessage = String.format("KNN codec nms library version mis match. Latest version: %s" +
                                             "Current version: %s, %s",
-                                    NmsLibVersion.VNMSLIB_2011.indexLibraryVersion(), KNNIndex.VERSION, KNNFIndex.VERSION);
+                                    NmsLibVersion.VNMSLIB_2011.indexLibraryVersion(), KNNNmsLibIndex.VERSION, KNNFaissIndex.VERSION);
                             logger.error(errorMessage);
                             return false;
                         }

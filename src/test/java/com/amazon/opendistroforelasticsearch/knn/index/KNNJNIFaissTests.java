@@ -2,7 +2,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 
-import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFaissIndex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.Directory;
@@ -37,7 +37,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFIndex.saveIndex(docs, vectors, indexPath, algoParams, "l2");
+                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoParams, "l2");
                         return null;
                     }
                 }
@@ -65,7 +65,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFIndex.saveIndex(docs, vectors, indexPath, algoParams, "l2");
+                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoParams, "l2");
                         return null;
                     }
                 }
@@ -76,7 +76,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNFIndex knnIndex = KNNFIndex.loadIndex(indexPath, algoQueryParams, "l2");
+        final KNNFaissIndex knnIndex = KNNFaissIndex.loadIndex(indexPath, algoQueryParams, "l2");
         final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
@@ -110,7 +110,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
                 AccessController.doPrivileged(
                         new PrivilegedAction<Void>() {
                             public Void run() {
-                                KNNFIndex index = KNNFIndex.loadIndex(indexPath, new String[] {}, "l2");
+                                KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, new String[] {}, "l2");
                                 return null;
                             }
                         }
@@ -136,7 +136,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, "l2");
+                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, "l2");
                         return null;
                     }
                 }
@@ -148,7 +148,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=200"};
 
-        final KNNFIndex index = KNNFIndex.loadIndex(indexPath, algoQueryParams, "l2");
+        final KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, algoQueryParams, "l2");
         final KNNQueryResult[] results = index.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
