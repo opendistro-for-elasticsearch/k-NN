@@ -76,7 +76,7 @@ elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64)
 endif()
 
 set(KNN_MAINTAINER "OpenDistro for Elasticsearch Team <opendistro@amazon.com>")
-set(ODFE_DOWNLOAD_URL "https://opendistro.github.io/elasticsearch/downloads")
+set(ODFE_DOWNLOAD_URL "https://opendistro.github.io/for-elasticsearch/downloads.html")
 set(CPACK_PACKAGE_NAME ${KNN_PACKAGE_NAME})
 set(CPACK_PACKAGE_VERSION 1.12.0.0)
 set(CMAKE_INSTALL_PREFIX /usr)
