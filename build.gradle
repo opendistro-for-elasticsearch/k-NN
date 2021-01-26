@@ -137,31 +137,41 @@ loggerUsageCheck.enabled = false
 def es_tmp_dir = rootProject.file('build/private/es_tmp').absoluteFile
 es_tmp_dir.mkdirs()
 
-task cmakeJniLib(type:Exec) {
+task cmakeJniNmsLib(type:Exec) {
     workingDir 'jni'
     commandLine 'cmake', '.'
 }
-
-task buildJniLib(type:Exec) {
-    dependsOn cmakeJniLib
+task cmakeJniFaissLib(type:Exec) {
+    workingDir 'jniFaiss'
+    commandLine 'cmake', '.'
+}
+task buildJniNmsLib(type:Exec) {
+    dependsOn cmakeJniNmsLib
     workingDir 'jni'
+    commandLine 'make'
+}
+task buildJniFaissLib(type:Exec) {
+    dependsOn cmakeJniFaissLib
+    workingDir 'jniFaiss'
     commandLine 'make'
 }
 
 test {
-    dependsOn buildJniLib
+    dependsOn buildJniNmsLib
+    dependsOn buildJniFaissLib
     systemProperty 'tests.security.manager', 'false'
-    systemProperty "java.library.path", "$rootDir/jni/release"
+    systemProperty "java.library.path", "$rootDir/jniFaiss/release:$rootDir/jni/release"
 }
 
 def _numNodes = findProperty('numNodes') as Integer ?: 1
 integTest {
     if (integTestDependOnJniLib) {
-        dependsOn buildJniLib
+        dependsOn buildJniNmsLib
+        dependsOn buildJniFaissLib
     }
     systemProperty 'tests.security.manager', 'false'
     systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
-    systemProperty "java.library.path", "$rootDir/jni/release"
+    systemProperty "java.library.path", "$rootDir/jniFaiss/release:$rootDir/jni/release"
     // allows integration test classes to access test resource from project root path
     systemProperty('project.root', project.rootDir.absolutePath)
 
@@ -204,12 +214,13 @@ testClusters.integTest {
                 debugPort += 1
             }
         }
-        systemProperty("java.library.path", "$rootDir/jni/release")
+        systemProperty("java.library.path", "$rootDir/jniFaiss/release:$rootDir/jni/release")
 }
 
 run {
     useCluster project.testClusters.integTest
-    dependsOn buildJniLib
+    dependsOn buildJniNmsLib
+    dependsOn buildJniFaissLib
     doFirst {
         // There seems to be an issue when running multi node run or integ tasks with unicast_hosts
         // not being written, the waitForAllConditions ensures it's written

@@ -15,7 +15,9 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import com.amazon.opendistroforelasticsearch.knn.index.v2011.KNNIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFaissIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
+import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNNmsLibIndex;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -93,7 +95,7 @@ public class KNNIndexCache implements Closeable {
                 .concurrencyLevel(1)
                 .removalListener(k -> onRemoval(k));
         if(KNNSettings.state().getSettingValue(KNNSettings.KNN_MEMORY_CIRCUIT_BREAKER_ENABLED)) {
-            cacheBuilder.maximumWeight(getCircuitBreakerLimit().getKb()).weigher((k, v) -> (int)v.getKnnIndex().getIndexSize());
+            cacheBuilder.maximumWeight(getCircuitBreakerLimit().getKb()).weigher((k, v) -> (int)v.getIndexSize());
         }
 
         if(KNNSettings.state().getSettingValue(KNNSettings.KNN_CACHE_ITEM_EXPIRY_ENABLED)) {
@@ -128,7 +130,7 @@ public class KNNIndexCache implements Closeable {
 
         knnIndexCacheEntry.getFileWatcherHandle().stop();
 
-        executor.execute(() -> knnIndexCacheEntry.getKnnIndex().close());
+        executor.execute(() -> knnIndexCacheEntry.indexClose());
 
         String esIndexName = removalNotification.getValue().getEsIndexName();
         String indexPathUrl = removalNotification.getValue().getIndexPathUrl();
@@ -151,12 +153,14 @@ public class KNNIndexCache implements Closeable {
      */
     public KNNIndex getIndex(String key, final String indexName) {
         try {
+            //TODO if Type Not consistent
             final KNNIndexCacheEntry knnIndexCacheEntry = cache.get(key, () -> loadIndex(key, indexName));
             return knnIndexCacheEntry.getKnnIndex();
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     /**
      * Loads list of segments for the given index into the cache and returns list of KNNIndex's.
@@ -213,7 +217,7 @@ public class KNNIndexCache implements Closeable {
      * @return Weight of the cache in kilobytes
      */
     public Long getWeightInKilobytes() {
-        return cache.asMap().values().stream().map(KNNIndexCacheEntry::getKnnIndex).mapToLong(KNNIndex::getIndexSize).sum();
+        return cache.asMap().values().stream().mapToLong(KNNIndexCacheEntry::getIndexSize).sum();
     }
 
     /**
@@ -225,7 +229,7 @@ public class KNNIndexCache implements Closeable {
     public Long getWeightInKilobytes(final String indexName) {
         return cache.asMap().values().stream()
                 .filter(knnIndexCacheEntry -> indexName.equals(knnIndexCacheEntry.getEsIndexName()))
-                .map(KNNIndexCacheEntry::getKnnIndex).mapToLong(KNNIndex::getIndexSize).sum();
+                .mapToLong(KNNIndexCacheEntry::getIndexSize).sum();
     }
 
     /**
@@ -304,14 +308,20 @@ public class KNNIndexCache implements Closeable {
         // the entry
         fileWatcher.init();
 
-        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
-
         // TODO verify that this is safe - ideally we'd explicitly ensure that the FileWatcher is only checked
         // after the guava cache has finished loading the key to avoid a race condition where the watcher
         // causes us to invalidate an entry before the key has been fully loaded.
         final WatcherHandle<FileWatcher> watcherHandle = resourceWatcherService.add(fileWatcher);
 
-        return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
+        // loadIndex from different library
+        if (KNNSettings.getKnnEngine(indexName).contains(KNNEngine.FAISS.getKnnEngineName())) {
+            final KNNFaissIndex knnIndex = KNNFaissIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
+            return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
+
+        } else {
+            final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
+            return new KNNIndexCacheEntry(knnNmsLibIndex, indexPathUrl, indexName, watcherHandle);
+        }
     }
 
     /**
@@ -320,19 +330,38 @@ public class KNNIndexCache implements Closeable {
      * upon expiration of the cache.
      */
     private static class KNNIndexCacheEntry {
+
         private final KNNIndex knnIndex;
         private final String indexPathUrl;
         private final String esIndexName;
         private final WatcherHandle<FileWatcher> fileWatcherHandle;
 
-        private KNNIndexCacheEntry(final KNNIndex knnIndex, final String indexPathUrl, final String esIndexName,
+        private KNNIndexCacheEntry(final KNNNmsLibIndex knnIndex, final String indexPathUrl, final String esIndexName,
                                    final WatcherHandle<FileWatcher> fileWatcherHandle) {
             this.knnIndex = knnIndex;
             this.indexPathUrl = indexPathUrl;
             this.esIndexName = esIndexName;
             this.fileWatcherHandle = fileWatcherHandle;
         }
-
+        private KNNIndexCacheEntry(final KNNFaissIndex knnIndex, final String indexPathUrl, final String esIndexName,
+                                   final WatcherHandle<FileWatcher> fileWatcherHandle) {
+            this.knnIndex = knnIndex;
+            this.indexPathUrl = indexPathUrl;
+            this.esIndexName = esIndexName;
+            this.fileWatcherHandle = fileWatcherHandle;
+        }
+        private void indexClose() {
+            if(knnIndex != null) {
+                logger.debug("knn Index close" + knnIndex.getIndexSize());
+                knnIndex.close();
+            }
+        }
+        private long getIndexSize() {
+            if(knnIndex != null) {
+                return knnIndex.getIndexSize();
+            }
+            return -1;
+        }
         private KNNIndex getKnnIndex() {
             return knnIndex;
         }

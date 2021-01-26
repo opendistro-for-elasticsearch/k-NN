@@ -56,7 +56,9 @@ import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_M;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ENGINE;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_SPACE_TYPE;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ENGINE;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_SPACE_TYPE;
 
 /**
@@ -84,36 +86,38 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                 m -> toType(m).hasDocValues,  true);
         private final Parameter<Integer> dimension = new Parameter<>(KNNConstants.DIMENSION, false, () -> -1,
                 (n, c, o) -> {
-                            if (o == null) {
-                                throw new IllegalArgumentException("Dimension cannot be null");
-                            }
-                            int value = XContentMapValues.nodeIntegerValue(o);
-                            if (value > MAX_DIMENSION) {
-                                throw new IllegalArgumentException("Dimension value cannot be greater than " +
-                                    MAX_DIMENSION + " for vector: " + name);
-                            }
+                    if (o == null) {
+                        throw new IllegalArgumentException("Dimension cannot be null");
+                    }
+                    int value = XContentMapValues.nodeIntegerValue(o);
+                    if (value > MAX_DIMENSION) {
+                        throw new IllegalArgumentException("Dimension value cannot be greater than " +
+                                MAX_DIMENSION + " for vector: " + name);
+                    }
 
-                            if (value <= 0) {
-                                throw new IllegalArgumentException("Dimension value must be greater than 0 " +
-                                        "for vector: " + name);
-                            }
-                            return value;
+                    if (value <= 0) {
+                        throw new IllegalArgumentException("Dimension value must be greater than 0 " +
+                                "for vector: " + name);
+                    }
+                    return value;
                 }, m -> toType(m).dimension);
         private final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
         private String spaceType;
         private String m;
         private String efConstruction;
+        private String knnEngine;
 
         public Builder(String name) {
             super(name);
         }
 
-        public Builder(String name, String spaceType, String m, String efConstruction) {
+        public Builder(String name, String spaceType, String m, String efConstruction, String knnEngine) {
             super(name);
             this.spaceType = spaceType;
             this.m = m;
             this.efConstruction = efConstruction;
+            this.knnEngine = knnEngine;
         }
 
         @Override
@@ -145,9 +149,25 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                 this.efConstruction = getEfConstruction(context.indexSettings());
             }
 
+            if (this.knnEngine == null) {
+                this.knnEngine = getKnnEngine(context.indexSettings());
+            }
+
             return new KNNVectorFieldMapper(name, new KNNVectorFieldType(buildFullName(context), meta.getValue(),
                     dimension.getValue()), multiFieldsBuilder.build(this, context),
-                    ignoreMalformed(context), this.spaceType, this.m, this.efConstruction, copyTo.build(), this);
+                    ignoreMalformed(context), this.spaceType, this.m, this.efConstruction, copyTo.build(), this,
+                    this.knnEngine);
+        }
+
+        private String getKnnEngine(Settings indexSettings) {
+            String knnEngine = indexSettings.get(INDEX_KNN_ENGINE.getKey());
+            if(knnEngine == null) {
+                logger.info("[KNN] The settings \"" + KNNConstants.KNNEngine + "\" was not set for the index. " +
+                        "Likely caused by recent version upgrade. Setting the setting to the default value="
+                        + INDEX_KNN_DEFAULT_ENGINE);
+                return INDEX_KNN_DEFAULT_ENGINE;
+            }
+            return knnEngine;
         }
 
         private String getSpaceType(Settings indexSettings) {
@@ -247,11 +267,13 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
     protected final String m;
     protected final String efConstruction;
     private final Integer dimension;
+    protected final String knnEngine;
 
     public KNNVectorFieldMapper(String simpleName, MappedFieldType mappedFieldType, MultiFields multiFields,
                                 Explicit<Boolean> ignoreMalformed, String spaceType, String m, String efConstruction,
-                                CopyTo copyTo, Builder builder) {
+                                CopyTo copyTo, Builder builder, String knnEngine) {
         super(simpleName, mappedFieldType,  multiFields, copyTo);
+
         this.stored = builder.stored.getValue();
         this.hasDocValues = builder.hasDocValues.getValue();
         this.dimension = builder.dimension.getValue();
@@ -259,10 +281,12 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         this.spaceType = spaceType;
         this.m = m;
         this.efConstruction = efConstruction;
+        this.knnEngine = knnEngine;
         this.fieldType = new FieldType(Defaults.FIELD_TYPE);
         this.fieldType.putAttribute(KNNConstants.SPACE_TYPE, spaceType);
         this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_M, m);
         this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, efConstruction);
+        this.fieldType.putAttribute(KNNConstants.KNNEngine, knnEngine);
         this.fieldType.freeze();
     }
 
@@ -283,7 +307,9 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
             FIELD_TYPE.setIndexOptions(IndexOptions.NONE);
             FIELD_TYPE.setDocValuesType(DocValuesType.BINARY);
             FIELD_TYPE.putAttribute(KNN_FIELD, "true"); //This attribute helps to determine knn field type
+            FIELD_TYPE.putAttribute(KNNConstants.KNNEngine, INDEX_KNN_DEFAULT_ENGINE);
             FIELD_TYPE.freeze();
+
         }
     }
 
@@ -368,7 +394,8 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
     @Override
     public ParametrizedFieldMapper.Builder getMergeBuilder() {
-        return new KNNVectorFieldMapper.Builder(simpleName(), this.spaceType, this.m, this.efConstruction).init(this);
+        return new KNNVectorFieldMapper.Builder(simpleName(),
+                this.spaceType, this.m, this.efConstruction, this.knnEngine).init(this);
     }
 
     @Override
