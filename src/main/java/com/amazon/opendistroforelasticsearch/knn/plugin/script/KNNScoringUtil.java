@@ -210,7 +210,7 @@ public class KNNScoringUtil {
     }
 
     /**
-     * This method calculates L1 squared distance between query vector
+     * This method calculates L1 distance between query vector
      * and input vector
      *
      * @param queryVector query vector
