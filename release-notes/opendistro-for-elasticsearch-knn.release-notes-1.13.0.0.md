@@ -8,7 +8,6 @@ Compatible with Elasticsearch 7.10.2
 
 ### Enhancements
 
-* Upgrade nmslib to v2.0.8 in JNI library ([#291](https://github.com/opendistro-for-elasticsearch/k-NN/pull/291))
 * Upgrade nmslib to 2.0.11 ([#302](https://github.com/opendistro-for-elasticsearch/k-NN/pull/302))
 * Upgrade commons-beanutils ([#297](https://github.com/opendistro-for-elasticsearch/k-NN/pull/297))
 
@@ -22,10 +21,10 @@ Compatible with Elasticsearch 7.10.2
 * Add arm64 support and correct the naming convention to the new standards ([#299](https://github.com/opendistro-for-elasticsearch/k-NN/pull/299))
 * Run KNN integ tests with security plugin enabled ([#304](https://github.com/opendistro-for-elasticsearch/k-NN/pull/304))
 * Update artifact naming ([#309](https://github.com/opendistro-for-elasticsearch/k-NN/pull/309))
+* Change CD workflow to use new staging bucket for artifacts ([#301](https://github.com/opendistro-for-elasticsearch/k-NN/pull/301))
 
 ### Documentation
 
-* Reformat release notes for 1.12.0.0 ([#278](https://github.com/opendistro-for-elasticsearch/k-NN/pull/278))
 * Add copyright header ([#307](https://github.com/opendistro-for-elasticsearch/k-NN/pull/307))
 
 ### Maintenance
