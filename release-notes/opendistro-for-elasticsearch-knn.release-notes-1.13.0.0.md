@@ -5,6 +5,7 @@ Compatible with Elasticsearch 7.10.2
 ### Features
 
 * Support k-NN similarity functions in painless scripting ([#281](https://github.com/opendistro-for-elasticsearch/k-NN/pull/281))
+* Add support for L1 distance in AKNN, custom scoring and painless scripting ([#310](https://github.com/opendistro-for-elasticsearch/k-NN/pull/310))
 
 ### Enhancements
 
