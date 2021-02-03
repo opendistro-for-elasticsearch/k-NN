@@ -232,7 +232,7 @@ public class KNNScoringUtil {
      * and document vectors
      * Example
      *  "script": {
-     *         "source": "1/(1 + l1distance(params.query_vector, doc[params.field]))",
+     *         "source": "1/(1 + l1Norm(params.query_vector, doc[params.field]))",
      *         "params": {
      *           "query_vector": [1, 2, 3.4],
      *           "field": "my_dense_vector"
