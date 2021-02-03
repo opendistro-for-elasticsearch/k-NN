@@ -217,7 +217,7 @@ public class KNNScoringUtil {
      * @param inputVector input vector
      * @return L1 score
      */
-    public static float l1distance(float[] queryVector, float[] inputVector) {
+    public static float l1Norm(float[] queryVector, float[] inputVector) {
         requireEqualDimension(queryVector, inputVector);
         float distance = 0;
         for (int i = 0; i < inputVector.length; i++) {
@@ -232,7 +232,7 @@ public class KNNScoringUtil {
      * and document vectors
      * Example
      *  "script": {
-     *         "source": "1/(1 + l1distance(params.query_vector, doc[params.field]))",
+     *         "source": "1/(1 + l1Norm(params.query_vector, doc[params.field]))",
      *         "params": {
      *           "query_vector": [1, 2, 3.4],
      *           "field": "my_dense_vector"
@@ -243,7 +243,7 @@ public class KNNScoringUtil {
      * @param docValues   script doc values
      * @return L1 score
      */
-    public static float l1distance(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
-        return l1distance(toFloat(queryVector), docValues.getValue());
+    public static float l1Norm(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
+        return l1Norm(toFloat(queryVector), docValues.getValue());
     }
 }
