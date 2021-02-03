@@ -256,7 +256,7 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
 
     // L1 tests
     public void testL1ScriptScoreFails() throws Exception {
-        String source = String.format("1/(1 + l1distance([1.0f, 1.0f], doc['%s']))", FIELD_NAME);
+        String source = String.format("1/(1 + l1Norm([1.0f, 1.0f], doc['%s']))", FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getL1TestData());
         addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
         expectThrows(ResponseException.class, () -> client().performRequest(request));
@@ -264,7 +264,7 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
     }
     public void testL1ScriptScore() throws Exception {
 
-        String source = String.format("1/(1 + l1distance([1.0f, 1.0f], doc['%s']))", FIELD_NAME);
+        String source = String.format("1/(1 + l1Norm([1.0f, 1.0f], doc['%s']))", FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getL1TestData());
 
         Response response = client().performRequest(request);
@@ -285,7 +285,7 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
     public void testL1ScriptScoreWithNumericField() throws Exception {
 
         String source = String.format(
-                "doc['%s'].size() == 0 ? 0 : 1/(1 + l1distance([1.0f, 1.0f], doc['%s']))", FIELD_NAME, FIELD_NAME);
+                "doc['%s'].size() == 0 ? 0 : 1/(1 + l1Norm([1.0f, 1.0f], doc['%s']))", FIELD_NAME, FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getL1TestData());
         addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
         Response response = client().performRequest(request);
