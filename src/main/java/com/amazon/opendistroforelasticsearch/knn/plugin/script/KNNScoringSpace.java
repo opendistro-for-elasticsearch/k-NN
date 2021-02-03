@@ -177,4 +177,33 @@ public interface KNNScoringSpace {
                     ctx);
         }
     }
+
+    class LInf implements KNNScoringSpace {
+
+        float[] processedQuery;
+        BiFunction<float[], float[], Float> scoringMethod;
+
+        /**
+         * Constructor for L-inf scoring space. L-inf scoring space expects values to be of type float[].
+         *
+         * @param query Query object that, along with the doc values, will be used to compute L-inf score
+         * @param fieldType FieldType for the doc values that will be used
+         */
+        public LInf(Object query, MappedFieldType fieldType) {
+            if (!isKNNVectorFieldType(fieldType)) {
+                throw new IllegalArgumentException("Incompatible field_type for l-inf space. The field type must " +
+                        "be knn_vector.");
+            }
+
+            this.processedQuery = parseToFloatArray(query,
+                    ((KNNVectorFieldMapper.KNNVectorFieldType) fieldType).getDimension());
+            this.scoringMethod = (float[] q, float[] v) -> 1 / (1 + KNNScoringUtil.lInfDistance(q, v));
+        }
+
+        public ScoreScript getScoreScript(Map<String, Object> params, String field, SearchLookup lookup,
+                                          LeafReaderContext ctx) throws IOException {
+            return new KNNScoreScript.KNNVectorType(params, this.processedQuery, field, this.scoringMethod, lookup,
+                    ctx);
+        }
+    }
 }

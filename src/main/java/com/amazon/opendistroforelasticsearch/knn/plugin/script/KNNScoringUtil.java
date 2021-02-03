@@ -246,4 +246,42 @@ public class KNNScoringUtil {
     public static float l1distance(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
         return l1distance(toFloat(queryVector), docValues.getValue());
     }
+
+    /**
+     * This method calculates L-inf distance between query vector
+     * and input vector
+     *
+     * @param queryVector query vector
+     * @param inputVector input vector
+     * @return L-inf score
+     */
+    public static float lInfDistance(float[] queryVector, float[] inputVector) {
+        requireEqualDimension(queryVector, inputVector);
+        float distance = 0;
+        for (int i = 0; i < inputVector.length; i++) {
+            float diff = queryVector[i] - inputVector[i];
+            distance = Math.max(Math.abs(diff), distance);
+        }
+        return distance;
+    }
+
+    /**
+     * Whitelisted lInfDistance method for users to calculate L-inf distance between query vector
+     * and document vectors
+     * Example
+     *  "script": {
+     *         "source": "1/(1 + lInfDistance(params.query_vector, doc[params.field]))",
+     *         "params": {
+     *           "query_vector": [1, 2, 3.4],
+     *           "field": "my_dense_vector"
+     *         }
+     *       }
+     *
+     * @param queryVector query vector
+     * @param docValues   script doc values
+     * @return L-inf score
+     */
+    public static float lInfDistance(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
+        return lInfDistance(toFloat(queryVector), docValues.getValue());
+    }
 }
