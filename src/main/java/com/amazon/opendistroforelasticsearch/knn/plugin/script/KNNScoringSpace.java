@@ -197,7 +197,7 @@ public interface KNNScoringSpace {
 
             this.processedQuery = parseToFloatArray(query,
                     ((KNNVectorFieldMapper.KNNVectorFieldType) fieldType).getDimension());
-            this.scoringMethod = (float[] q, float[] v) -> 1 / (1 + KNNScoringUtil.lInfDistance(q, v));
+            this.scoringMethod = (float[] q, float[] v) -> 1 / (1 + KNNScoringUtil.lInfNorm(q, v));
         }
 
         public ScoreScript getScoreScript(Map<String, Object> params, String field, SearchLookup lookup,
