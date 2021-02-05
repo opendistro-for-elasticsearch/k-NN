@@ -66,7 +66,7 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
         public double execute(ScoreScript.ExplanationHolder explanationHolder) {
             ScriptDocValues.Longs scriptDocValues = (ScriptDocValues.Longs) getDoc().get(this.field);
             if (scriptDocValues.isEmpty()) {
-                return Float.MIN_VALUE;
+                return 0.0;
             }
             return this.scoringMethod.apply(this.queryValue, scriptDocValues.getValue());
         }
@@ -94,7 +94,7 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
         public double execute(ScoreScript.ExplanationHolder explanationHolder) {
             ScriptDocValues.BytesRefs scriptDocValues = (ScriptDocValues.BytesRefs) getDoc().get(this.field);
             if (scriptDocValues.isEmpty()) {
-                return Float.MIN_VALUE;
+                return 0.0;
             }
             return this.scoringMethod.apply(this.queryValue, new BigInteger(1, scriptDocValues.getValue().bytes));
         }
@@ -123,7 +123,7 @@ public abstract class KNNScoreScript<T> extends ScoreScript {
         public double execute(ScoreScript.ExplanationHolder explanationHolder) {
             KNNVectorScriptDocValues scriptDocValues = (KNNVectorScriptDocValues) getDoc().get(this.field);
             if (scriptDocValues.isEmpty()) {
-                return Float.MIN_VALUE;
+                return 0.0;
             }
             return this.scoringMethod.apply(this.queryValue, scriptDocValues.getValue());
         }

@@ -114,7 +114,7 @@ public class KNNScoringUtil {
         float normalizedProduct = normQueryVector * normInputVector;
         if (normalizedProduct == 0) {
             logger.debug("Invalid vectors for cosine. Returning minimum score to put this result to end");
-            return Float.MIN_VALUE;
+            return 0.0f;
         }
         return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
     }
@@ -161,7 +161,7 @@ public class KNNScoringUtil {
         float normalizedProduct = normQueryVector * normInputVector;
         if (normalizedProduct == 0) {
             logger.debug("Invalid vectors for cosine. Returning minimum score to put this result to end");
-            return Float.MIN_VALUE;
+            return 0.0f;
         }
         return (float) (dotProduct / (Math.sqrt(normalizedProduct)));
     }
