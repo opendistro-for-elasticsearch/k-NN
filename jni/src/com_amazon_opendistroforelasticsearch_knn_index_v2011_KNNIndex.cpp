@@ -71,15 +71,9 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
         env->ReleaseIntArrayElements(ids, objectIds, 0);
         index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", spaceTypeCppString, *space, dataset);
 
-        int paramsCount = env->GetArrayLength(algoParams);
-        vector<string> paramsList;
-        string paramString;
-        for (int i=0; i<paramsCount; i++) {
-            paramString = getStringJenv(env, (jstring)(env->GetObjectArrayElement(algoParams, i)));
-            paramsList.push_back(paramString);
-        }
-
+        auto paramsList = getVectorOfStrings(env, algoParams);
         string indexPathCppString = getStringJenv(env, indexPath);
+
         index->CreateIndex(AnyParams(paramsList));
         index->SaveIndex(indexPathCppString);
 
@@ -148,13 +142,7 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v20
         indexWrapper->index->LoadIndex(indexPathCppString);
 
         // Parse and set query params
-        int paramsCount = env->GetArrayLength(algoParams);
-        vector<string> paramsList;
-        string paramString;
-        for (int i=0; i<paramsCount; i++) {
-            paramString = getStringJenv(env, (jstring)(env->GetObjectArrayElement(algoParams, i)));
-            paramsList.push_back(paramString);
-        }
+        auto paramsList = getVectorOfStrings(env, algoParams);
         indexWrapper->index->SetQueryTimeParams(AnyParams(paramsList));
 
         return (jlong) indexWrapper;

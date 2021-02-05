@@ -20,6 +20,7 @@
 #include <new>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 void java_exception(JNIEnv* env, const char* type = "", const char* message = "") {
     jclass newExcCls = env->FindClass(type);
@@ -65,6 +66,19 @@ std::string getStringJenv(JNIEnv * env, jstring javaString) {
     std::string cppString(cString);
     env->ReleaseStringUTFChars(javaString, cString);
     return cppString;
+}
+
+std::vector<std::string> getVectorOfStrings(JNIEnv * env, jobjectArray javaStringsArray) {
+    int arraySize = env->GetArrayLength(javaStringsArray);
+    std::vector<std::string> stringVector;
+    std::string cppString;
+
+    for (int i=0; i < arraySize; i++) {
+        cppString = getStringJenv(env, (jstring)(env->GetObjectArrayElement(javaStringsArray, i)));
+        stringVector.push_back(cppString);
+    }
+
+    return stringVector;
 }
 
 #endif //OPENDISTRO_KNN_JNI_UTIL_H
