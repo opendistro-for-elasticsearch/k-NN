@@ -26,9 +26,11 @@ void java_exception(JNIEnv* env, const char* type = "", const char* message = ""
     if (newExcCls != nullptr) {
         env->ThrowNew(newExcCls, message);
     }
-    //If newExcCls isn't found, NoClassDefFoundError will be thrown
+    // If newExcCls isn't found, NoClassDefFoundError will be thrown
 }
 
+// This method checks if an exception occurred in the JVM and if so throws a C++ exception
+// This should be called after some calls to JNI functions
 inline void has_exception_in_stack(JNIEnv* env)
 {
     if (env->ExceptionCheck() == JNI_TRUE) {
