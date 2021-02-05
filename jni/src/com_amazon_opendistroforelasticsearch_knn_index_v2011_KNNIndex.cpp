@@ -14,6 +14,7 @@
  */
 
 #include "com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex.h"
+#include "jni_util.h"
 
 #include "init.h"
 #include "index.h"
@@ -41,7 +42,7 @@ using similarity::KNNQueue;
 extern "C"
 
 struct IndexWrapper {
-  IndexWrapper(string spaceType) {
+  explicit IndexWrapper(const string& spaceType) {
     space.reset(SpaceFactoryRegistry<float>::Instance().CreateSpace(spaceType, AnyParams()));
     index.reset(MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", spaceType, *space, data));
   }
@@ -50,40 +51,6 @@ struct IndexWrapper {
   // Index gets constructed with a reference to data (see above) but is otherwise unused
   ObjectVector data;
 };
-
-struct JavaException {
-    JavaException(JNIEnv* env, const char* type = "", const char* message = "")
-    {
-        jclass newExcCls = env->FindClass(type);
-        if (newExcCls != NULL)
-            env->ThrowNew(newExcCls, message);
-    }
-};
-
-inline void has_exception_in_stack(JNIEnv* env)
-{
-    if (env->ExceptionCheck() == JNI_TRUE)
-        throw std::runtime_error("Exception Occured");
-}
-
-void catch_cpp_exception_and_throw_java(JNIEnv* env)
-{
-    try {
-        throw;
-    }
-    catch (const std::bad_alloc& rhs) {
-        JavaException(env, "java/io/IOException", rhs.what());
-    }
-    catch (const std::runtime_error& re) {
-        JavaException(env, "java/lang/Exception", re.what());
-    }
-    catch (const std::exception& e) {
-        JavaException(env, "java/lang/Exception", e.what());
-    }
-    catch (...) {
-        JavaException(env, "java/lang/Exception", "Unknown exception occured");
-    }
-}
 
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_saveIndex(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams, jstring spaceType)
 {
