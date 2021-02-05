@@ -60,7 +60,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
     int* objectIds = nullptr;
 
     try {
-        string spaceTypeCppString = GetStringJenv(env, spaceType);
+        string spaceTypeCppString = knn_jni::GetStringJenv(env, spaceType);
         space = SpaceFactoryRegistry<float>::Instance().CreateSpace(spaceTypeCppString, AnyParams());
         objectIds = env->GetIntArrayElements(ids, nullptr);
         for (int i = 0; i < env->GetArrayLength(vectors); i++) {
@@ -73,8 +73,8 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
         env->ReleaseIntArrayElements(ids, objectIds, 0);
         index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", spaceTypeCppString, *space, dataset);
 
-        auto paramsList = GetVectorOfStrings(env, algoParams);
-        string indexPathCppString = GetStringJenv(env, indexPath);
+        auto paramsList = knn_jni::GetVectorOfStrings(env, algoParams);
+        string indexPathCppString = knn_jni::GetStringJenv(env, indexPath);
 
         index->CreateIndex(AnyParams(paramsList));
         index->SaveIndex(indexPathCppString);
@@ -94,7 +94,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
         }
         delete index;
         delete space;
-        CatchCppExceptionAndThrowJava(env);
+        knn_jni::CatchCppExceptionAndThrowJava(env);
     }
 }
 
@@ -104,7 +104,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
     try {
         auto *indexWrapper = reinterpret_cast<IndexWrapper*>(indexPointer);
         float* rawQueryvector = env->GetFloatArrayElements(queryVector, nullptr);
-        HasExceptionInStack(env);
+        knn_jni::HasExceptionInStack(env);
         std::unique_ptr<const Object> queryObject(new Object(-1, -1, env->GetArrayLength(queryVector)*sizeof(float), rawQueryvector));
         env->ReleaseFloatArrayElements(queryVector, rawQueryvector, 0);
 
@@ -115,12 +115,12 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
 
         jclass resultClass = env->FindClass("com/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult");
         if (resultClass == nullptr) {
-            HasExceptionInStack(env);
+            knn_jni::HasExceptionInStack(env);
         }
 
         jmethodID allArgs = env->GetMethodID(resultClass, "<init>", "(IF)V");
         jobjectArray results = env->NewObjectArray(resultSize, resultClass, nullptr);
-        HasExceptionInStack(env);
+        knn_jni::HasExceptionInStack(env);
 
         for (int i = 0; i < resultSize; i++) {
             float distance = result->TopDistance();
@@ -129,7 +129,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
         }
         return results;
     } catch(...) {
-        CatchCppExceptionAndThrowJava(env);
+        knn_jni::CatchCppExceptionAndThrowJava(env);
     }
     return nullptr;
 }
@@ -139,14 +139,14 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v20
 {
     IndexWrapper *indexWrapper = nullptr;
     try {
-        string indexPathCppString = GetStringJenv(env, indexPath);
-        string spaceTypeCppString = GetStringJenv(env, spaceType);
+        string indexPathCppString = knn_jni::GetStringJenv(env, indexPath);
+        string spaceTypeCppString = knn_jni::GetStringJenv(env, spaceType);
 
         indexWrapper = new IndexWrapper(spaceTypeCppString);
         indexWrapper->index->LoadIndex(indexPathCppString);
 
         // Parse and set query params
-        auto paramsList = GetVectorOfStrings(env, algoParams);
+        auto paramsList = knn_jni::GetVectorOfStrings(env, algoParams);
         indexWrapper->index->SetQueryTimeParams(AnyParams(paramsList));
 
         return (jlong) indexWrapper;
@@ -155,7 +155,7 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v20
     // is the only known failure mode for init()).
     catch (...) {
         delete indexWrapper;
-        CatchCppExceptionAndThrowJava(env);
+        knn_jni::CatchCppExceptionAndThrowJava(env);
     }
     return NULL;
 }

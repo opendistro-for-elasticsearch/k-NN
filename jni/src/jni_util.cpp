@@ -22,7 +22,7 @@
 #include <vector>
 
 
-void ThrowJavaException(JNIEnv* env, const char* type, const char* message) {
+void knn_jni::ThrowJavaException(JNIEnv* env, const char* type, const char* message) {
     jclass newExcCls = env->FindClass(type);
     if (newExcCls != nullptr) {
         env->ThrowNew(newExcCls, message);
@@ -31,7 +31,7 @@ void ThrowJavaException(JNIEnv* env, const char* type, const char* message) {
 }
 
 
-void CatchCppExceptionAndThrowJava(JNIEnv* env)
+void knn_jni::CatchCppExceptionAndThrowJava(JNIEnv* env)
 {
     try {
         throw;
@@ -51,7 +51,7 @@ void CatchCppExceptionAndThrowJava(JNIEnv* env)
 }
 
 
-std::string GetStringJenv(JNIEnv * env, jstring javaString) {
+std::string knn_jni::GetStringJenv(JNIEnv * env, jstring javaString) {
     const char *cString = env->GetStringUTFChars(javaString, nullptr);
     if (cString == nullptr) {
         HasExceptionInStack(env);
@@ -62,7 +62,7 @@ std::string GetStringJenv(JNIEnv * env, jstring javaString) {
 }
 
 
-std::vector<std::string> GetVectorOfStrings(JNIEnv * env, jobjectArray javaStringsArray) {
+std::vector<std::string> knn_jni::GetVectorOfStrings(JNIEnv * env, jobjectArray javaStringsArray) {
     int arraySize = env->GetArrayLength(javaStringsArray);
     std::vector<std::string> stringVector;
     std::string cppString;

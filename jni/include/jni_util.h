@@ -22,32 +22,33 @@
 #include <string>
 #include <vector>
 
+namespace knn_jni {
+    // Takes the name of a Java exception type and a message and throws the corresponding exception
+    // to the JVM
+    void ThrowJavaException(JNIEnv* env, const char* type = "", const char* message = "");
 
-// Takes the name of a Java exception type and a message and throws the corresponding exception
-// to the JVM
-void ThrowJavaException(JNIEnv* env, const char* type = "", const char* message = "");
 
-
-// Checks if an exception occurred in the JVM and if so throws a C++ exception
-// This should be called after some calls to JNI functions
-inline void HasExceptionInStack(JNIEnv* env)
-{
-    if (env->ExceptionCheck() == JNI_TRUE) {
-        throw std::runtime_error("Exception Occurred");
+    // Checks if an exception occurred in the JVM and if so throws a C++ exception
+    // This should be called after some calls to JNI functions
+    inline void HasExceptionInStack(JNIEnv* env)
+    {
+        if (env->ExceptionCheck() == JNI_TRUE) {
+            throw std::runtime_error("Exception Occurred");
+        }
     }
+
+
+    // Catches a C++ exception and throws the corresponding exception to the JVM
+    void CatchCppExceptionAndThrowJava(JNIEnv* env);
+
+
+    // Returns cpp copied string from the Java string and releases the JNI Resource
+    std::string GetStringJenv(JNIEnv * env, jstring javaString);
+
+
+    // Returns the translation of a jobjectArray containing jstrings to a c++ vector of strings and releases the underlying
+    // JNI resources
+    std::vector<std::string> GetVectorOfStrings(JNIEnv * env, jobjectArray javaStringsArray);
 }
-
-
-// Catches a C++ exception and throws the corresponding exception to the JVM
-void CatchCppExceptionAndThrowJava(JNIEnv* env);
-
-
-// Returns cpp copied string from the Java string and releases the JNI Resource
-std::string GetStringJenv(JNIEnv * env, jstring javaString);
-
-
-// Returns the translation of a jobjectArray containing jstrings to a c++ vector of strings and releases the underlying
-// JNI resources
-std::vector<std::string> GetVectorOfStrings(JNIEnv * env, jobjectArray javaStringsArray);
 
 #endif //OPENDISTRO_KNN_JNI_UTIL_H
