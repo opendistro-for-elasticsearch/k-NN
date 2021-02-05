@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-void java_exception(JNIEnv* env, const char* type = "", const char* message = "") {
+void ThrowJavaException(JNIEnv* env, const char* type = "", const char* message = "") {
     jclass newExcCls = env->FindClass(type);
     if (newExcCls != nullptr) {
         env->ThrowNew(newExcCls, message);
@@ -32,49 +32,49 @@ void java_exception(JNIEnv* env, const char* type = "", const char* message = ""
 
 // This method checks if an exception occurred in the JVM and if so throws a C++ exception
 // This should be called after some calls to JNI functions
-inline void has_exception_in_stack(JNIEnv* env)
+inline void HasExceptionInStack(JNIEnv* env)
 {
     if (env->ExceptionCheck() == JNI_TRUE) {
         throw std::runtime_error("Exception Occurred");
     }
 }
 
-void catch_cpp_exception_and_throw_java(JNIEnv* env)
+void CatchCppExceptionAndThrowJava(JNIEnv* env)
 {
     try {
         throw;
     }
     catch (const std::bad_alloc& rhs) {
-        java_exception(env, "java/io/IOException", rhs.what());
+        ThrowJavaException(env, "java/io/IOException", rhs.what());
     }
     catch (const std::runtime_error& re) {
-        java_exception(env, "java/lang/Exception", re.what());
+        ThrowJavaException(env, "java/lang/Exception", re.what());
     }
     catch (const std::exception& e) {
-        java_exception(env, "java/lang/Exception", e.what());
+        ThrowJavaException(env, "java/lang/Exception", e.what());
     }
     catch (...) {
-        java_exception(env, "java/lang/Exception", "Unknown exception occurred");
+        ThrowJavaException(env, "java/lang/Exception", "Unknown exception occurred");
     }
 }
 
-std::string getStringJenv(JNIEnv * env, jstring javaString) {
+std::string GetStringJenv(JNIEnv * env, jstring javaString) {
     const char *cString = env->GetStringUTFChars(javaString, nullptr);
     if (cString == nullptr) {
-        has_exception_in_stack(env);
+        HasExceptionInStack(env);
     }
     std::string cppString(cString);
     env->ReleaseStringUTFChars(javaString, cString);
     return cppString;
 }
 
-std::vector<std::string> getVectorOfStrings(JNIEnv * env, jobjectArray javaStringsArray) {
+std::vector<std::string> GetVectorOfStrings(JNIEnv * env, jobjectArray javaStringsArray) {
     int arraySize = env->GetArrayLength(javaStringsArray);
     std::vector<std::string> stringVector;
     std::string cppString;
 
     for (int i=0; i < arraySize; i++) {
-        cppString = getStringJenv(env, (jstring)(env->GetObjectArrayElement(javaStringsArray, i)));
+        cppString = GetStringJenv(env, (jstring)(env->GetObjectArrayElement(javaStringsArray, i)));
         stringVector.push_back(cppString);
     }
 

@@ -58,7 +58,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
     int* objectIds = nullptr;
 
     try {
-        string spaceTypeCppString = getStringJenv(env, spaceType);
+        string spaceTypeCppString = GetStringJenv(env, spaceType);
         space = SpaceFactoryRegistry<float>::Instance().CreateSpace(spaceTypeCppString, AnyParams());
         objectIds = env->GetIntArrayElements(ids, nullptr);
         for (int i = 0; i < env->GetArrayLength(vectors); i++) {
@@ -71,8 +71,8 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
         env->ReleaseIntArrayElements(ids, objectIds, 0);
         index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", spaceTypeCppString, *space, dataset);
 
-        auto paramsList = getVectorOfStrings(env, algoParams);
-        string indexPathCppString = getStringJenv(env, indexPath);
+        auto paramsList = GetVectorOfStrings(env, algoParams);
+        string indexPathCppString = GetStringJenv(env, indexPath);
 
         index->CreateIndex(AnyParams(paramsList));
         index->SaveIndex(indexPathCppString);
@@ -92,7 +92,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
         }
         delete index;
         delete space;
-        catch_cpp_exception_and_throw_java(env);
+        CatchCppExceptionAndThrowJava(env);
     }
 }
 
@@ -101,7 +101,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
     try {
         auto *indexWrapper = reinterpret_cast<IndexWrapper*>(indexPointer);
         float* rawQueryvector = env->GetFloatArrayElements(queryVector, nullptr);
-        has_exception_in_stack(env);
+        HasExceptionInStack(env);
         std::unique_ptr<const Object> queryObject(new Object(-1, -1, env->GetArrayLength(queryVector)*sizeof(float), rawQueryvector));
         env->ReleaseFloatArrayElements(queryVector, rawQueryvector, 0);
 
@@ -112,12 +112,12 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
 
         jclass resultClass = env->FindClass("com/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult");
         if (resultClass == nullptr) {
-            has_exception_in_stack(env);
+            HasExceptionInStack(env);
         }
 
         jmethodID allArgs = env->GetMethodID(resultClass, "<init>", "(IF)V");
         jobjectArray results = env->NewObjectArray(resultSize, resultClass, nullptr);
-        has_exception_in_stack(env);
+        HasExceptionInStack(env);
 
         for (int i = 0; i < resultSize; i++) {
             float distance = result->TopDistance();
@@ -126,7 +126,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
         }
         return results;
     } catch(...) {
-        catch_cpp_exception_and_throw_java(env);
+        CatchCppExceptionAndThrowJava(env);
     }
     return nullptr;
 }
@@ -135,14 +135,14 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v20
 {
     IndexWrapper *indexWrapper = nullptr;
     try {
-        string indexPathCppString = getStringJenv(env, indexPath);
-        string spaceTypeCppString = getStringJenv(env, spaceType);
+        string indexPathCppString = GetStringJenv(env, indexPath);
+        string spaceTypeCppString = GetStringJenv(env, spaceType);
 
         indexWrapper = new IndexWrapper(spaceTypeCppString);
         indexWrapper->index->LoadIndex(indexPathCppString);
 
         // Parse and set query params
-        auto paramsList = getVectorOfStrings(env, algoParams);
+        auto paramsList = GetVectorOfStrings(env, algoParams);
         indexWrapper->index->SetQueryTimeParams(AnyParams(paramsList));
 
         return (jlong) indexWrapper;
@@ -151,7 +151,7 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v20
     // is the only known failure mode for init()).
     catch (...) {
         delete indexWrapper;
-        catch_cpp_exception_and_throw_java(env);
+        CatchCppExceptionAndThrowJava(env);
     }
     return NULL;
 }
