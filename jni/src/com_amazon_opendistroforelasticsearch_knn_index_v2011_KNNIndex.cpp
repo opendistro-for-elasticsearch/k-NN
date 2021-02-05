@@ -55,40 +55,33 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
     Space<float>* space = nullptr;
     ObjectVector dataset;
     Index<float>* index = nullptr;
-    int* object_ids = nullptr;
+    int* objectIds = nullptr;
 
     try {
-        const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, nullptr);
-        string spaceTypeString(spaceTypeCStr);
-        env->ReleaseStringUTFChars(spaceType, spaceTypeCStr);
-        has_exception_in_stack(env);
-        space = SpaceFactoryRegistry<float>::Instance().CreateSpace(spaceTypeString, AnyParams());
-        object_ids = env->GetIntArrayElements(ids, nullptr);
+        string spaceTypeCppString = getStringJenv(env, spaceType);
+        space = SpaceFactoryRegistry<float>::Instance().CreateSpace(spaceTypeCppString, AnyParams());
+        objectIds = env->GetIntArrayElements(ids, nullptr);
         for (int i = 0; i < env->GetArrayLength(vectors); i++) {
             auto vectorArray = (jfloatArray)env->GetObjectArrayElement(vectors, i);
             float* vector = env->GetFloatArrayElements(vectorArray, nullptr);
-            dataset.push_back(new Object(object_ids[i], -1, env->GetArrayLength(vectorArray)*sizeof(float), vector));
+            dataset.push_back(new Object(objectIds[i], -1, env->GetArrayLength(vectorArray)*sizeof(float), vector));
             env->ReleaseFloatArrayElements(vectorArray, vector, 0);
         }
         // free up memory
-        env->ReleaseIntArrayElements(ids, object_ids, 0);
-        index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", spaceTypeString, *space, dataset);
+        env->ReleaseIntArrayElements(ids, objectIds, 0);
+        index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", spaceTypeCppString, *space, dataset);
 
         int paramsCount = env->GetArrayLength(algoParams);
         vector<string> paramsList;
+        string paramString;
         for (int i=0; i<paramsCount; i++) {
-            auto param = (jstring) (env->GetObjectArrayElement(algoParams, i));
-            const char *rawString = env->GetStringUTFChars(param, nullptr);
-            paramsList.emplace_back(rawString);
-            env->ReleaseStringUTFChars(param, rawString);
+            paramString = getStringJenv(env, (jstring)(env->GetObjectArrayElement(algoParams, i)));
+            paramsList.push_back(paramString);
         }
 
+        string indexPathCppString = getStringJenv(env, indexPath);
         index->CreateIndex(AnyParams(paramsList));
-        has_exception_in_stack(env);
-        const char *indexString = env->GetStringUTFChars(indexPath, nullptr);
-        index->SaveIndex(indexString);
-        env->ReleaseStringUTFChars(indexPath, indexString);
-        has_exception_in_stack(env);
+        index->SaveIndex(indexPathCppString);
 
         // Free each object in the dataset. No need to clear the vector because it goes out of scope
         // immediately
@@ -99,7 +92,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
         delete space;
     }
     catch (...) {
-        if (object_ids) { env->ReleaseIntArrayElements(ids, object_ids, 0); }
+        if (objectIds) { env->ReleaseIntArrayElements(ids, objectIds, 0); }
         for (auto & it : dataset) {
              delete it;
         }
@@ -144,27 +137,19 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v20
 {
     IndexWrapper *indexWrapper = nullptr;
     try {
-        const char *indexPathCStr = env->GetStringUTFChars(indexPath, nullptr);
-        string indexPathString(indexPathCStr);
-        env->ReleaseStringUTFChars(indexPath, indexPathCStr);
-        has_exception_in_stack(env);
+        string indexPathCppString = getStringJenv(env, indexPath);
+        string spaceTypeCppString = getStringJenv(env, spaceType);
 
-        // Load index from file (may throw)
-        const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, nullptr);
-        string spaceTypeString(spaceTypeCStr);
-        env->ReleaseStringUTFChars(spaceType, spaceTypeCStr);
-        has_exception_in_stack(env);
-        indexWrapper = new IndexWrapper(spaceTypeString);
-        indexWrapper->index->LoadIndex(indexPathString);
+        indexWrapper = new IndexWrapper(spaceTypeCppString);
+        indexWrapper->index->LoadIndex(indexPathCppString);
 
         // Parse and set query params
         int paramsCount = env->GetArrayLength(algoParams);
         vector<string> paramsList;
+        string paramString;
         for (int i=0; i<paramsCount; i++) {
-            auto param = (jstring) (env->GetObjectArrayElement(algoParams, i));
-            const char *rawString = env->GetStringUTFChars(param, nullptr);
-            paramsList.emplace_back(rawString);
-            env->ReleaseStringUTFChars(param, rawString);
+            paramString = getStringJenv(env, (jstring)(env->GetObjectArrayElement(algoParams, i)));
+            paramsList.push_back(paramString);
         }
         indexWrapper->index->SetQueryTimeParams(AnyParams(paramsList));
         has_exception_in_stack(env);

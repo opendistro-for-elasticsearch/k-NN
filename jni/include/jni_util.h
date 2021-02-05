@@ -17,8 +17,9 @@
 #define OPENDISTRO_KNN_JNI_UTIL_H
 
 #include <jni.h>
-#include <stdexcept>
 #include <new>
+#include <stdexcept>
+#include <string>
 
 void java_exception(JNIEnv* env, const char* type = "", const char* message = "") {
     jclass newExcCls = env->FindClass(type);
@@ -52,6 +53,16 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
     catch (...) {
         java_exception(env, "java/lang/Exception", "Unknown exception occurred");
     }
+}
+
+std::string getStringJenv(JNIEnv * env, jstring javaString) {
+    const char *cString = env->GetStringUTFChars(javaString, nullptr);
+    if (cString == nullptr) {
+        has_exception_in_stack(env);
+    }
+    std::string cppString(cString);
+    env->ReleaseStringUTFChars(javaString, cString);
+    return cppString;
 }
 
 #endif //OPENDISTRO_KNN_JNI_UTIL_H
