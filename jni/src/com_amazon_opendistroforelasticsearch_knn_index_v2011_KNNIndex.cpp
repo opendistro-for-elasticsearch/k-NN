@@ -39,6 +39,7 @@ using similarity::Object;
 using similarity::KNNQuery;
 using similarity::KNNQueue;
 
+
 struct IndexWrapper {
   explicit IndexWrapper(const string& spaceType) {
     // Index gets constructed with a reference to data (see above) but is otherwise unused
@@ -49,6 +50,7 @@ struct IndexWrapper {
   std::unique_ptr<Space<float>> space;
   std::unique_ptr<Index<float>> index;
 };
+
 
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_saveIndex(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams, jstring spaceType)
 {
@@ -96,6 +98,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
     }
 }
 
+
 JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_queryIndex(JNIEnv* env, jclass cls, jlong indexPointer, jfloatArray queryVector, jint k)
 {
     try {
@@ -131,6 +134,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
     return nullptr;
 }
 
+
 JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_init(JNIEnv* env, jclass cls,  jstring indexPath, jobjectArray algoParams, jstring spaceType)
 {
     IndexWrapper *indexWrapper = nullptr;
@@ -156,11 +160,13 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v20
     return NULL;
 }
 
+
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_gc(JNIEnv* env, jclass cls,  jlong indexPointer)
 {
     auto *indexWrapper = reinterpret_cast<IndexWrapper*>(indexPointer);
     delete indexWrapper;
 }
+
 
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_initLibrary(JNIEnv *, jclass)
 {
