@@ -231,6 +231,54 @@ public class KNNJNITests extends KNNTestCase {
         assertEquals(38.0, scores.get(2), 0.001);
         dir.close();
     }
+    public void testQueryHnswIndexLInf() throws Exception {
+        int[] docs = {0, 1, 2};
+
+        float[][] vectors = {
+                {5.0f, 6.0f, 7.0f, 8.0f},
+                {1.0f, 2.0f, 3.0f, 4.0f},
+                {9.0f, 10.0f, 11.0f, 12.0f}
+        };
+
+        Directory dir = newFSDirectory(createTempDir());
+        String segmentName = "_dummy1";
+        String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
+                String.format("%s.hnsw", segmentName)).toString();
+
+        String[] algoParams = {};
+        AccessController.doPrivileged(
+                new PrivilegedAction<Void>() {
+                    public Void run() {
+                        KNNIndex.saveIndex(docs, vectors, indexPath, algoParams, "linf");
+                        return null;
+                    }
+                }
+        );
+
+        assertTrue(Arrays.asList(dir.listAll()).contains("_dummy1.hnsw"));
+
+        float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
+        String[] algoQueryParams = {"efSearch=20"};
+
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, algoQueryParams, "l1");
+        final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
+
+        Map<Integer, Float> scores = Arrays.stream(results).collect(
+                Collectors.toMap(result -> result.getId(), result -> result.getScore()));
+        logger.info(scores);
+
+        assertEquals(results.length, 3);
+        /*
+         * scores are evaluated using Manhattan distance. Distance of the documents with
+         * respect to query vector are as follows
+         * doc0 = 7, doc1 = 3,  doc2 = 11
+         * Nearest neighbor is doc1 then doc0 then doc2
+         */
+        assertEquals(7.0, scores.get(0), 0.001);
+        assertEquals(3.0, scores.get(1), 0.001);
+        assertEquals(11.0, scores.get(2), 0.001);
+        dir.close();
+    }
 
     public void testQueryHnswIndexWithValidAlgoParams() throws Exception {
         int[] docs = {0, 1, 2};
