@@ -103,10 +103,10 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
             jfloatArray vectorArray = (jfloatArray)env->GetObjectArrayElement(vectors, i);
             float* vector = env->GetFloatArrayElements(vectorArray, 0);
             dataset.push_back(new Object(object_ids[i], -1, env->GetArrayLength(vectorArray)*sizeof(float), vector));
-            env->ReleaseFloatArrayElements(vectorArray, vector, 0);
+            env->ReleaseFloatArrayElements(vectorArray, vector, JNI_ABORT);
         }
         // free up memory
-        env->ReleaseIntArrayElements(ids, object_ids, 0);
+        env->ReleaseIntArrayElements(ids, object_ids, JNI_ABORT);
         index = MethodFactoryRegistry<float>::Instance().CreateMethod(false, "hnsw", spaceTypeString, *space, dataset);
 
         int paramsCount = env->GetArrayLength(algoParams);
@@ -134,7 +134,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
         delete space;
     }
     catch (...) {
-        if (object_ids) { env->ReleaseIntArrayElements(ids, object_ids, 0); }
+        if (object_ids) { env->ReleaseIntArrayElements(ids, object_ids, JNI_ABORT); }
         for (auto it = dataset.begin(); it != dataset.end(); it++) {
              delete *it;
         }
@@ -151,7 +151,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
 
         float* rawQueryvector = env->GetFloatArrayElements(queryVector, 0);
         std::unique_ptr<const Object> queryObject(new Object(-1, -1, env->GetArrayLength(queryVector)*sizeof(float), rawQueryvector));
-        env->ReleaseFloatArrayElements(queryVector, rawQueryvector, 0);
+        env->ReleaseFloatArrayElements(queryVector, rawQueryvector, JNI_ABORT);
         has_exception_in_stack(env);
 
         KNNQuery<float> knnQuery(*(indexWrapper->space), queryObject.get(), k);
@@ -231,5 +231,4 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v201
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_v2011_KNNIndex_initLibrary(JNIEnv *, jclass)
 {
     initLibrary();
-
 }
