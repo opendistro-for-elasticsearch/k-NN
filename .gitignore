@@ -21,7 +21,8 @@ jni/release
 jni/packages
 jni/*.cbp
 jni/*/release
-jni/*/cmake*
+jni/*/cmake_*
+jni/*/cmake-*
 jni/*/CPack*
 jni/*/CMakeCache.txt
 jni/*/CMakeFiles
