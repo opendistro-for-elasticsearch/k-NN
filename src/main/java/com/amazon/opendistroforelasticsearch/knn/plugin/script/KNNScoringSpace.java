@@ -148,4 +148,62 @@ public interface KNNScoringSpace {
                     (BiFunction<BigInteger, BigInteger, Float>) this.scoringMethod, lookup, ctx);
         }
     }
+
+    class L1 implements KNNScoringSpace {
+
+        float[] processedQuery;
+        BiFunction<float[], float[], Float> scoringMethod;
+
+        /**
+         * Constructor for L1 scoring space. L1 scoring space expects values to be of type float[].
+         *
+         * @param query Query object that, along with the doc values, will be used to compute L1 score
+         * @param fieldType FieldType for the doc values that will be used
+         */
+        public L1(Object query, MappedFieldType fieldType) {
+            if (!isKNNVectorFieldType(fieldType)) {
+                throw new IllegalArgumentException("Incompatible field_type for l1 space. The field type must " +
+                        "be knn_vector.");
+            }
+
+            this.processedQuery = parseToFloatArray(query,
+                    ((KNNVectorFieldMapper.KNNVectorFieldType) fieldType).getDimension());
+            this.scoringMethod = (float[] q, float[] v) -> 1 / (1 + KNNScoringUtil.l1Norm(q, v));
+        }
+
+        public ScoreScript getScoreScript(Map<String, Object> params, String field, SearchLookup lookup,
+                                          LeafReaderContext ctx) throws IOException {
+            return new KNNScoreScript.KNNVectorType(params, this.processedQuery, field, this.scoringMethod, lookup,
+                    ctx);
+        }
+    }
+
+    class LInf implements KNNScoringSpace {
+
+        float[] processedQuery;
+        BiFunction<float[], float[], Float> scoringMethod;
+
+        /**
+         * Constructor for L-inf scoring space. L-inf scoring space expects values to be of type float[].
+         *
+         * @param query Query object that, along with the doc values, will be used to compute L-inf score
+         * @param fieldType FieldType for the doc values that will be used
+         */
+        public LInf(Object query, MappedFieldType fieldType) {
+            if (!isKNNVectorFieldType(fieldType)) {
+                throw new IllegalArgumentException("Incompatible field_type for l-inf space. The field type must " +
+                        "be knn_vector.");
+            }
+
+            this.processedQuery = parseToFloatArray(query,
+                    ((KNNVectorFieldMapper.KNNVectorFieldType) fieldType).getDimension());
+            this.scoringMethod = (float[] q, float[] v) -> 1 / (1 + KNNScoringUtil.lInfNorm(q, v));
+        }
+
+        public ScoreScript getScoreScript(Map<String, Object> params, String field, SearchLookup lookup,
+                                          LeafReaderContext ctx) throws IOException {
+            return new KNNScoreScript.KNNVectorType(params, this.processedQuery, field, this.scoringMethod, lookup,
+                    ctx);
+        }
+    }
 }

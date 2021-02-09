@@ -20,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.math.BigInteger;
+import java.lang.Math;
 import java.util.List;
 import java.util.Objects;
 
@@ -206,5 +207,81 @@ public class KNNScoringUtil {
      */
     public static float calculateHammingBit(Long queryLong, Long inputLong) {
         return Long.bitCount(queryLong ^ inputLong);
+    }
+
+    /**
+     * This method calculates L1 distance between query vector
+     * and input vector
+     *
+     * @param queryVector query vector
+     * @param inputVector input vector
+     * @return L1 score
+     */
+    public static float l1Norm(float[] queryVector, float[] inputVector) {
+        requireEqualDimension(queryVector, inputVector);
+        float distance = 0;
+        for (int i = 0; i < inputVector.length; i++) {
+            float diff = queryVector[i] - inputVector[i];
+            distance += Math.abs(diff);
+        }
+        return distance;
+    }
+
+    /**
+     * Whitelisted l1distance method for users to calculate L1 distance between query vector
+     * and document vectors
+     * Example
+     *  "script": {
+     *         "source": "1/(1 + l1Norm(params.query_vector, doc[params.field]))",
+     *         "params": {
+     *           "query_vector": [1, 2, 3.4],
+     *           "field": "my_dense_vector"
+     *         }
+     *       }
+     *
+     * @param queryVector query vector
+     * @param docValues   script doc values
+     * @return L1 score
+     */
+    public static float l1Norm(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
+        return l1Norm(toFloat(queryVector), docValues.getValue());
+    }
+
+    /**
+     * This method calculates L-inf distance between query vector
+     * and input vector
+     *
+     * @param queryVector query vector
+     * @param inputVector input vector
+     * @return L-inf score
+     */
+    public static float lInfNorm(float[] queryVector, float[] inputVector) {
+        requireEqualDimension(queryVector, inputVector);
+        float distance = 0;
+        for (int i = 0; i < inputVector.length; i++) {
+            float diff = queryVector[i] - inputVector[i];
+            distance = Math.max(Math.abs(diff), distance);
+        }
+        return distance;
+    }
+
+    /**
+     * Whitelisted lInfNorm method for users to calculate L-inf distance between query vector
+     * and document vectors
+     * Example
+     *  "script": {
+     *         "source": "1/(1 + lInfNorm(params.query_vector, doc[params.field]))",
+     *         "params": {
+     *           "query_vector": [1, 2, 3.4],
+     *           "field": "my_dense_vector"
+     *         }
+     *       }
+     *
+     * @param queryVector query vector
+     * @param docValues   script doc values
+     * @return L-inf score
+     */
+    public static float lInfNorm(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
+        return lInfNorm(toFloat(queryVector), docValues.getValue());
     }
 }

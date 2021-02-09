@@ -15,7 +15,7 @@
 
 buildscript {
     ext {
-        es_version = System.getProperty("es.version", "7.10.0")
+        es_version = System.getProperty("es.version", "7.10.2")
         es_group = "org.elasticsearch"
         distribution = 'oss-zip'
     }
@@ -68,7 +68,7 @@ if (!usingRemoteCluster) {
 }
 
 ext {
-    opendistroVersion = '1.12.0'
+    opendistroVersion = '1.13.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.TXT')
@@ -279,14 +279,27 @@ afterEvaluate {
 
     buildRpm {
         arch = 'NOARCH'
-        archiveName "${packageName}-${version}.rpm"
         dependsOn 'assemble'
+        finalizedBy 'renameRpm'
+        task renameRpm(type: Copy) {
+            from("$buildDir/distributions")
+            into("$buildDir/distributions")
+            include archiveName
+            rename archiveName, "${packageName}-${version}.rpm"
+            doLast { delete file("$buildDir/distributions/$archiveName") }
+        }
     }
-
     buildDeb {
-        arch = 'amd64'
-        archiveName "${packageName}-${version}.deb"
+        arch = 'all'
         dependsOn 'assemble'
+        finalizedBy 'renameDeb'
+        task renameDeb(type: Copy) {
+            from("$buildDir/distributions")
+            into("$buildDir/distributions")
+            include archiveName
+            rename archiveName, "${packageName}-${version}.deb"
+            doLast { delete file("$buildDir/distributions/$archiveName") }
+        }
     }
 
     task buildPackages(type: GradleBuild) {

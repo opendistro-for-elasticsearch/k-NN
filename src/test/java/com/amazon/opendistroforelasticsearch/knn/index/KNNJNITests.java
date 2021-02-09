@@ -109,6 +109,7 @@ public class KNNJNITests extends KNNTestCase {
         }
         dir.close();
     }
+
     public void testQueryMixedEngineHnswIndexWithWrongEngine() throws Exception {
         int[] docs = {0, 1, 2};
 

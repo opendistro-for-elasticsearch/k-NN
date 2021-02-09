@@ -69,10 +69,16 @@ install(TARGETS ${KNN_INDEX}
         COMPONENT library)
 
 # CPack section to build artifacts
+if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL aarch64)
+    set(MACH_ARCH arm64)
+elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL x86_64)
+    set(MACH_ARCH x64)
+endif()
+
 set(KNN_MAINTAINER "OpenDistro for Elasticsearch Team <opendistro@amazon.com>")
-set(ODFE_DOWNLOAD_URL "https://opendistro.github.io/elasticsearch/downloads")
+set(ODFE_DOWNLOAD_URL "https://opendistro.github.io/for-elasticsearch/downloads.html")
 set(CPACK_PACKAGE_NAME ${KNN_PACKAGE_NAME})
-set(CPACK_PACKAGE_VERSION 1.12.0.0)
+set(CPACK_PACKAGE_VERSION 1.13.0.0)
 set(CMAKE_INSTALL_PREFIX /usr)
 set(CPACK_GENERATOR "RPM;DEB")
 SET(CPACK_OUTPUT_FILE_PREFIX packages)
@@ -81,7 +87,7 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "KNN JNI library built off of NMSLIB for O
 set(CPACK_PACKAGE_VENDOR "Amazon")
 set(CPACK_PACKAGE_CONTACT "Maintainer: ${KNN_MAINTAINER}")
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${JVM_OS_TYPE}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${JVM_OS_TYPE}-${MACH_ARCH}")
 
 # RPM Specific variables
 set(CPACK_RPM_PACKAGE_RELEASE ${CPACK_PACKAGE_RELEASE})

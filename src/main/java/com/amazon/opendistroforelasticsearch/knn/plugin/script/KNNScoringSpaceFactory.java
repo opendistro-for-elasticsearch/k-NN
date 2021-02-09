@@ -32,6 +32,12 @@ public class KNNScoringSpaceFactory {
         if (KNNConstants.L2.equalsIgnoreCase(spaceType)) {
             return new KNNScoringSpace.L2(query, mappedFieldType);
         }
+        if (KNNConstants.L1.equalsIgnoreCase(spaceType)) {
+            return new KNNScoringSpace.L1(query, mappedFieldType);
+        }
+        if (KNNConstants.LINF.equalsIgnoreCase(spaceType)) {
+            return new KNNScoringSpace.LInf(query, mappedFieldType);
+        }
 
         if (KNNConstants.COSINESIMIL.equalsIgnoreCase(spaceType)) {
             return new KNNScoringSpace.CosineSimilarity(query, mappedFieldType);

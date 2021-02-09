@@ -100,6 +100,116 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         assertEquals("1", results.get(3).getDocId());
     }
 
+    public void testKNNL1ScriptScore() throws Exception {
+        /*
+         * Create knn index and populate data
+         */
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] f1  = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, f1);
+
+        Float[] f2  = {4.0f, 1.0f};
+        addKnnDoc(INDEX_NAME, "2", FIELD_NAME, f2);
+
+        Float[] f3  = {3.0f, 3.0f};
+        addKnnDoc(INDEX_NAME, "3", FIELD_NAME, f3);
+
+        Float[] f4  = {5.0f, 5.0f};
+        addKnnDoc(INDEX_NAME, "4", FIELD_NAME, f4);
+
+
+        /**
+         * Construct Search Request
+         */
+        QueryBuilder qb = new MatchAllQueryBuilder();
+        Map<String, Object> params = new HashMap<>();
+        /*
+         *   params": {
+         *       "field": "my_dense_vector",
+         *       "vector": [1.0, 1.0]
+         *      }
+         */
+        float[] queryVector = {1.0f, 1.0f};
+        params.put("field", FIELD_NAME);
+        params.put("query_value", queryVector);
+        params.put("space_type", KNNConstants.L1);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        List<String> expectedDocids = Arrays.asList("2", "4", "3", "1");
+
+        List<String> actualDocids = new ArrayList<>();
+        for(KNNResult result : results) {
+            actualDocids.add(result.getDocId());
+        }
+
+        assertEquals(4, results.size());
+
+        // assert document order
+        assertEquals("2", results.get(0).getDocId());
+        assertEquals("3", results.get(1).getDocId());
+        assertEquals("4", results.get(2).getDocId());
+        assertEquals("1", results.get(3).getDocId());
+    }
+
+    public void testKNNLInfScriptScore() throws Exception {
+        /*
+         * Create knn index and populate data
+         */
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] f1  = {6.0f, 6.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, f1);
+
+        Float[] f2  = {4.0f, 1.0f};
+        addKnnDoc(INDEX_NAME, "2", FIELD_NAME, f2);
+
+        Float[] f3  = {3.0f, 3.0f};
+        addKnnDoc(INDEX_NAME, "3", FIELD_NAME, f3);
+
+        Float[] f4  = {5.0f, 5.0f};
+        addKnnDoc(INDEX_NAME, "4", FIELD_NAME, f4);
+
+
+        /**
+         * Construct Search Request
+         */
+        QueryBuilder qb = new MatchAllQueryBuilder();
+        Map<String, Object> params = new HashMap<>();
+        /*
+         *   params": {
+         *       "field": "my_dense_vector",
+         *       "vector": [1.0, 1.0]
+         *      }
+         */
+        float[] queryVector = {1.0f, 1.0f};
+        params.put("field", FIELD_NAME);
+        params.put("query_value", queryVector);
+        params.put("space_type", KNNConstants.LINF);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        List<String> expectedDocids = Arrays.asList("3", "2", "4", "1");
+
+        List<String> actualDocids = new ArrayList<>();
+        for(KNNResult result : results) {
+            actualDocids.add(result.getDocId());
+        }
+
+        assertEquals(4, results.size());
+
+        // assert document order
+        assertEquals("3", results.get(0).getDocId());
+        assertEquals("2", results.get(1).getDocId());
+        assertEquals("4", results.get(2).getDocId());
+        assertEquals("1", results.get(3).getDocId());
+    }
+
     public void testKNNCosineScriptScore() throws Exception {
         /*
          * Create knn index and populate data
