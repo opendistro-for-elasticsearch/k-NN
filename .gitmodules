@@ -1,5 +1,5 @@
-[submodule "jni/external/nmslib"]
-	path = jni/external/nmslib
+[submodule "jni/nmslib/external/nmslib"]
+	path = jni/nmslib/external/nmslib
 	url = https://github.com/nmslib/nmslib.git
 [submodule "jniFaiss/external/faiss"]
 	path = jniFaiss/external/faiss

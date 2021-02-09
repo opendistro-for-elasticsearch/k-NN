@@ -19,3 +19,10 @@ jni/CPack*
 jni/_CPack*
 jni/release
 jni/packages
+jni/*.cbp
+jni/*/release
+jni/*/cmake*
+jni/*/CPack*
+jni/*/CMakeCache.txt
+jni/*/CMakeFiles
+jni/*/Makefile
