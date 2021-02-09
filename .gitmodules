@@ -3,4 +3,4 @@
 	url = https://github.com/nmslib/nmslib.git
 [submodule "jni/faiss/external/faiss"]
 	path = jni/faiss/external/faiss
-	url = https://github.com/facebookresearch/faiss
+	url = https://github.com/facebookresearch/faiss.git
