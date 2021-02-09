@@ -16,7 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
-import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
+import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.IndexScopedSettings;
