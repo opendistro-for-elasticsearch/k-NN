@@ -27,3 +27,4 @@ jni/*/CPack*
 jni/*/CMakeCache.txt
 jni/*/CMakeFiles
 jni/*/Makefile
+jni/_deps

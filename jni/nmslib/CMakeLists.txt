@@ -14,8 +14,7 @@
 #
 
 # Target Library to be built
-set(KNN_INDEX KNNIndex_NMSLIB_V2_0_11)
-set(KNN_PACKAGE_NAME opendistro-knnlib-nmslib)
+set(KNN_INDEX ${KNNIndex_NMSLIB})
 
 # Check if similarity search exists
 find_path(NMS_REPO_DIR NAMES similarity_search PATHS ${CMAKE_CURRENT_SOURCE_DIR}/external/nmslib)
@@ -41,17 +40,4 @@ set_target_properties(${KNN_INDEX} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_C
 # Installation rules for shared library
 install(TARGETS ${KNN_INDEX}
         LIBRARY DESTINATION lib
-        COMPONENT library)
-
-set(CPACK_PACKAGE_NAME ${KNN_INDEX})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "KNN JNI library built off of NMSLIB for OpenDistro for Elasticsearch. Reference documentation can be found at https://opendistro.github.io/for-elasticsearch-docs/.")
-set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${JVM_OS_TYPE}-${MACH_ARCH}")
-message(STATUS ${CPACK_PACKAGE_FILE_NAME})
-set(CPACK_RPM_PACKAGE_URL ${ODFE_DOWNLOAD_URL})
-set(CPACK_RPM_PACKAGE_DESCRIPTION "Open Distro for Elasticsearch KNN JNI Library")
-set(CPACK_RPM_PACKAGE_RELEASE ${CPACK_PACKAGE_NAME})
-
-set(CPACK_DEBIAN_PACKAGE_SOURCE ${CPACK_PACKAGE_NAME})
-set(CPACK_DEBIAN_PACKAGE_VERSION ${CPACK_PACKAGE_VERSION})
-
-include(CPack)
+        COMPONENT ${NMSLIB_COMPONENT})

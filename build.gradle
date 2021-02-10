@@ -137,41 +137,31 @@ loggerUsageCheck.enabled = false
 def es_tmp_dir = rootProject.file('build/private/es_tmp').absoluteFile
 es_tmp_dir.mkdirs()
 
-task cmakeJniNmsLib(type:Exec) {
+task cmakeLib(type:Exec) {
     workingDir 'jni'
     commandLine 'cmake', '.'
 }
-task cmakeJniFaissLib(type:Exec) {
-    workingDir 'jniFaiss'
-    commandLine 'cmake', '.'
-}
-task buildJniNmsLib(type:Exec) {
-    dependsOn cmakeJniNmsLib
+
+task buildLib(type:Exec) {
+    dependsOn cmakeLib
     workingDir 'jni'
-    commandLine 'make'
-}
-task buildJniFaissLib(type:Exec) {
-    dependsOn cmakeJniFaissLib
-    workingDir 'jniFaiss'
     commandLine 'make'
 }
 
 test {
-    dependsOn buildJniNmsLib
-    dependsOn buildJniFaissLib
+    dependsOn buildLib
     systemProperty 'tests.security.manager', 'false'
-    systemProperty "java.library.path", "$rootDir/jniFaiss/release:$rootDir/jni/release"
+    systemProperty "java.library.path", "$rootDir/jni/faiss/release:$rootDir/jni/nmslib/release"
 }
 
 def _numNodes = findProperty('numNodes') as Integer ?: 1
 integTest {
     if (integTestDependOnJniLib) {
-        dependsOn buildJniNmsLib
-        dependsOn buildJniFaissLib
+        dependsOn buildLib
     }
     systemProperty 'tests.security.manager', 'false'
     systemProperty 'java.io.tmpdir', es_tmp_dir.absolutePath
-    systemProperty "java.library.path", "$rootDir/jniFaiss/release:$rootDir/jni/release"
+    systemProperty "java.library.path", "$rootDir/jni/faiss/release:$rootDir/jni/nmslib/release"
     // allows integration test classes to access test resource from project root path
     systemProperty('project.root', project.rootDir.absolutePath)
 
@@ -214,13 +204,12 @@ testClusters.integTest {
                 debugPort += 1
             }
         }
-        systemProperty("java.library.path", "$rootDir/jniFaiss/release:$rootDir/jni/release")
+        systemProperty("java.library.path", "$rootDir/jni/faiss/release:$rootDir/jni/nmslib/release")
 }
 
 run {
     useCluster project.testClusters.integTest
-    dependsOn buildJniNmsLib
-    dependsOn buildJniFaissLib
+    dependsOn buildLib
     doFirst {
         // There seems to be an issue when running multi node run or integ tasks with unicast_hosts
         // not being written, the waitForAllConditions ensures it's written
@@ -262,7 +251,8 @@ afterEvaluate {
         dirMode 0755
 
         requires('elasticsearch-oss', versions.elasticsearch, EQUAL)
-        requires("opendistro-knnlib",  "${opendistroVersion}.0",  EQUAL)
+        requires("opendistro-knnlib-nmslib",  "${opendistroVersion}.0",  EQUAL)
+        requires("opendistro-knnlib-faiss",  "${opendistroVersion}.0",  EQUAL)
         packager = 'Amazon'
         vendor = 'Amazon'
         os = 'LINUX'

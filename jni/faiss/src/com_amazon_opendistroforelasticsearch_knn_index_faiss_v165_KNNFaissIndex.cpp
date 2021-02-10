@@ -1,4 +1,20 @@
+/*
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
 #include "com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex.h"
+#include "jni_util.h"
 
 #include <cmath>
 #include <cstdio>
@@ -22,41 +38,6 @@ std::unordered_map<string, faiss::MetricType> mapMetric = {
 	{"innerproduct", faiss::METRIC_INNER_PRODUCT}
 };
 
-extern "C"
-
-struct JavaException {
-	JavaException(JNIEnv* env, const char* type = "", const char* message = "")
-	{
-		jclass newExcCls = env->FindClass(type);
-		if (newExcCls != NULL)
-			env->ThrowNew(newExcCls, message);
-	}
-};
-
-inline void has_exception_in_stack(JNIEnv* env)
-{
-	if (env->ExceptionCheck() == JNI_TRUE)
-		throw std::runtime_error("Exception Occured");
-}
-
-void catch_cpp_exception_and_throw_java(JNIEnv* env)
-{
-	try {
-		throw;
-	}
-	catch (const std::bad_alloc& rhs) {
-		JavaException(env, "java/io/IOException", rhs.what());
-	}
-	catch (const std::runtime_error& re) {
-		JavaException(env, "java/lang/Exception", re.what());
-	}
-	catch (const std::exception& e) {
-		JavaException(env, "java/lang/Exception", e.what());
-	}
-	catch (...) {
-		JavaException(env, "java/lang/Exception", "Unknown exception occured");
-	}
-}
 
 /**
  * Method: saveIndex
@@ -81,7 +62,7 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
 			idVector.push_back(object_ids[i]);
 		}
 		env->ReleaseIntArrayElements(ids, object_ids, 0);
-		has_exception_in_stack(env);
+		knn_jni::HasExceptionInStack(env);
 
 		//---- vectors
 		for (int i = 0; i < env->GetArrayLength(vectors); ++i) {
@@ -93,13 +74,13 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
 			}
 			env->ReleaseFloatArrayElements(vectorArray, vector, 0);
 		}
-		has_exception_in_stack(env);
+        knn_jni::HasExceptionInStack(env);
 
 		//---- indexPath
 		const char *indexString = env->GetStringUTFChars(indexPath, 0);
 		string indexPathString(indexString);
 		env->ReleaseStringUTFChars(indexPath, indexString);
-		has_exception_in_stack(env);
+        knn_jni::HasExceptionInStack(env);
 
 		//---- algoParams
 		int paramsCount = env->GetArrayLength(algoParams);
@@ -115,14 +96,14 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
 			env->ReleaseStringUTFChars(param, rawString);
 
 		}
-		has_exception_in_stack(env);
+        knn_jni::HasExceptionInStack(env);
 
 
 		//---- space
 		const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, 0);
 		string spaceTypeString(spaceTypeCStr);
 		env->ReleaseStringUTFChars(spaceType, spaceTypeCStr);
-		has_exception_in_stack(env);
+        knn_jni::HasExceptionInStack(env);
 		// space mapping faiss::MetricType
 		if(mapMetric.find(spaceTypeString) != mapMetric.end()) {
 			metric = mapMetric[spaceTypeString];
@@ -174,7 +155,7 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
 	catch(...) {
 		faiss::Index* indexPointer = indexWriter.release();
 		if(indexPointer) delete indexPointer;
-		catch_cpp_exception_and_throw_java(env);
+        knn_jni::CatchCppExceptionAndThrowJava(env);
 	}
 }
 
@@ -192,7 +173,7 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
 		std::vector<faiss::Index::idx_t> ids( k * dim);
 		indexReader->search(1, rawQueryvector, k, dis.data(), ids.data());
 		env->ReleaseFloatArrayElements(queryVector, rawQueryvector, 0);
-		has_exception_in_stack(env);
+        knn_jni::HasExceptionInStack(env);
 
 		int resultSize = k;
 		//if result is not enough, padded with -1s
@@ -211,13 +192,13 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
 			long  id = ids[i];
 			env->SetObjectArrayElement(results, i, env->NewObject(resultClass, allArgs, id, distance));
 		}
-		has_exception_in_stack(env);
+        knn_jni::HasExceptionInStack(env);
 		return results;
 
 	}
 	catch(...) {
 		if(indexReader) delete indexReader;
-		catch_cpp_exception_and_throw_java(env);	
+        knn_jni::CatchCppExceptionAndThrowJava(env);
 	}
 	return NULL;
 }
@@ -231,14 +212,14 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
 		const char *indexPathCStr = env->GetStringUTFChars(indexPath, 0);
 		string indexPathString(indexPathCStr);
 		env->ReleaseStringUTFChars(indexPath, indexPathCStr);
-		has_exception_in_stack(env);
+        knn_jni::HasExceptionInStack(env);
 		//whether set IO_FLAGS = 0 or IO_FLAG_READ_ONLYfaiss::IO_FLAG_READ_ONLY
 		indexReader = faiss::read_index(indexPathString.c_str(), faiss::IO_FLAG_READ_ONLY);
 		return (jlong) indexReader;
 	} 
 	catch(...) {
 		if (indexReader) delete indexReader;
-		catch_cpp_exception_and_throw_java(env);	
+        knn_jni::CatchCppExceptionAndThrowJava(env);
 	}
 	return NULL;
 }
@@ -252,12 +233,12 @@ void catch_cpp_exception_and_throw_java(JNIEnv* env)
 {
 	try {
 		faiss::Index *indexWrapper = reinterpret_cast<faiss::Index*>(indexPointer);
-		has_exception_in_stack(env);
+        knn_jni::HasExceptionInStack(env);
 		delete indexWrapper;
-		has_exception_in_stack(env);
+        knn_jni::HasExceptionInStack(env);
 	}
 	catch (...) {
-		catch_cpp_exception_and_throw_java(env);
+        knn_jni::CatchCppExceptionAndThrowJava(env);
 	}
 }
 
