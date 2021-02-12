@@ -39,7 +39,7 @@ make
 The library will be placed in the `jni/release` directory.
 
 ## JNI Library Artifacts
-We build and distribute binary library artifacts with Opendistro for Elasticsearch. We build the library binary, RPM and DEB in [this GitHub action](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/.github/workflows/CD.yml). We use Centos 7 with g++ 4.8.5 to build the DEB, RPM and ZIP. Additionally, in order to provide as much general compatibility as possible, we compile the library without optimized instruction sets enabled. For users that want to get the most out of the library, they should follow [this section](##Build JNI Library RPM/DEB) and build the library from source in their production environment, so that if their environment has optimized instruction sets, they take advantage of them.
+We build and distribute binary library artifacts with Opendistro for Elasticsearch. We build the library binary, RPM and DEB in [this GitHub action](https://github.com/opendistro-for-elasticsearch/k-NN/blob/main/.github/workflows/CD.yml). We use Centos 7 with g++ 4.8.5 to build the DEB, RPM and ZIP. Additionally, in order to provide as much general compatibility as possible, we compile the library without optimized instruction sets enabled. For users that want to get the most out of the library, they should follow [this section](##Build JNI Library RPM/DEB) and build the library from source in their production environment, so that if their environment has optimized instruction sets, they take advantage of them.
 
 ## Build JNI Library RPM/DEB
 
@@ -456,11 +456,11 @@ In order for the warmup API to function properly, a few best practices should be
 Second, it should first be confirmed that all of the graphs of interest are able to fit into native memory before running warmup. If they all cannot fit into memory, then the cache will thrash.
 
 ## Scoring
-During k-NN search, for each graph, NMSLIB will return up to `k` results. These results contain both the [document ID and the NMSLIB score](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/src/main/java/com/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult.java#L21). 
+During k-NN search, for each graph, NMSLIB will return up to `k` results. These results contain both the [document ID and the NMSLIB score](https://github.com/opendistro-for-elasticsearch/k-NN/blob/main/src/main/java/com/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult.java#L21). 
 
 The score NMSLIB assigns to a result is related to the space type that is selected. For example, for cosine similarity, NMSLIB will return [`1 - normScalarProduct`](https://github.com/nmslib/nmslib/blob/master/similarity_search/src/method/hnsw_distfunc_opt.cc#L372). For l2, the score returned will be the square of the euclidean distance.
 
-From the k-NN and NMSLIB perspective, a lower score equates to a closer and better result. This is the opposite of how Elasticsearch scores results, where a greater score equates to a better result. In order to convert from the NMSLIB score to the Elasticsearch score, we perform [the following conversion](https://github.com/opendistro-for-elasticsearch/k-NN/blob/master/src/main/java/com/amazon/opendistroforelasticsearch/knn/index/KNNWeight.java#L113):
+From the k-NN and NMSLIB perspective, a lower score equates to a closer and better result. This is the opposite of how Elasticsearch scores results, where a greater score equates to a better result. In order to convert from the NMSLIB score to the Elasticsearch score, we perform [the following conversion](https://github.com/opendistro-for-elasticsearch/k-NN/blob/main/src/main/java/com/amazon/opendistroforelasticsearch/knn/index/KNNWeight.java#L113):
 ```
 Elasticsearch score = 1/(1 + NMSLIB score)
 ```
