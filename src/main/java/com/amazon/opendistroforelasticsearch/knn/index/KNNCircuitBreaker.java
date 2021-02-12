@@ -80,7 +80,7 @@ public class KNNCircuitBreaker {
                 }
             }
 
-            // Master node untriggers CB if all nodes have not reached their max capacity
+            // Leader node untriggers CB if all nodes have not reached their max capacity
             if (KNNSettings.isCircuitBreakerTriggered() && clusterService.state().nodes().isLocalNodeElectedMaster()) {
                 KNNStatsRequest knnStatsRequest = new KNNStatsRequest(KNNStatsConfig.KNN_STATS.keySet());
                 knnStatsRequest.addStat(StatNames.CACHE_CAPACITY_REACHED.getName());

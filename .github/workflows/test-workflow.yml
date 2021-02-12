@@ -1,13 +1,13 @@
 name: Testing Workflow
-# This workflow is triggered on pull requests and pushes to the master and opendistro release branches
+# This workflow is triggered on pull requests and pushes to the main and opendistro release branches
 on:
   pull_request:
     branches:
-      - master
+      - main
       - opendistro-*
   push:
     branches:
-      - master
+      - main
       - opendistro-*
       - faiss*
 jobs:
