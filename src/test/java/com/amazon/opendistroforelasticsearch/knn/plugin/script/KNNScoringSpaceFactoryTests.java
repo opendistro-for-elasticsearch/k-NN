@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
-import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
+import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 
 import java.util.ArrayList;

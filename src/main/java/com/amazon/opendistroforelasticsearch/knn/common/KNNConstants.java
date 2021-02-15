@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *   permissions and limitations under the License.
  */
 
-package com.amazon.opendistroforelasticsearch.knn.index.util;
+package com.amazon.opendistroforelasticsearch.knn.common;
 
 public class KNNConstants {
     public static final String SPACE_TYPE = "spaceType";
@@ -22,6 +22,8 @@ public class KNNConstants {
     public static final String HNSW_ALGO_EF_SEARCH = "efSearch";
     public static final String HNSW_ALGO_INDEX_THREAD_QTY = "indexThreadQty";
     public static final String L2 = "l2";
+    public static final String L1 = "l1";
+    public static final String LINF = "linf";
     public static final String COSINESIMIL = "cosinesimil";
     public static final String HAMMING_BIT = "hammingbit";
     public static final String DIMENSION = "dimension";

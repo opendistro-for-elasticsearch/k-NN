@@ -16,7 +16,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
-import com.amazon.opendistroforelasticsearch.knn.index.util.KNNConstants;
+import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.elasticsearch.index.mapper.MappedFieldType;
 
@@ -31,6 +31,12 @@ public class KNNScoringSpaceFactory {
 
         if (KNNConstants.L2.equalsIgnoreCase(spaceType)) {
             return new KNNScoringSpace.L2(query, mappedFieldType);
+        }
+        if (KNNConstants.L1.equalsIgnoreCase(spaceType)) {
+            return new KNNScoringSpace.L1(query, mappedFieldType);
+        }
+        if (KNNConstants.LINF.equalsIgnoreCase(spaceType)) {
+            return new KNNScoringSpace.LInf(query, mappedFieldType);
         }
 
         if (KNNConstants.COSINESIMIL.equalsIgnoreCase(spaceType)) {

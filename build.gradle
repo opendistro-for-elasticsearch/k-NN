@@ -15,7 +15,7 @@
 
 buildscript {
     ext {
-        es_version = System.getProperty("es.version", "7.10.0")
+        es_version = System.getProperty("es.version", "7.10.2")
         es_group = "org.elasticsearch"
         distribution = 'oss-zip'
     }
@@ -68,7 +68,7 @@ if (!usingRemoteCluster) {
 }
 
 ext {
-    opendistroVersion = '1.12.0'
+    opendistroVersion = '1.13.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.TXT')

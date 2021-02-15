@@ -2,7 +2,7 @@ name: Build and Test k-NN
 on:
   push:
     branches:
-      - master
+      - main
       - opendistro-*
 
 jobs:
