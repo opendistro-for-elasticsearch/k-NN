@@ -25,7 +25,8 @@ public enum SpaceTypes {
   l2("l2"),
   cosinesimil("cosinesimil"),
   l1("l1"),
-  linf("linf");
+  linf("linf"),
+  negdotprod("negdotprod");
 
   private String value;
 
