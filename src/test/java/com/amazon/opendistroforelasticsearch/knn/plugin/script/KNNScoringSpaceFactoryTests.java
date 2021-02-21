@@ -39,6 +39,8 @@ public class KNNScoringSpaceFactoryTests extends KNNTestCase {
                 instanceof KNNScoringSpace.L2);
         assertTrue(KNNScoringSpaceFactory.create(KNNConstants.COSINESIMIL, floatQueryObject, knnVectorFieldType)
                 instanceof KNNScoringSpace.CosineSimilarity);
+        assertTrue(KNNScoringSpaceFactory.create(KNNConstants.NEGDOTPROD, floatQueryObject, knnVectorFieldType)
+                instanceof KNNScoringSpace.NegDotProd);
         assertTrue(KNNScoringSpaceFactory.create(KNNConstants.HAMMING_BIT, longQueryObject, numberFieldType)
                 instanceof KNNScoringSpace.HammingBit);
     }

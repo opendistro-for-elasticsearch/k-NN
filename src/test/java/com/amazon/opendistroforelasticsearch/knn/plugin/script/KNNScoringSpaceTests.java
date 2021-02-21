@@ -64,6 +64,24 @@ public class KNNScoringSpaceTests extends KNNTestCase {
                 new KNNScoringSpace.CosineSimilarity(arrayListQueryObject, invalidFieldType));
     }
 
+    public void testNegDotProdSimilarity() {
+        float[] arrayFloat = new float[]{1.0f, 2.0f, 3.0f};
+        List<Double> arrayListQueryObject = new ArrayList<>(Arrays.asList(1.0, 2.0, 3.0));
+        float[] arrayFloat2 = new float[]{1.0f, 1.0f, 1.0f};
+
+        KNNVectorFieldMapper.KNNVectorFieldType fieldType = new KNNVectorFieldMapper.KNNVectorFieldType("test",
+                Collections.emptyMap(), 3);
+        KNNScoringSpace.NegDotProd negDotProd =
+                new KNNScoringSpace.NegDotProd(arrayListQueryObject, fieldType);
+
+        assertEquals(1.857F, negDotProd.scoringMethod.apply(arrayFloat2, arrayFloat), 0.001F);
+
+        NumberFieldMapper.NumberFieldType invalidFieldType = new NumberFieldMapper.NumberFieldType("field",
+                NumberFieldMapper.NumberType.INTEGER);
+        expectThrows(IllegalArgumentException.class, () ->
+                new KNNScoringSpace.NegDotProd(arrayListQueryObject, invalidFieldType));
+    }
+
     @SuppressWarnings("unchecked")
     public void testHammingBit_Long() {
         NumberFieldMapper.NumberFieldType fieldType = new NumberFieldMapper.NumberFieldType("field",

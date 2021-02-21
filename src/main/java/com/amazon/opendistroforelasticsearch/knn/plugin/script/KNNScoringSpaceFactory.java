@@ -39,6 +39,10 @@ public class KNNScoringSpaceFactory {
             return new KNNScoringSpace.LInf(query, mappedFieldType);
         }
 
+        if (KNNConstants.NEGDOTPROD.equalsIgnoreCase(spaceType)) {
+            return new KNNScoringSpace.NegDotProd(query, mappedFieldType);
+        }
+
         if (KNNConstants.COSINESIMIL.equalsIgnoreCase(spaceType)) {
             return new KNNScoringSpace.CosineSimilarity(query, mappedFieldType);
         }
