@@ -16,6 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
+import com.amazon.opendistroforelasticsearch.knn.index.KNNWeight;
 import org.apache.lucene.index.LeafReaderContext;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.script.ScoreScript;
@@ -202,6 +203,35 @@ public interface KNNScoringSpace {
 
         public ScoreScript getScoreScript(Map<String, Object> params, String field, SearchLookup lookup,
                                           LeafReaderContext ctx) throws IOException {
+            return new KNNScoreScript.KNNVectorType(params, this.processedQuery, field, this.scoringMethod, lookup,
+                    ctx);
+        }
+    }
+
+    class NegDotProd implements KNNScoringSpace {
+
+        float[] processedQuery;
+        BiFunction<float[], float[], Float> scoringMethod;
+
+        /**
+         * Constructor for negative dot product (negdotprod) scoring space. negdotprod scoring space expects values to be of type float[].
+         *
+         * @param query Query object that, along with the doc values, will be used to compute L-inf score
+         * @param fieldType FieldType for the doc values that will be used
+         */
+        public NegDotProd(Object query, MappedFieldType fieldType) {
+            if (!isKNNVectorFieldType(fieldType)) {
+                throw new IllegalArgumentException("Incompatible field_type for negdotprod space. The field type must " +
+                        "be knn_vector.");
+            }
+
+            this.processedQuery = parseToFloatArray(query,
+                    ((KNNVectorFieldMapper.KNNVectorFieldType) fieldType).getDimension());
+            this.scoringMethod = (float[] q, float[] v) -> KNNWeight.scoreFunc(KNNScoringUtil.negdotprod(q, v));
+        }
+
+        @Override
+        public ScoreScript getScoreScript(Map<String, Object> params, String field, SearchLookup lookup, LeafReaderContext ctx) throws IOException {
             return new KNNScoreScript.KNNVectorType(params, this.processedQuery, field, this.scoringMethod, lookup,
                     ctx);
         }

@@ -284,4 +284,41 @@ public class KNNScoringUtil {
     public static float lInfNorm(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
         return lInfNorm(toFloat(queryVector), docValues.getValue());
     }
+
+    /**
+     * This method calculates negative dot product distance between query vector
+     * and input vector
+     *
+     * @param queryVector query vector
+     * @param inputVector input vector
+     * @return negdotprod score
+     */
+    public static float negdotprod(float[] queryVector, float[] inputVector) {
+        requireEqualDimension(queryVector, inputVector);
+        float distance = 0;
+        for (int i = 0; i < inputVector.length; i++) {
+            distance -= queryVector[i] * inputVector[i];
+        }
+        return distance;
+    }
+
+    /**
+     * Whitelisted negdotprod method for users to calculate negative dot product distance between query vector
+     * and document vectors
+     * Example
+     *  "script": {
+     *         "source": "negprod(params.query_vector, doc[params.field])",
+     *         "params": {
+     *           "query_vector": [1, 2, 3.4],
+     *           "field": "my_dense_vector"
+     *         }
+     *       }
+     *
+     * @param queryVector query vector
+     * @param docValues   script doc values
+     * @return negdotprod score
+     */
+    public static float negdotprod(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
+        return negdotprod(toFloat(queryVector), docValues.getValue());
+    }
 }
