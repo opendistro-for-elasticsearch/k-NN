@@ -371,11 +371,46 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
         deleteKNNIndex(INDEX_NAME);
     }
 
+    public void testNegDotProdScriptScoreFails() throws Exception {
+        String source = String.format(
+                "float x = negdotprod([1.0f, 1.0f], doc['%s']); return x >= 0? 1/(1+x):2+1/(x-1);", FIELD_NAME);
+        Request request = buildPainlessScriptRequest(source, 3, getNegDotProdTestData());
+        addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
+        expectThrows(ResponseException.class, () -> client().performRequest(request));
+        deleteKNNIndex(INDEX_NAME);
+    }
+
     public void testNegDotProdScriptScore() throws Exception {
 
-        String source = String.format("1/(1 + negdotprod([1.0f, 1.0f], doc['%s']))", FIELD_NAME);
+        String source = String.format(
+                "float x = negdotprod([1.0f, 1.0f], doc['%s']); return x >= 0? 1/(1+x):2+1/(x-1);", FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getNegDotProdTestData());
 
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        assertEquals(3, results.size());
+
+
+        String[] expectedDocIDs = {"3", "2", "4", "1"};
+        for (int i = 0; i < results.size(); i++) {
+            assertEquals(expectedDocIDs[i], results.get(i).getDocId());
+        }
+        deleteKNNIndex(INDEX_NAME);
+    }
+
+    public void testNegDotProdScriptScoreWithNumericField() throws Exception {
+
+        String source = String.format(
+                "if (doc['%s'].size() == 0) " +
+                        "{ return 0; } " +
+                        "else " +
+                        "{ float x = negdotprod([1.0f, 1.0f], doc['%s']); return x >= 0? 1/(1+x):2+1/(x-1); }",
+                FIELD_NAME, FIELD_NAME);
+        Request request = buildPainlessScriptRequest(source, 3, getNegDotProdTestData());
+        addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
                 RestStatus.fromCode(response.getStatusLine().getStatusCode()));
