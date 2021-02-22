@@ -307,7 +307,7 @@ public class KNNScoringUtil {
      * and document vectors
      * Example
      *  "script": {
-     *         "source": "negprod(params.query_vector, doc[params.field])",
+     *         "source": "float x = negdotprod([1.0f, 1.0f], doc['%s']); return x >= 0? 1/(1+x):2+1/(x-1);",
      *         "params": {
      *           "query_vector": [1, 2, 3.4],
      *           "field": "my_dense_vector"
