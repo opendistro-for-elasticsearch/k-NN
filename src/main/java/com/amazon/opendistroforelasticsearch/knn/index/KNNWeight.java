@@ -110,7 +110,7 @@ public class KNNWeight extends Weight {
              * neighbors we are inverting the scores.
              */
             Map<Integer, Float> scores = Arrays.stream(results).collect(
-                    Collectors.toMap(result -> result.getId(), result -> score(result.getScore())));
+                    Collectors.toMap(result -> result.getId(), result -> normalizeScore(result.getScore())));
             int maxDoc = Collections.max(scores.keySet()) + 1;
             DocIdSetBuilder docIdSetBuilder = new DocIdSetBuilder(maxDoc);
             DocIdSetBuilder.BulkAdder setAdder = docIdSetBuilder.grow(maxDoc);
@@ -124,12 +124,10 @@ public class KNNWeight extends Weight {
         return true;
     }
 
-    public static float score(float score) {
-        if (score >= 0) {
+    public static float normalizeScore(float score) {
+        if (score >= 0)
             return 1 / (1 + score);
-        } else {
-            return 2 + 1 / (score - 1);
-        }
+        return 2 + 1 / (score - 1);
     }
 }
 
