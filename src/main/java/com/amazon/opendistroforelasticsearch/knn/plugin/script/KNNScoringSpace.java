@@ -227,7 +227,7 @@ public interface KNNScoringSpace {
 
             this.processedQuery = parseToFloatArray(query,
                     ((KNNVectorFieldMapper.KNNVectorFieldType) fieldType).getDimension());
-            this.scoringMethod = (float[] q, float[] v) -> KNNWeight.score(-KNNScoringUtil.innerProd(q, v));
+            this.scoringMethod = (float[] q, float[] v) -> KNNWeight.normalizeScore(-KNNScoringUtil.innerProd(q, v));
         }
 
         @Override
