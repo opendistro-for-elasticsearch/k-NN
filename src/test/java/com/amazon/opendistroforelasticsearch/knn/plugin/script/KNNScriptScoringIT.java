@@ -643,4 +643,60 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         assertArrayEquals(correctIds2.toArray(), docIds2.toArray());
         assertArrayEquals(correctScores2, scores2, 0.001);
     }
+
+    public void testKNNNegDotProdScriptScore() throws Exception {
+        /*
+         * Create knn index and populate data
+         */
+        createKnnIndex(INDEX_NAME, createKnnIndexMapping(FIELD_NAME, 2));
+        Float[] f1  = {-2.0f, -2.0f};
+        addKnnDoc(INDEX_NAME, "1", FIELD_NAME, f1);
+
+        Float[] f2  = {1.0f, 1.0f};
+        addKnnDoc(INDEX_NAME, "2", FIELD_NAME, f2);
+
+        Float[] f3  = {2.0f, 2.0f};
+        addKnnDoc(INDEX_NAME, "3", FIELD_NAME, f3);
+
+        Float[] f4  = {2.0f, -2.0f};
+        addKnnDoc(INDEX_NAME, "4", FIELD_NAME, f4);
+
+
+        /**
+         * Construct Search Request
+         */
+        QueryBuilder qb = new MatchAllQueryBuilder();
+        Map<String, Object> params = new HashMap<>();
+        /*
+         *   params": {
+         *       "field": "my_dense_vector",
+         *       "query_value": [1.0, 1.0],
+         *       "space_type": "negdotprod",
+         *      }
+         */
+        float[] queryVector = {1.0f, 1.0f};
+        params.put("field", FIELD_NAME);
+        params.put("query_value", queryVector);
+        params.put("space_type", KNNConstants.NEGDOTPROD);
+        Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        List<String> expectedDocids = Arrays.asList("3", "2", "4", "1");
+
+        List<String> actualDocids = new ArrayList<>();
+        for(KNNResult result : results) {
+            actualDocids.add(result.getDocId());
+        }
+
+        assertEquals(4, results.size());
+
+        // assert document order
+        assertEquals("3", results.get(0).getDocId());
+        assertEquals("2", results.get(1).getDocId());
+        assertEquals("4", results.get(2).getDocId());
+        assertEquals("1", results.get(3).getDocId());
+    }
 }
