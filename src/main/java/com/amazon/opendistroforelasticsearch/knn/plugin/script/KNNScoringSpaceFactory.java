@@ -40,7 +40,7 @@ public class KNNScoringSpaceFactory {
         }
 
         if (KNNConstants.INNER_PROD.equalsIgnoreCase(spaceType)) {
-            return new KNNScoringSpace.NegDotProd(query, mappedFieldType);
+            return new KNNScoringSpace.InnerProd(query, mappedFieldType);
         }
 
         if (KNNConstants.COSINESIMIL.equalsIgnoreCase(spaceType)) {

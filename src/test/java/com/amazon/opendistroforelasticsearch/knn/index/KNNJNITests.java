@@ -331,7 +331,7 @@ public class KNNJNITests extends KNNTestCase {
         dir.close();
     }
 
-    public void testAddAndQueryHnswIndexNegDotProd() throws Exception {
+    public void testAddAndQueryHnswIndexInnerProd() throws Exception {
         int[] docs = {0, 1, 2};
 
         float[][] vectors = {

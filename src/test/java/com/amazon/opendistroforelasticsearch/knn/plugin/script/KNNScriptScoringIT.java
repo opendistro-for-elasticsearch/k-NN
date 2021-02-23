@@ -644,7 +644,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         assertArrayEquals(correctScores2, scores2, 0.001);
     }
 
-    public void testKNNNegDotProdScriptScore() throws Exception {
+    public void testKNNInnerProdScriptScore() throws Exception {
         /*
          * Create knn index and populate data
          */
