@@ -319,7 +319,7 @@ public class KNNIndexCache implements Closeable {
             return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
 
         } else {
-            final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
+            final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.loadIndex(indexPathUrl, getQueryParams(indexName), SpaceTypes.getValueByKey(KNNSettings.getSpaceType(indexName)));
             return new KNNIndexCacheEntry(knnNmsLibIndex, indexPathUrl, indexName, watcherHandle);
         }
     }

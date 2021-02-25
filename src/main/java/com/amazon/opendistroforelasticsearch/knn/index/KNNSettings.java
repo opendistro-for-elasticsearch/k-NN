@@ -402,11 +402,11 @@ public class KNNSettings {
     /**
      *
      * @param index Name of the index
-     * @return spaceType value
+     * @return spaceType name in KNN plugin
      */
     public static String getSpaceType(String index) {
         return KNNSettings.state().clusterService.state().getMetadata()
-            .index(index).getSettings().get(KNN_SPACE_TYPE, SpaceTypes.l2.getValue());
+            .index(index).getSettings().get(KNN_SPACE_TYPE, SpaceTypes.l2.getKey());
     }
 
     public static int getIndexSettingValue(String index, String settingName, int defaultValue) {
@@ -421,10 +421,8 @@ public class KNNSettings {
 
     static class SpaceTypeValidator implements Setting.Validator<String> {
 
-        private Set<String> types = SpaceTypes.getValues();
-
         @Override public void validate(String value) {
-            if (value == null || !types.contains(value.toLowerCase())){
+            if (value == null || !SpaceTypes.contains(value.toLowerCase())){
                 throw new InvalidParameterException(String.format("Unsupported space type: %s", value));
             }
         }

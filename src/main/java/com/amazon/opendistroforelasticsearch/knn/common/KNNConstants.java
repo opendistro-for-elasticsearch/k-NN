@@ -26,7 +26,7 @@ public class KNNConstants {
     public static final String LINF = "linf";
     public static final String COSINESIMIL = "cosinesimil";
     public static final String HAMMING_BIT = "hammingbit";
-    public static final String NEGDOTPROD = "negdotprod";
+    public static final String INNER_PROD = "innerproduct";
     public static final String DIMENSION = "dimension";
     public static final String KNNEngine = "knnEngine";
 }

@@ -82,7 +82,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
              */
             Map<String, String> fieldAttributes = field.attributes();
             String engineName = fieldAttributes.getOrDefault(KNNConstants.KNNEngine, KNNSettings.INDEX_KNN_DEFAULT_ENGINE);
-            String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceTypes.l2.getValue());
+            String spaceType = SpaceTypes.getValueByKey(fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceTypes.l2.getKey()));
             String[] algoParams = getKNNIndexParams(fieldAttributes);
             KNNEngine knnEngine = KNNEngine.getEngine(engineName);
             boolean faissindex = knnEngine == KNNEngine.FAISS;
