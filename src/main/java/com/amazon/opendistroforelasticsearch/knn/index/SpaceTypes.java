@@ -21,7 +21,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Enum contains space types for k-NN similarity search
+ * Enum contains space type key-value pairs for k-NN similarity search.
+ * key represents the space type name exposed to user;
+ * value represents the internal space type name used in nmslib.
  */
 public enum SpaceTypes {
   l2("l2", "l2"),
