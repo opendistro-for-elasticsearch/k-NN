@@ -373,7 +373,7 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
 
     public void testInnerProdScriptScoreFails() throws Exception {
         String source = String.format(
-                "float x = innerProd([1.0f, 1.0f], doc['%s']); return x >= 0? 2-1/(x+1):1/(1-x);", FIELD_NAME);
+                "float x = innerProduct([1.0f, 1.0f], doc['%s']); return x >= 0? 2-1/(x+1):1/(1-x);", FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getInnerProdTestData());
         addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
         expectThrows(ResponseException.class, () -> client().performRequest(request));
@@ -383,7 +383,7 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
     public void testInnerProdScriptScore() throws Exception {
 
         String source = String.format(
-                "float x = innerProd([1.0f, 1.0f], doc['%s']); return x >= 0? 2-1/(x+1):1/(1-x);", FIELD_NAME);
+                "float x = innerProduct([1.0f, 1.0f], doc['%s']); return x >= 0? 2-1/(x+1):1/(1-x);", FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getInnerProdTestData());
 
         Response response = client().performRequest(request);
@@ -407,7 +407,7 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
                 "if (doc['%s'].size() == 0) " +
                         "{ return 0; } " +
                         "else " +
-                        "{ float x = innerProd([1.0f, 1.0f], doc['%s']); return x >= 0? 2-1/(x+1):1/(1-x); }",
+                        "{ float x = innerProduct([1.0f, 1.0f], doc['%s']); return x >= 0? 2-1/(x+1):1/(1-x); }",
                 FIELD_NAME, FIELD_NAME);
         Request request = buildPainlessScriptRequest(source, 3, getInnerProdTestData());
         addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);

@@ -293,7 +293,7 @@ public class KNNScoringUtil {
      * @param inputVector input vector
      * @return dot product score
      */
-    public static float innerProd(float[] queryVector, float[] inputVector) {
+    public static float innerProduct(float[] queryVector, float[] inputVector) {
         requireEqualDimension(queryVector, inputVector);
         float distance = 0;
         for (int i = 0; i < inputVector.length; i++) {
@@ -307,7 +307,7 @@ public class KNNScoringUtil {
      * and document vectors
      * Example
      *  "script": {
-     *         "source": "float x = innerProd([1.0f, 1.0f], doc['%s']); return x&gt;=0? 2-(1/(x+1)):1/(1-x);",
+     *         "source": "float x = innerProduct([1.0f, 1.0f], doc['%s']); return x&gt;=0? 2-(1/(x+1)):1/(1-x);",
      *         "params": {
      *           "query_vector": [1, 2, 3.4],
      *           "field": "my_dense_vector"
@@ -318,7 +318,7 @@ public class KNNScoringUtil {
      * @param docValues   script doc values
      * @return inner product score
      */
-    public static float innerProd(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
-        return innerProd(toFloat(queryVector), docValues.getValue());
+    public static float innerProduct(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
+        return innerProduct(toFloat(queryVector), docValues.getValue());
     }
 }
