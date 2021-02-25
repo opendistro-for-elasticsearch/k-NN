@@ -99,7 +99,7 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
         return data;
     }
 
-    private Map<String, Float[]> getNegDotProdTestData() {
+    private Map<String, Float[]> getInnerProdTestData() {
         Map<String, Float[]> data = new HashMap<>();
         data.put("1", new Float[]{-2.0f, -2.0f});
         data.put("2", new Float[]{1.0f, 1.0f});
@@ -371,20 +371,20 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
         deleteKNNIndex(INDEX_NAME);
     }
 
-    public void testNegDotProdScriptScoreFails() throws Exception {
+    public void testInnerProdScriptScoreFails() throws Exception {
         String source = String.format(
-                "float x = negdotprod([1.0f, 1.0f], doc['%s']); return x >= 0? 1/(1+x):2+1/(x-1);", FIELD_NAME);
-        Request request = buildPainlessScriptRequest(source, 3, getNegDotProdTestData());
+                "float x = innerProduct([1.0f, 1.0f], doc['%s']); return x >= 0? 2-1/(x+1):1/(1-x);", FIELD_NAME);
+        Request request = buildPainlessScriptRequest(source, 3, getInnerProdTestData());
         addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
         expectThrows(ResponseException.class, () -> client().performRequest(request));
         deleteKNNIndex(INDEX_NAME);
     }
 
-    public void testNegDotProdScriptScore() throws Exception {
+    public void testInnerProdScriptScore() throws Exception {
 
         String source = String.format(
-                "float x = negdotprod([1.0f, 1.0f], doc['%s']); return x >= 0? 1/(1+x):2+1/(x-1);", FIELD_NAME);
-        Request request = buildPainlessScriptRequest(source, 3, getNegDotProdTestData());
+                "float x = innerProduct([1.0f, 1.0f], doc['%s']); return x >= 0? 2-1/(x+1):1/(1-x);", FIELD_NAME);
+        Request request = buildPainlessScriptRequest(source, 3, getInnerProdTestData());
 
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
@@ -401,15 +401,15 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
         deleteKNNIndex(INDEX_NAME);
     }
 
-    public void testNegDotProdScriptScoreWithNumericField() throws Exception {
+    public void testInnerProdScriptScoreWithNumericField() throws Exception {
 
         String source = String.format(
                 "if (doc['%s'].size() == 0) " +
                         "{ return 0; } " +
                         "else " +
-                        "{ float x = negdotprod([1.0f, 1.0f], doc['%s']); return x >= 0? 1/(1+x):2+1/(x-1); }",
+                        "{ float x = innerProduct([1.0f, 1.0f], doc['%s']); return x >= 0? 2-1/(x+1):1/(1-x); }",
                 FIELD_NAME, FIELD_NAME);
-        Request request = buildPainlessScriptRequest(source, 3, getNegDotProdTestData());
+        Request request = buildPainlessScriptRequest(source, 3, getInnerProdTestData());
         addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,

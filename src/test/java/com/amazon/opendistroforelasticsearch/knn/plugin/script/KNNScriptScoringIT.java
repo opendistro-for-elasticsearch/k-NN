@@ -644,7 +644,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
         assertArrayEquals(correctScores2, scores2, 0.001);
     }
 
-    public void testKNNNegDotProdScriptScore() throws Exception {
+    public void testKNNInnerProdScriptScore() throws Exception {
         /*
          * Create knn index and populate data
          */
@@ -671,13 +671,13 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
          *   params": {
          *       "field": "my_dense_vector",
          *       "query_value": [1.0, 1.0],
-         *       "space_type": "negdotprod",
+         *       "space_type": "innerproduct",
          *      }
          */
         float[] queryVector = {1.0f, 1.0f};
         params.put("field", FIELD_NAME);
         params.put("query_value", queryVector);
-        params.put("space_type", KNNConstants.NEGDOTPROD);
+        params.put("space_type", KNNConstants.INNER_PROD);
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         Response response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,

@@ -286,28 +286,28 @@ public class KNNScoringUtil {
     }
 
     /**
-     * This method calculates negative dot product distance between query vector
+     * This method calculates dot product distance between query vector
      * and input vector
      *
      * @param queryVector query vector
      * @param inputVector input vector
-     * @return negdotprod score
+     * @return dot product score
      */
-    public static float negdotprod(float[] queryVector, float[] inputVector) {
+    public static float innerProduct(float[] queryVector, float[] inputVector) {
         requireEqualDimension(queryVector, inputVector);
         float distance = 0;
         for (int i = 0; i < inputVector.length; i++) {
-            distance -= queryVector[i] * inputVector[i];
+            distance += queryVector[i] * inputVector[i];
         }
         return distance;
     }
 
     /**
-     * Whitelisted negdotprod method for users to calculate negative dot product distance between query vector
+     * Whitelisted innerProd method for users to calculate inner product distance between query vector
      * and document vectors
      * Example
      *  "script": {
-     *         "source": "float x = negdotprod([1.0f, 1.0f], doc['%s']); return x&gt;=0? 1/(1+x):2+1/(x-1);",
+     *         "source": "float x = innerProduct([1.0f, 1.0f], doc['%s']); return x&gt;=0? 2-(1/(x+1)):1/(1-x);",
      *         "params": {
      *           "query_vector": [1, 2, 3.4],
      *           "field": "my_dense_vector"
@@ -316,9 +316,9 @@ public class KNNScoringUtil {
      *
      * @param queryVector query vector
      * @param docValues   script doc values
-     * @return negdotprod score
+     * @return inner product score
      */
-    public static float negdotprod(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
-        return negdotprod(toFloat(queryVector), docValues.getValue());
+    public static float innerProduct(List<Number> queryVector, KNNVectorScriptDocValues docValues) {
+        return innerProduct(toFloat(queryVector), docValues.getValue());
     }
 }

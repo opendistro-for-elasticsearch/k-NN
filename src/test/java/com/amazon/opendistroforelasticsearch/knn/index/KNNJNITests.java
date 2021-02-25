@@ -331,7 +331,7 @@ public class KNNJNITests extends KNNTestCase {
         dir.close();
     }
 
-    public void testAddAndQueryHnswIndexNegDotProd() throws Exception {
+    public void testAddAndQueryHnswIndexInnerProd() throws Exception {
         int[] docs = {0, 1, 2};
 
         float[][] vectors = {
@@ -349,7 +349,7 @@ public class KNNJNITests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceTypes.negdotprod.getValue());
+                        KNNIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceTypes.inner_product.getValue());
                         return null;
                     }
                 }
@@ -360,7 +360,7 @@ public class KNNJNITests extends KNNTestCase {
         float[] queryVector = {2.0f, -2.0f};
         String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, algoQueryParams, SpaceTypes.negdotprod.getValue());
+        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, algoQueryParams, SpaceTypes.inner_product.getValue());
         final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
