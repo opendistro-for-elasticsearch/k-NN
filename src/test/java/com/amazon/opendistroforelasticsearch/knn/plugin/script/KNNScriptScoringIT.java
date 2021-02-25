@@ -671,7 +671,7 @@ public class KNNScriptScoringIT extends KNNRestTestCase {
          *   params": {
          *       "field": "my_dense_vector",
          *       "query_value": [1.0, 1.0],
-         *       "space_type": "inner_product",
+         *       "space_type": "innerproduct",
          *      }
          */
         float[] queryVector = {1.0f, 1.0f};

@@ -214,14 +214,14 @@ public interface KNNScoringSpace {
         BiFunction<float[], float[], Float> scoringMethod;
 
         /**
-         * Constructor for inner_product scoring space. inner_product scoring space expects values to be of type float[].
+         * Constructor for innerproduct scoring space. innerproduct scoring space expects values to be of type float[].
          *
          * @param query Query object that, along with the doc values, will be used to compute L-inf score
          * @param fieldType FieldType for the doc values that will be used
          */
         public InnerProd(Object query, MappedFieldType fieldType) {
             if (!isKNNVectorFieldType(fieldType)) {
-                throw new IllegalArgumentException("Incompatible field_type for inner_product space. The field type must " +
+                throw new IllegalArgumentException("Incompatible field_type for innerproduct space. The field type must " +
                         "be knn_vector.");
             }
 

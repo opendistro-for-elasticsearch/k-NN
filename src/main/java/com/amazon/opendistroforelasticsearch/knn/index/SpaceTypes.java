@@ -30,7 +30,7 @@ public enum SpaceTypes {
   cosinesimil("cosinesimil", "cosinesimil"),
   l1("l1", "l1"),
   linf("linf", "linf"),
-  inner_product("inner_product", "negdotprod");
+  inner_product("innerproduct", "negdotprod");
 
   private static final Map<String, String> TRANSLATION = new HashMap<>();
 
