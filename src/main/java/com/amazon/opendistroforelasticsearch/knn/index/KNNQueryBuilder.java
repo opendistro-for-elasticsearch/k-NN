@@ -205,8 +205,8 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
     @Override
     protected boolean doEquals(KNNQueryBuilder other) {
         return Objects.equals(fieldName, other.fieldName) &&
-                Objects.equals(vector, other.vector) &&
-                Objects.equals(k, other.k);
+                       Objects.equals(vector, other.vector) &&
+                       Objects.equals(k, other.k);
     }
 
     @Override
