@@ -192,14 +192,21 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
 
     @Override
     protected Query doToQuery(QueryShardContext context) throws IOException {
+        if (((KNNVectorFieldMapper.KNNVectorFieldType) context.fieldMapper(this.fieldName)).getDimension()
+                != vector.length) {
+            throw new IllegalArgumentException("Invalid vector query vector: " + vector.length +
+                    ". Dimension should be: " +
+                    ((KNNVectorFieldMapper.KNNVectorFieldType) context.fieldMapper(this.fieldName)).dimension);
+        }
+
         return new KNNQuery(this.fieldName, vector, k, context.index().getName());
     }
 
     @Override
     protected boolean doEquals(KNNQueryBuilder other) {
         return Objects.equals(fieldName, other.fieldName) &&
-                       Objects.equals(vector, other.vector) &&
-                       Objects.equals(k, other.k);
+                Objects.equals(vector, other.vector) &&
+                Objects.equals(k, other.k);
     }
 
     @Override
