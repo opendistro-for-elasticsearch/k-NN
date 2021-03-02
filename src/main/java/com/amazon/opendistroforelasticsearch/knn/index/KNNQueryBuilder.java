@@ -198,7 +198,7 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
         MappedFieldType mappedFieldType = context.fieldMapper(this.fieldName);
 
         if (!(mappedFieldType instanceof KNNVectorFieldMapper.KNNVectorFieldType)) {
-            throw new IllegalArgumentException("Field '" + this.fieldName + "' is not knn type.");
+            throw new IllegalArgumentException("Field '" + this.fieldName + "' is not knn_vector type.");
         }
 
         int dimension = ((KNNVectorFieldMapper.KNNVectorFieldType) mappedFieldType).getDimension();
