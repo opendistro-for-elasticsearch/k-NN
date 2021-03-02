@@ -11,6 +11,8 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.FilterDirectory;
 
 import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -198,7 +200,7 @@ public class KNNJNITests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, "l2");
+                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, "l2");
                         return null;
                     }
                 }
@@ -210,7 +212,7 @@ public class KNNJNITests extends KNNTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=200"};
 
-        final KNNIndex index = KNNIndex.loadIndex(indexPath, algoQueryParams, "l2");
+        final KNNIndex index = KNNNmsLibIndex.loadIndex(indexPath, algoQueryParams, "l2");
         final KNNQueryResult[] results = index.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
@@ -248,7 +250,7 @@ public class KNNJNITests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceTypes.inner_product.getValue());
+                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceTypes.inner_product.getValue());
                         return null;
                     }
                 }
@@ -259,7 +261,7 @@ public class KNNJNITests extends KNNTestCase {
         float[] queryVector = {2.0f, -2.0f};
         String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNIndex knnIndex = KNNIndex.loadIndex(indexPath, algoQueryParams, SpaceTypes.inner_product.getValue());
+        final KNNIndex knnIndex = KNNNmsLibIndex.loadIndex(indexPath, algoQueryParams, SpaceTypes.inner_product.getValue());
         final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
