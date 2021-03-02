@@ -18,6 +18,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.document.FieldType;
 import org.apache.lucene.search.Query;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.ParsingException;
@@ -26,6 +27,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
+import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.query.AbstractQueryBuilder;
 import org.elasticsearch.index.query.QueryShardContext;
 
@@ -192,11 +194,18 @@ public class KNNQueryBuilder extends AbstractQueryBuilder<KNNQueryBuilder> {
 
     @Override
     protected Query doToQuery(QueryShardContext context) throws IOException {
-        if (((KNNVectorFieldMapper.KNNVectorFieldType) context.fieldMapper(this.fieldName)).getDimension()
-                != vector.length) {
-            throw new IllegalArgumentException("Invalid vector query vector: " + vector.length +
-                    ". Dimension should be: " +
-                    ((KNNVectorFieldMapper.KNNVectorFieldType) context.fieldMapper(this.fieldName)).dimension);
+
+        MappedFieldType mappedFieldType = context.fieldMapper(this.fieldName);
+
+        if (!(mappedFieldType instanceof KNNVectorFieldMapper.KNNVectorFieldType)) {
+            throw new IllegalArgumentException("Field '" + this.fieldName + "' is not knn type.");
+        }
+
+        int dimension = ((KNNVectorFieldMapper.KNNVectorFieldType) mappedFieldType).getDimension();
+
+        if (dimension != vector.length) {
+            throw new IllegalArgumentException("Query vector has invalid dimension: " + vector.length +
+                    ". Dimension should be: " + dimension);
         }
 
         return new KNNQuery(this.fieldName, vector, k, context.index().getName());
