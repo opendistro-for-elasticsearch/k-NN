@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index.faiss.v165;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
+import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
 import com.amazon.opendistroforelasticsearch.knn.index.util.FAISSLibVersion;
 
 import java.security.AccessController;
@@ -42,14 +43,14 @@ public class KNNFaissIndex extends KNNIndex  {
      * @param spaceType space type of the index
      * @return knn index that can be queried for k nearest neighbours
      */
-    public static KNNFaissIndex loadIndex(String indexPath, final String[] algoParams, final String spaceType) {
+    public static KNNFaissIndex loadIndex(String indexPath, final String[] algoParams, final SpaceTypes spaceType) {
         long fileSize = computeFileSize(indexPath);
-        long indexPointer = init(indexPath, algoParams, spaceType);
-        return new KNNFaissIndex(indexPointer, fileSize);
+        long indexPointer = init(indexPath, algoParams, spaceType.getValue());
+        return new KNNFaissIndex(indexPointer, fileSize, spaceType);
     }
 
-    private KNNFaissIndex(final long indexPointer, final long indexSize) {
-        super(indexPointer, indexSize);
+    private KNNFaissIndex(final long indexPointer, final long indexSize, final SpaceTypes spaceType) {
+        super(indexPointer, indexSize, spaceType);
     }
 
     /*

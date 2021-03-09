@@ -46,7 +46,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.getCircuitBreakerLimit;
 
@@ -315,12 +314,11 @@ public class KNNIndexCache implements Closeable {
 
         // loadIndex from different library
         final KNNIndex knnIndex;
+        SpaceTypes spaceType = SpaceTypes.getSpace(KNNSettings.getSpaceType(indexName));
         if (indexPathUrl.contains(KNNEngine.NMSLIB.getExtension())) {
-            knnIndex = KNNNmsLibIndex.loadIndex(indexPathUrl, getQueryParams(indexName),
-                    SpaceTypes.getValueByKey(KNNSettings.getSpaceType(indexName)));
+            knnIndex = KNNNmsLibIndex.loadIndex(indexPathUrl, getQueryParams(indexName), spaceType);
         } else if (indexPathUrl.contains(KNNEngine.FAISS.getExtension())) {
-            knnIndex = KNNFaissIndex.loadIndex(indexPathUrl, getQueryParams(indexName),
-                    SpaceTypes.getValueByKey(KNNSettings.getSpaceType(indexName)));
+            knnIndex = KNNFaissIndex.loadIndex(indexPathUrl, getQueryParams(indexName), spaceType);
         } else {
             throw new IllegalArgumentException("[KNN] Invalid engine type for path: " + indexPathUrl);
         }

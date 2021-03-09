@@ -37,7 +37,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoParams, "l2");
+                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceTypes.L2.getValue());
                         return null;
                     }
                 }
@@ -65,7 +65,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoParams, "l2");
+                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceTypes.L2.getValue());
                         return null;
                     }
                 }
@@ -76,7 +76,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNFaissIndex knnIndex = KNNFaissIndex.loadIndex(indexPath, algoQueryParams, "l2");
+        final KNNFaissIndex knnIndex = KNNFaissIndex.loadIndex(indexPath, algoQueryParams, SpaceTypes.L2);
         final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
@@ -110,7 +110,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
                 AccessController.doPrivileged(
                         new PrivilegedAction<Void>() {
                             public Void run() {
-                                KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, new String[] {}, "l2");
+                                KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, new String[] {}, SpaceTypes.L2);
                                 return null;
                             }
                         }
@@ -136,7 +136,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, "l2");
+                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, SpaceTypes.L2.getValue());
                         return null;
                     }
                 }
@@ -148,7 +148,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=200"};
 
-        final KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, algoQueryParams, "l2");
+        final KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, algoQueryParams, SpaceTypes.L2);
         final KNNQueryResult[] results = index.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(

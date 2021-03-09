@@ -124,7 +124,8 @@ public class KNNWeight extends Weight {
              * neighbors we are inverting the scores.
              */
             Map<Integer, Float> scores = Arrays.stream(results).collect(
-                    Collectors.toMap(KNNQueryResult::getId, result -> normalizeScore(result.getScore())));
+                    Collectors.toMap(KNNQueryResult::getId,
+                            result -> knnEngine.score(result.getScore(), index.getSpaceType())));
             int maxDoc = Collections.max(scores.keySet()) + 1;
             DocIdSetBuilder docIdSetBuilder = new DocIdSetBuilder(maxDoc);
             DocIdSetBuilder.BulkAdder setAdder = docIdSetBuilder.grow(maxDoc);

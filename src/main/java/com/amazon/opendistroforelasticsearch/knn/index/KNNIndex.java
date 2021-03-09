@@ -31,10 +31,12 @@ public abstract class KNNIndex implements AutoCloseable {
 
     protected final long indexPointer;
     protected final long indexSize;
+    protected final SpaceTypes spaceType;
 
-    protected KNNIndex(final long indexPointer, final long indexSize) {
+    protected KNNIndex(final long indexPointer, final long indexSize, final SpaceTypes spaceType) {
         this.indexPointer = indexPointer;
         this.indexSize = indexSize;
+        this.spaceType = spaceType;
     }
 
     /**
@@ -70,6 +72,10 @@ public abstract class KNNIndex implements AutoCloseable {
      */
     public long getIndexSize() {
         return this.indexSize;
+    }
+
+    public SpaceTypes getSpaceType() {
+        return this.spaceType;
     }
 
     public void close() {

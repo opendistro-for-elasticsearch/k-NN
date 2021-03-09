@@ -15,11 +15,16 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.util;
 
+import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
+
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 public enum KNNEngine {
-    NMSLIB("NMSLIB", ".hnsw") {
+    NMSLIB("NMSLIB", ".hnsw", Collections.emptyMap()) {
         @Override
         public String getLatestBuildVersion() {
             return NmsLibVersion.LATEST.buildVersion;
@@ -30,7 +35,8 @@ public enum KNNEngine {
             return NmsLibVersion.LATEST.indexLibraryVersion();
         }
     },
-    FAISS("FAISS", ".faiss") {
+    FAISS("FAISS", ".faiss", Collections.singletonMap(
+            SpaceTypes.INNER_PRODUCT, rawScore -> SpaceTypes.INNER_PRODUCT.scoreTranslation(-1*rawScore))) {
         @Override
         public String getLatestBuildVersion() {
             return FAISSLibVersion.LATEST.buildVersion;
@@ -43,13 +49,15 @@ public enum KNNEngine {
     };
     public static final KNNEngine DEFAULT = NMSLIB;
 
-    KNNEngine(String knnEngineName, String extension) {
+    KNNEngine(String knnEngineName, String extension, Map<SpaceTypes, Function<Float, Float>> scoreOverride) {
         this.knnEngineName = knnEngineName;
         this.extension = extension;
+        this.scoreOverride = scoreOverride;
     }
 
     private String knnEngineName;
     private String extension;
+    private Map<SpaceTypes, Function<Float, Float>> scoreOverride;
 
     public abstract String getLatestBuildVersion();
     public abstract String getLatestLibVersion();
@@ -81,5 +89,13 @@ public enum KNNEngine {
             return NMSLIB;
         }
         throw new IllegalArgumentException("[KNN] Invalid engine type: " + name);
+    }
+
+    public float score(float rawScore, SpaceTypes spaceTypes) {
+        if (this.scoreOverride.containsKey(spaceTypes)) {
+            return this.scoreOverride.get(spaceTypes).apply(rawScore);
+        }
+
+        return spaceTypes.scoreTranslation(rawScore);
     }
 }
