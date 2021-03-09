@@ -50,15 +50,26 @@ public enum SpaceTypes {
         }
     },
     INNER_PRODUCT("innerproduct") {
+        /**
+         * The inner product has a range of [-Float.MAX_VALUE, Float.MAX_VALUE], with a more similar result being
+         * represented by a more negative value. In Lucene, scores have to be in the range of [0, Float.MAX_VALUE],
+         * where a higher score represents a more similar result.
+         *
+         * To perform this translation, we have to map [-Float.MAX_VALUE, Float.MAX_VALUE] to [0, Float.MAX_VALUE]
+         * where more negative scores are translated to larger values. With this mapping, we will lose 1 bit of
+         * precision. We will treat the most significant bit of the exponent value in the float as a pseudo sign bit,
+         * where 1 represents a negative value and 0 represents a positive number. To build the rest of the exponent,
+         * we will just shift the old exponent by 1. The mantissa will remain unchanged.
+         *
+         * @param rawScore score returned from underlying library
+         * @return Lucene scaled score
+         */
         @Override
         public float scoreTranslation(float rawScore) {
-            if (rawScore < 0) {
-                return 2 + 1/(1 + rawScore);
+            if (rawScore >= 0) {
+                return 1 / (1 + rawScore);
             }
-            return 1/(1 + rawScore);
-            //TODO: Currently this formula does not work, but something like this could provent scores for big numbers
-            // from just going to 1 or 2
-            // return (float) Math.max(Float.MAX_VALUE/2 + rawScore/2, 0.0);
+            return -rawScore + 1;
         }
     },
     HAMMING_BIT("hammingbit") {
