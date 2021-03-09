@@ -78,14 +78,12 @@ public class  KNNCodecTestCase extends KNNTestCase {
         IndexWriterConfig iwc = newIndexWriterConfig();
         iwc.setMergeScheduler(new SerialMergeScheduler());
         iwc.setCodec(codec);
-
         float[] array = {1.0f, 2.0f, 3.0f};
         VectorField vectorField = new VectorField("test_vector", array, KNNVectorFieldMapper.Defaults.FIELD_TYPE);
         RandomIndexWriter writer = new RandomIndexWriter(random(), dir, iwc);
         Document doc = new Document();
         doc.add(vectorField);
         writer.addDocument(doc);
-
         KNNIndexCache.setResourceWatcherService(createDisabledResourceWatcherService());
         IndexReader reader = writer.getReader();
         LeafReaderContext lrc = reader.getContext().leaves().iterator().next(); // leaf reader context

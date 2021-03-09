@@ -52,6 +52,7 @@ void knn_jni::CatchCppExceptionAndThrowJava(JNIEnv* env)
 
 
 std::string knn_jni::GetStringJenv(JNIEnv * env, jstring javaString) {
+    //TODO: Add check here for javaString is null
     const char *cString = env->GetStringUTFChars(javaString, nullptr);
     if (cString == nullptr) {
         HasExceptionInStack(env);

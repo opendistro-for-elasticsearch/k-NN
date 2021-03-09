@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -15,47 +15,60 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
- * Enum contains space type key-value pairs for k-NN similarity search.
- * key represents the space type name exposed to user;
- * value represents the internal space type name used in nmslib.
+ * Enum contains spaces supported for approximate nearest neighbor search in the k-NN plugin. Each engine is expected
+ * to support a subset of these spaces. Validation should be done in the jni layer and an exception should be
+ * propagated up to the Java layer. Additionally, naming translations should be done in jni layer as well. For example,
+ * nmslib calls the inner_product space "negdotprod". This translation should take place in the nmslib's jni layer.
  */
 public enum SpaceTypes {
-  l2("l2", "l2"),
-  cosinesimil("cosinesimil", "cosinesimil"),
-  l1("l1", "l1"),
-  linf("linf", "linf"),
-  inner_product("innerproduct", "negdotprod");
+  L2("l2") {
+    @Override
+    public float scoreTranslation(float rawScore) {
+      return 1 / (1 + rawScore);
+    }
+  },
+  COSINESIMIL("cosinesimil") {
+    @Override
+    public float scoreTranslation(float rawScore) {
+      return 1 / (1 + rawScore);
+    }
+  },
+  L1("l1") {
+    @Override
+    public float scoreTranslation(float rawScore) {
+      return 1 / (1 + rawScore);
+    }
+  },
+  LINF("linf") {
+    @Override
+    public float scoreTranslation(float rawScore) {
+      return 1 / (1 + rawScore);
+    }
+  },
+  INNER_PRODUCT("innerproduct") {
+    @Override
+    public float scoreTranslation(float rawScore) {
+      return (float) Math.max(Float.MAX_VALUE/2 + rawScore/2, 0.0);
+    }
+  },
+  HAMMING_BIT("hammingbit") {
+    @Override
+    public float scoreTranslation(float rawScore) {
+      return 1 / (1 + rawScore);
+    }
+  };
 
-  private static final Map<String, String> TRANSLATION = new HashMap<>();
-
-  private final String key;
   private final String value;
 
-  static {
-    for (SpaceTypes spaceType : values()) {
-      TRANSLATION.put(spaceType.key, spaceType.value);
-    }
-  }
-
-  public static boolean contains(final String name) { return TRANSLATION.containsKey(name); }
-
-  public static String getValueByKey(final String name) { return TRANSLATION.get(name); }
-
-  SpaceTypes(String key, String value) {
-    this.key = key;
+  SpaceTypes(String value) {
     this.value = value;
   }
 
-  /**
-   * Get space type name in KNN plugin
-   *
-   * @return name
-   */
-  public String getKey() { return key; }
+  public abstract float scoreTranslation(float rawScore);
 
   /**
    * Get space type name in engine
@@ -63,4 +76,13 @@ public enum SpaceTypes {
    * @return name
    */
   public String getValue() { return value; }
+
+  public static Set<String> getValues() {
+    Set<String> values = new HashSet<>();
+
+    for (SpaceTypes spaceType : SpaceTypes.values()) {
+      values.add(spaceType.getValue());
+    }
+    return values;
+  }
 }

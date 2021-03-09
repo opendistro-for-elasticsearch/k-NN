@@ -18,11 +18,8 @@
 
 #include <cmath>
 #include <cstdio>
-#include <cstdlib>
 #include <string>
 #include <vector>
-#include <sys/time.h>
-#include <omp.h>
 
 #include "faiss/index_factory.h"
 #include "faiss/MetaIndexes.h"
@@ -33,6 +30,7 @@
 using std::string;
 using std::vector;
 
+// mapMetric is used to map a string from the plugin to a faiss metric. All translation should be done via this map
 std::unordered_map<string, faiss::MetricType> mapMetric = {
 	{"l2", faiss::METRIC_L2},
 	{"innerproduct", faiss::METRIC_INNER_PRODUCT}
@@ -56,7 +54,7 @@ std::unordered_map<string, faiss::MetricType> mapMetric = {
 	int dim = 0;
 	try {
 		//---- ids
-		int* object_ids = NULL;
+		int* object_ids = nullptr;
 		object_ids = env->GetIntArrayElements(ids, 0);
 		for(int i = 0; i < env->GetArrayLength(ids); ++i) {
 			idVector.push_back(object_ids[i]);
@@ -66,7 +64,7 @@ std::unordered_map<string, faiss::MetricType> mapMetric = {
 
 		//---- vectors
 		for (int i = 0; i < env->GetArrayLength(vectors); ++i) {
-			jfloatArray vectorArray = (jfloatArray)env->GetObjectArrayElement(vectors, i);
+			auto vectorArray = (jfloatArray)env->GetObjectArrayElement(vectors, i);
 			float* vector = env->GetFloatArrayElements(vectorArray, 0);
 			dim = env->GetArrayLength(vectorArray);
 			for(int j = 0; j < dim; ++j) {

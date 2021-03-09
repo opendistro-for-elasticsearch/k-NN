@@ -16,7 +16,6 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
-import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFaissIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNNmsLibIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
@@ -55,7 +54,7 @@ public class KNNJNITests extends KNNTestCase {
             String[] algoParams = {};
             AccessController.doPrivileged(
                     (PrivilegedAction<Void>) () -> {
-                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, KNNConstants.L2);
+                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceTypes.L2.getValue());
                         return null;
                     }
             );
@@ -67,7 +66,7 @@ public class KNNJNITests extends KNNTestCase {
             String[] algoParams = {};
             AccessController.doPrivileged(
                     (PrivilegedAction<Void>) () -> {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoParams, KNNConstants.L2);
+                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceTypes.L2.getValue());
                         return null;
                     }
             );
@@ -90,7 +89,7 @@ public class KNNJNITests extends KNNTestCase {
             String[] algoParams = {};
             AccessController.doPrivileged(
                     (PrivilegedAction<Void>) () -> {
-                        KNNNmsLibIndex.saveIndex(docs, vectors, indexNmsLibPath, algoParams, KNNConstants.L2);
+                        KNNNmsLibIndex.saveIndex(docs, vectors, indexNmsLibPath, algoParams, SpaceTypes.L2.getValue());
                         return null;
                     }
             );
@@ -99,7 +98,7 @@ public class KNNJNITests extends KNNTestCase {
             String[] algoParams = {};
             AccessController.doPrivileged(
                     (PrivilegedAction<Void>) () -> {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexFaissPath, algoParams, KNNConstants.L2);
+                        KNNFaissIndex.saveIndex(docs, vectors, indexFaissPath, algoParams, SpaceTypes.L2.getValue());
                         return null;
                     }
             );
@@ -260,7 +259,7 @@ public class KNNJNITests extends KNNTestCase {
         String[] algoParams = {};
         AccessController.doPrivileged(
                 (PrivilegedAction<Void>) () -> {
-                    KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceTypes.inner_product.getValue());
+                    KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceTypes.INNER_PRODUCT.getValue());
                     return null;
                 }
         );
@@ -270,7 +269,7 @@ public class KNNJNITests extends KNNTestCase {
         float[] queryVector = {2.0f, -2.0f};
         String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNIndex knnIndex = KNNNmsLibIndex.loadIndex(indexPath, algoQueryParams, SpaceTypes.inner_product.getValue());
+        final KNNIndex knnIndex = KNNNmsLibIndex.loadIndex(indexPath, algoQueryParams, SpaceTypes.INNER_PRODUCT.getValue());
         final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(

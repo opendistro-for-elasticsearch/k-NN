@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.action;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
-import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
+import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNStats;
 
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames;
@@ -198,7 +198,7 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         float[] queryVector = {1.0f, 1.0f};
         params.put("field", FIELD_NAME);
         params.put("query_value", queryVector);
-        params.put("space_type", KNNConstants.L2);
+        params.put("space_type", SpaceTypes.L2.getValue());
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
@@ -267,7 +267,7 @@ public class RestKNNStatsHandlerIT extends KNNRestTestCase {
         float[] queryVector = {1.0f, 1.0f};
         params.put("field", FIELD_NAME);
         params.put("query_value", queryVector);
-        params.put("space_type", KNNConstants.L2);
+        params.put("space_type", SpaceTypes.L2.getValue());
         Request request = constructKNNScriptQueryRequest(INDEX_NAME, qb, params);
         response = client().performRequest(request);
         assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,

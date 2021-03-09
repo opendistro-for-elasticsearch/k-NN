@@ -13,6 +13,7 @@
  *   permissions and limitations under the License.
  */
 
+#include <unordered_map>
 #include "com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex.h"
 #include "jni_util.h"
 
@@ -39,6 +40,14 @@ using similarity::Object;
 using similarity::KNNQuery;
 using similarity::KNNQueue;
 
+// mapMetric is used to map a string from the plugin to an nmslib space. All translation should be done via this map
+std::unordered_map<string, string> mapSpace = {
+        {"l2", "l2"},
+        {"l1", "l1"},
+        {"linf", "linf"},
+        {"cosinesimil", "cosinesimil"},
+        {"innerproduct", "negdotprod"}
+};
 
 struct IndexWrapper {
   explicit IndexWrapper(const string& spaceType) {
@@ -61,6 +70,11 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmsl
 
     try {
         string spaceTypeCppString = knn_jni::GetStringJenv(env, spaceType);
+
+        //TODO: Throw exception if space is not in list
+        if(mapSpace.find(spaceTypeCppString) != mapSpace.end()) {
+            spaceTypeCppString = mapSpace[spaceTypeCppString];
+        }
         space = SpaceFactoryRegistry<float>::Instance().CreateSpace(spaceTypeCppString, AnyParams());
         objectIds = env->GetIntArrayElements(ids, nullptr);
         for (int i = 0; i < env->GetArrayLength(vectors); i++) {
@@ -139,6 +153,9 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nms
     try {
         string indexPathCppString = knn_jni::GetStringJenv(env, indexPath);
         string spaceTypeCppString = knn_jni::GetStringJenv(env, spaceType);
+        if(mapSpace.find(spaceTypeCppString) != mapSpace.end()) {
+            spaceTypeCppString = mapSpace[spaceTypeCppString];
+        }
 
         indexWrapper = new IndexWrapper(spaceTypeCppString);
         indexWrapper->index->LoadIndex(indexPathCppString);

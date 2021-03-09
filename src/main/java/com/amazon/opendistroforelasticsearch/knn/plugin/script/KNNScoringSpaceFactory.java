@@ -16,7 +16,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
-import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
+import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 import org.elasticsearch.index.mapper.MappedFieldType;
 
@@ -25,25 +25,27 @@ import org.elasticsearch.index.mapper.MappedFieldType;
  */
 public class KNNScoringSpaceFactory {
     public static KNNScoringSpace create(String spaceType, Object query, MappedFieldType mappedFieldType) {
-        if (KNNConstants.HAMMING_BIT.equalsIgnoreCase(spaceType)) {
+        if (SpaceTypes.HAMMING_BIT.getValue().equalsIgnoreCase(spaceType)) {
             return new KNNScoringSpace.HammingBit(query, mappedFieldType);
         }
 
-        if (KNNConstants.L2.equalsIgnoreCase(spaceType)) {
+        if (SpaceTypes.L2.getValue().equalsIgnoreCase(spaceType)) {
             return new KNNScoringSpace.L2(query, mappedFieldType);
         }
-        if (KNNConstants.L1.equalsIgnoreCase(spaceType)) {
+
+        if (SpaceTypes.L1.getValue().equalsIgnoreCase(spaceType)) {
             return new KNNScoringSpace.L1(query, mappedFieldType);
         }
-        if (KNNConstants.LINF.equalsIgnoreCase(spaceType)) {
+
+        if (SpaceTypes.LINF.getValue().equalsIgnoreCase(spaceType)) {
             return new KNNScoringSpace.LInf(query, mappedFieldType);
         }
 
-        if (KNNConstants.INNER_PROD.equalsIgnoreCase(spaceType)) {
+        if (SpaceTypes.INNER_PRODUCT.getValue().equalsIgnoreCase(spaceType)) {
             return new KNNScoringSpace.InnerProd(query, mappedFieldType);
         }
 
-        if (KNNConstants.COSINESIMIL.equalsIgnoreCase(spaceType)) {
+        if (SpaceTypes.COSINESIMIL.getValue().equalsIgnoreCase(spaceType)) {
             return new KNNScoringSpace.CosineSimilarity(query, mappedFieldType);
         }
 
