@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNRestTestCase;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.common.settings.Settings;
@@ -35,8 +36,8 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
      * multiple segments may or may not be created, we will force merge each index into a single segment before
      * searching.
      */
-    private void  tripLibHnswCb() throws Exception {
-        // Make sure that Cb is intially not tripped
+    private void  tripNmslibCb() throws Exception {
+        // Make sure that Cb is initially not tripped
         assertFalse(isCbTripped());
 
         // Set circuit breaker limit to 1 KB
@@ -48,14 +49,13 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", numNodes - 1)
                 .put("index.knn", true)
-                .put("index.knn.knnEngine", "NMSLIB")
                 .build();
 
         String indexName1 = INDEX_NAME + "1";
         String indexName2 = INDEX_NAME + "2";
 
-        createKnnIndex(indexName1, settings, createKnnIndexMapping(FIELD_NAME, 2));
-        createKnnIndex(indexName2, settings, createKnnIndexMapping(FIELD_NAME, 2));
+        createKnnIndex(indexName1, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.NMSLIB));
+        createKnnIndex(indexName2, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.NMSLIB));
 
         Float[] vector = {1.3f, 2.2f};
         int docsInIndex = 5; // through testing, 7 is minimum number of docs to trip circuit breaker at 1kb
@@ -96,14 +96,13 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
                 .put("number_of_shards", 1)
                 .put("number_of_replicas", numNodes - 1)
                 .put("index.knn", true)
-                .put("index.knn.knnEngine", "FAISS")
                 .build();
 
         String indexName1 = INDEX_NAME + "1";
         String indexName2 = INDEX_NAME + "2";
 
-        createKnnIndex(indexName1, settings, createKnnIndexMapping(FIELD_NAME, 2));
-        createKnnIndex(indexName2, settings, createKnnIndexMapping(FIELD_NAME, 2));
+        createKnnIndex(indexName1, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.FAISS));
+        createKnnIndex(indexName2, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.FAISS));
 
         Float[] vector = {1.3f, 2.2f};
         int docsInIndex = 5; // through testing, 7 is minimum number of docs to trip circuit breaker at 2kb
@@ -139,7 +138,7 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
     }
 
     public void testCbLibHnswTripped() throws Exception {
-        tripLibHnswCb();
+        tripNmslibCb();
     }
     public void testCbFaissTripped() throws Exception {
         tripFaissCb();

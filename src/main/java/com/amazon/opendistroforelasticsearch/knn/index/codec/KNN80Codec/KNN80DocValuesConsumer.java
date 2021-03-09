@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -81,14 +81,14 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
              * First Get Attribute from field
              */
             Map<String, String> fieldAttributes = field.attributes();
-            String engineName = fieldAttributes.getOrDefault(KNNConstants.KNNEngine, KNNSettings.INDEX_KNN_DEFAULT_ENGINE);
+            String engineName = fieldAttributes.getOrDefault(KNNConstants.KNNEngine, KNNEngine.DEFAULT.getKnnEngineName());
             String spaceType = SpaceTypes.getValueByKey(fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceTypes.l2.getKey()));
             String[] algoParams = getKNNIndexParams(fieldAttributes);
             KNNEngine knnEngine = KNNEngine.getEngine(engineName);
             boolean faissindex = knnEngine == KNNEngine.FAISS;
 
             /**
-             * We always write with latest NMS library version OR Faiss
+             * We always write with latest engine version
              */
             if (!isKnnLibLatest()) {
                 KNNCounter.GRAPH_INDEX_ERRORS.increment();
@@ -101,35 +101,35 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
              * Make Engine Name Into FileName
              */
             BinaryDocValues values = valuesProducer.getBinary(field);
-            String hnswFileName = String.format("%s_%s_%s%s", state.segmentInfo.name, knnEngine.getLatestBuildVersion(),
-                    field.name, KNNCodecUtil.HNSW_EXTENSION);
+            String engineFileName = String.format("%s_%s_%s%s", state.segmentInfo.name, knnEngine.getLatestBuildVersion(),
+                    field.name, knnEngine.getExtension());
             String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(state.directory))).getDirectory().toString(),
-                    hnswFileName).toString();
+                    engineFileName).toString();
 
             KNNCodecUtil.Pair pair = KNNCodecUtil.getFloats(values);
-            if (pair == null || pair.vectors.length == 0 || pair.docs.length == 0) {
-                logger.info("Skipping hnsw index creation as there are no vectors or docs in the documents");
+            if (pair.vectors.length == 0 || pair.docs.length == 0) {
+                logger.info("Skipping engine index creation as there are no vectors or docs in the documents");
                 return;
             }
 
             // Pass the path for the nms library to save the file
             String tempIndexPath = indexPath + TEMP_SUFFIX;
             AccessController.doPrivileged(
-                    new PrivilegedAction<Void>() {
-                        public Void run() {
-                            if(faissindex) {
-                                KNNFaissIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
-                            } else {
-                                KNNNmsLibIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
-                            }
-                            return null;
+                    (PrivilegedAction<Void>) () -> {
+                        if(KNNEngine.NMSLIB.getKnnEngineName().equals(knnEngine.getKnnEngineName())) {
+                            KNNNmsLibIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
+                        } else if (KNNEngine.FAISS.getKnnEngineName().equals(knnEngine.getKnnEngineName())) {
+                            KNNFaissIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
+                        } else {
+                            throw new IllegalStateException("Invalid engine");
                         }
+                        return null;
                     }
             );
 
-            String hsnwTempFileName = hnswFileName + TEMP_SUFFIX;
+            String engineTempFileName = engineFileName + TEMP_SUFFIX;
 
-            /**
+            /*
              * Adds Footer to the serialized graph
              * 1. Copies the serialized graph to new file.
              * 2. Adds Footer to the new file.
@@ -138,15 +138,15 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
              * existing file will miss calculating checksum for the serialized graph
              * bytes and result in index corruption issues.
              */
-            try (IndexInput is = state.directory.openInput(hsnwTempFileName, state.context);
-                 IndexOutput os = state.directory.createOutput(hnswFileName, state.context)) {
+            try (IndexInput is = state.directory.openInput(engineTempFileName, state.context);
+                 IndexOutput os = state.directory.createOutput(engineFileName, state.context)) {
                 os.copyBytes(is, is.length());
                 CodecUtil.writeFooter(os);
             } catch (Exception ex) {
                 KNNCounter.GRAPH_INDEX_ERRORS.increment();
                 throw new RuntimeException("[KNN] Adding footer to serialized graph failed: " + ex);
             } finally {
-                IOUtils.deleteFilesIgnoringExceptions(state.directory, hsnwTempFileName);
+                IOUtils.deleteFilesIgnoringExceptions(state.directory, engineTempFileName);
             }
         }
     }
@@ -160,7 +160,6 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
     public void merge(MergeState mergeState) {
         try {
             delegatee.merge(mergeState);
-            assert mergeState != null;
             assert mergeState.mergeFieldInfos != null;
             for (FieldInfo fieldInfo : mergeState.mergeFieldInfos) {
                 DocValuesType type = fieldInfo.getDocValuesType();
@@ -200,18 +199,16 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
 
     private boolean isKnnLibLatest() {
         return AccessController.doPrivileged(
-                new PrivilegedAction<Boolean>() {
-                    public Boolean run() {
-                        if (!(NmsLibVersion.VNMSLIB_2011.indexLibraryVersion().equals(KNNNmsLibIndex.VERSION.indexLibraryVersion()) &&
-                                FAISSLibVersion.VFAISS_165.indexLibraryVersion().equals(KNNFaissIndex.VERSION.indexLibraryVersion()))) {
-                            String errorMessage = String.format("KNN codec nms library version mis match. Latest version: %s" +
-                                            "Current version: %s, %s",
-                                    NmsLibVersion.VNMSLIB_2011.indexLibraryVersion(), KNNNmsLibIndex.VERSION, KNNFaissIndex.VERSION);
-                            logger.error(errorMessage);
-                            return false;
-                        }
-                        return true;
+                (PrivilegedAction<Boolean>) () -> {
+                    if (!(NmsLibVersion.VNMSLIB_2011.indexLibraryVersion().equals(KNNNmsLibIndex.VERSION.indexLibraryVersion()) &&
+                            FAISSLibVersion.VFAISS_165.indexLibraryVersion().equals(KNNFaissIndex.VERSION.indexLibraryVersion()))) {
+                        String errorMessage = String.format("KNN codec nms library version mis match. Latest version: %s" +
+                                        "Current version: %s, %s",
+                                NmsLibVersion.VNMSLIB_2011.indexLibraryVersion(), KNNNmsLibIndex.VERSION, KNNFaissIndex.VERSION);
+                        logger.error(errorMessage);
+                        return false;
                     }
+                    return true;
                 }
         );
     }

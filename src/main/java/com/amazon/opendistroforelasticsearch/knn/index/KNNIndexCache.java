@@ -46,12 +46,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.getCircuitBreakerLimit;
 
 /**
  * KNNIndex level caching with weight based, time based evictions. This caching helps us
- * to manage the hnsw graphs in the memory and garbage collect them after specified timeout
+ * to manage the engine files in the memory and garbage collect them after specified timeout
  * or when weightCircuitBreaker is hit.
  */
 public class KNNIndexCache implements Closeable {
@@ -93,14 +94,14 @@ public class KNNIndexCache implements Closeable {
         CacheBuilder<String, KNNIndexCacheEntry> cacheBuilder = CacheBuilder.newBuilder()
                 .recordStats()
                 .concurrencyLevel(1)
-                .removalListener(k -> onRemoval(k));
+                .removalListener(this::onRemoval);
         if(KNNSettings.state().getSettingValue(KNNSettings.KNN_MEMORY_CIRCUIT_BREAKER_ENABLED)) {
             cacheBuilder.maximumWeight(getCircuitBreakerLimit().getKb()).weigher((k, v) -> (int)v.getIndexSize());
         }
 
         if(KNNSettings.state().getSettingValue(KNNSettings.KNN_CACHE_ITEM_EXPIRY_ENABLED)) {
             /**
-             * If the hnsw index is not accessed for knn.cache.item.expiry.minutes, it would be garbage collected.
+             * If the engine index is not accessed for knn.cache.item.expiry.minutes, it would be garbage collected.
              */
             long expiryTime = ((TimeValue) KNNSettings.state()
                     .getSettingValue(KNNSettings.KNN_CACHE_ITEM_EXPIRY_TIME_MINUTES)).getMinutes();
@@ -121,7 +122,7 @@ public class KNNIndexCache implements Closeable {
     }
 
     /**
-     * On cache eviction, the corresponding hnsw index will be deleted from native memory.
+     * On cache eviction, the corresponding engine index will be deleted from native memory.
      *
      * @param removalNotification key, value that got evicted.
      */
@@ -130,10 +131,7 @@ public class KNNIndexCache implements Closeable {
 
         knnIndexCacheEntry.getFileWatcherHandle().stop();
 
-        executor.execute(() -> knnIndexCacheEntry.indexClose());
-
-        String esIndexName = removalNotification.getValue().getEsIndexName();
-        String indexPathUrl = removalNotification.getValue().getIndexPathUrl();
+        executor.execute(knnIndexCacheEntry::indexClose);
 
         if (RemovalCause.SIZE == removalNotification.getCause()) {
             KNNSettings.state().updateCircuitBreakerSettings(true);
@@ -141,13 +139,13 @@ public class KNNIndexCache implements Closeable {
         }
         // TODO will change below logger to debug when close to ship it
         logger.info("[KNN] Cache evicted. Key {}, Reason: {}", removalNotification.getKey()
-                ,removalNotification.getCause());
+                , removalNotification.getCause());
     }
 
     /**
      * Loads corresponding index for the given key to memory and returns the index object.
      *
-     * @param key indexPath where the serialized hnsw graph is stored
+     * @param key indexPath where the serialized engine file is stored
      * @param indexName index name
      * @return KNNIndex holding the heap pointer of the loaded graph
      */
@@ -170,7 +168,8 @@ public class KNNIndexCache implements Closeable {
      * @return List of KNNIndex's from the segment paths
      */
     public List<KNNIndex> getIndices(List<String> segmentPaths, String indexName) {
-        return segmentPaths.stream().map(segmentPath -> getIndex(segmentPath, indexName)).collect(Collectors.toList());
+        return segmentPaths.stream().map(segmentPath -> getIndex(segmentPath, indexName))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -287,7 +286,8 @@ public class KNNIndexCache implements Closeable {
     }
 
     /**
-     * Loads k-NN Lucene index to memory. Registers the location of the serialized graph with ResourceWatcher.
+     * Loads engine index to memory. Registers the location of the serialized graph with ResourceWatcher. This operates
+     * at the Lucene segment level. There can be multiple graphs per Lucene index.
      *
      * @param indexPathUrl path for serialized k-NN segment
      * @param indexName index name
@@ -314,14 +314,18 @@ public class KNNIndexCache implements Closeable {
         final WatcherHandle<FileWatcher> watcherHandle = resourceWatcherService.add(fileWatcher);
 
         // loadIndex from different library
-        if (KNNSettings.getKnnEngine(indexName).contains(KNNEngine.FAISS.getKnnEngineName())) {
-            final KNNFaissIndex knnIndex = KNNFaissIndex.loadIndex(indexPathUrl, getQueryParams(indexName), KNNSettings.getSpaceType(indexName));
-            return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
-
+        final KNNIndex knnIndex;
+        if (indexPathUrl.contains(KNNEngine.NMSLIB.getExtension())) {
+            knnIndex = KNNNmsLibIndex.loadIndex(indexPathUrl, getQueryParams(indexName),
+                    SpaceTypes.getValueByKey(KNNSettings.getSpaceType(indexName)));
+        } else if (indexPathUrl.contains(KNNEngine.FAISS.getExtension())) {
+            knnIndex = KNNFaissIndex.loadIndex(indexPathUrl, getQueryParams(indexName),
+                    SpaceTypes.getValueByKey(KNNSettings.getSpaceType(indexName)));
         } else {
-            final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.loadIndex(indexPathUrl, getQueryParams(indexName), SpaceTypes.getValueByKey(KNNSettings.getSpaceType(indexName)));
-            return new KNNIndexCacheEntry(knnNmsLibIndex, indexPathUrl, indexName, watcherHandle);
+            throw new IllegalArgumentException("[KNN] Invalid engine type for path: " + indexPathUrl);
         }
+
+        return new KNNIndexCacheEntry(knnIndex, indexPathUrl, indexName, watcherHandle);
     }
 
     /**
@@ -336,20 +340,14 @@ public class KNNIndexCache implements Closeable {
         private final String esIndexName;
         private final WatcherHandle<FileWatcher> fileWatcherHandle;
 
-        private KNNIndexCacheEntry(final KNNNmsLibIndex knnIndex, final String indexPathUrl, final String esIndexName,
+        private KNNIndexCacheEntry(final KNNIndex knnIndex, final String indexPathUrl, final String esIndexName,
                                    final WatcherHandle<FileWatcher> fileWatcherHandle) {
             this.knnIndex = knnIndex;
             this.indexPathUrl = indexPathUrl;
             this.esIndexName = esIndexName;
             this.fileWatcherHandle = fileWatcherHandle;
         }
-        private KNNIndexCacheEntry(final KNNFaissIndex knnIndex, final String indexPathUrl, final String esIndexName,
-                                   final WatcherHandle<FileWatcher> fileWatcherHandle) {
-            this.knnIndex = knnIndex;
-            this.indexPathUrl = indexPathUrl;
-            this.esIndexName = esIndexName;
-            this.fileWatcherHandle = fileWatcherHandle;
-        }
+
         private void indexClose() {
             if(knnIndex != null) {
                 logger.debug("knn Index close" + knnIndex.getIndexSize());

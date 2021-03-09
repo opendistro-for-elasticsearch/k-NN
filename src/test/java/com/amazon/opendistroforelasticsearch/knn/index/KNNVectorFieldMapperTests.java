@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.IndexScopedSettings;
@@ -147,8 +148,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
 
         String mockIndexFieldName = "test-field-name";
         KNNVectorFieldMapper.KNNVectorFieldType vectorFieldType = new KNNVectorFieldMapper.KNNVectorFieldType(
-                mockIndexFieldName, Collections.<String, String>emptyMap(), 10
-        );
+                mockIndexFieldName, Collections.<String, String>emptyMap(), 10, KNNEngine.DEFAULT.getKnnEngineName());
         IndexFieldData.Builder builder = vectorFieldType.fielddataBuilder(mockIndexFieldName, null);
         IndexFieldData<?> knnVectorIndexField = builder.build(null, null);
         assertNotNull(knnVectorIndexField);

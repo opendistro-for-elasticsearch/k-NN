@@ -17,115 +17,27 @@ package com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
-import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
-import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
 
-import java.io.File;
-import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter.GRAPH_INDEX_REQUESTS;
 
 /**
  * JNI layer to communicate with the nmslib
  * This class refers to the nms library build with version tag 2.0.11
  * See <a href="https://github.com/nmslib/nmslib/tree/v2.0.8">tag2.0.11</a>
  */
-public class KNNNmsLibIndex extends KNNIndex implements AutoCloseable {
+public class KNNNmsLibIndex extends KNNIndex {
     public static NmsLibVersion VERSION = NmsLibVersion.VNMSLIB_2011;
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                System.loadLibrary(NmsLibVersion.VNMSLIB_2011.indexLibraryVersion());
-                return null;
-            }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            System.loadLibrary(NmsLibVersion.VNMSLIB_2011.indexLibraryVersion());
+            return null;
         });
         initLibrary();
-    }
-
-    private volatile boolean isClosed = false;
-    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-
-    private final long indexPointer;
-    private final long indexSize;
-
-    private KNNNmsLibIndex(final long indexPointer, final long indexSize) {
-        this.indexPointer = indexPointer;
-        this.indexSize = indexSize;
-    }
-    public KNNNmsLibIndex() {
-        this.indexPointer = 0;
-        this.indexSize = 0;
-    }
-
-    @Override
-    public long getIndexSize() {
-        return this.indexSize;
-    }
-
-    @Override
-    public KNNQueryResult[] queryIndex(final float[] query, final int k) throws RuntimeException {
-        Lock readLock = readWriteLock.readLock();
-        readLock.lock();
-        KNNCounter.GRAPH_QUERY_REQUESTS.increment();
-        try {
-            if (this.isClosed) {
-                throw new IOException("Index is already closed");
-            }
-            final long indexPointer = this.indexPointer;
-            return AccessController.doPrivileged(
-                    new PrivilegedAction<KNNQueryResult[]>() {
-                        public KNNQueryResult[] run() {
-                            return queryIndex(indexPointer, query, k);
-                        }
-                    }
-            );
-
-        } catch (Exception ex) {
-            KNNCounter.GRAPH_QUERY_ERRORS.increment();
-            throw new RuntimeException("Unable to query the index: " + ex);
-        } finally {
-            readLock.unlock();
-        }
-    }
-    @Override
-    public void saveIndex(int[] ids, float[][] data, String indexPath,
-                          String[] algoParams, String spaceType,
-                          KNNEngine engine) throws  RuntimeException{
-        if (engine != KNNEngine.NMSLIB) {
-            throw new RuntimeException("Index Engine: " +
-                    engine.getKnnEngineName() +
-                    " is not support in" + KNNEngine.NMSLIB);
-        }
-        AccessController.doPrivileged(
-                new PrivilegedAction<Void>() {
-                    public Void run() {
-                        saveIndex(ids, data, indexPath, algoParams, spaceType);
-                        return null;
-                    }
-                }
-        );
-    }
-
-    @Override
-    public void close() {
-        Lock writeLock = readWriteLock.writeLock();
-        writeLock.lock();
-        // Autocloseable documentation recommends making close idempotent. We don't expect to doubly close
-        // but this will help prevent a crash in that situation.    
-        if (this.isClosed) {
-            return;
-        }
-        try {
-            gc(this.indexPointer);
-        } finally {
-            this.isClosed = true;
-            writeLock.unlock();
-        }
     }
 
     /**
@@ -142,25 +54,29 @@ public class KNNNmsLibIndex extends KNNIndex implements AutoCloseable {
         return new KNNNmsLibIndex(indexPointer, fileSize);
     }
 
-    /**
-     * determines the size of the hnsw index on disk
-     * @param indexPath absolute path of the index
-     *
-     */
-    private static long computeFileSize(String indexPath) {
-        if (indexPath == null || indexPath.isEmpty()) {
-            return 0;
-        }
-        File file = new File(indexPath);
-        if (!file.exists() || !file.isFile()) {
-            return 0;
-        }
-
-        return file.length() / 1024 + 1;
+    private KNNNmsLibIndex(final long indexPointer, final long indexSize) {
+        super(indexPointer, indexSize);
     }
 
+    /*
+     * Wrappers around Jni functions
+     */
+    protected KNNQueryResult[] queryIndexJniWrapper(long indexPointer, float[] query, int k) {
+        GRAPH_INDEX_REQUESTS.increment();
+        return AccessController.doPrivileged(
+                (PrivilegedAction<KNNQueryResult[]>) () -> queryIndex(indexPointer, query, k)
+        );
+    }
+
+    protected void gcJniWrapper(long indexPointer) {
+        gc(indexPointer);
+    }
+
+
+    // JNI FUNCTIONS
     // Builds index and writes to disk (no index pointer escapes).
-    public static native void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams, String spaceType);
+    public static native void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams,
+                                        String spaceType);
 
     // Queries index (thread safe with other readers, blocked by write lock)
     private static native KNNQueryResult[] queryIndex(long indexPointer, float[] query, int k);
@@ -171,6 +87,6 @@ public class KNNNmsLibIndex extends KNNIndex implements AutoCloseable {
     // Deletes memory pointed to by index pointer (needs write lock)
     private static native void gc(long indexPointer);
 
-    // Calls nmslib's initLibrary function: https://github.com/nmslib/nmslib/blob/v2.0.11/similarity_search/include/init.h#L27
+    // Calls nmslib's initLibrary function
     private static native void initLibrary();
 }

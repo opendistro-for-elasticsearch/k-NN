@@ -15,8 +15,10 @@
 
 package com.amazon.opendistroforelasticsearch.knn;
 
+import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryBuilder;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import com.amazon.opendistroforelasticsearch.knn.plugin.KNNPlugin;
 import com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringScriptEngine;
 import org.apache.http.util.EntityUtils;
@@ -239,6 +241,18 @@ public class KNNRestTestCase extends ODFERestTestCase {
                 .startObject(fieldName)
                 .field("type", "knn_vector")
                 .field("dimension", dimensions.toString())
+                .endObject()
+                .endObject()
+                .endObject());
+    }
+
+    protected String createKnnIndexMapping(String fieldName, Integer dimensions, KNNEngine engine) throws IOException {
+        return Strings.toString(XContentFactory.jsonBuilder().startObject()
+                .startObject("properties")
+                .startObject(fieldName)
+                .field("type", "knn_vector")
+                .field("dimension", dimensions.toString())
+                .field(KNNConstants.KNNEngine, engine.getKnnEngineName())
                 .endObject()
                 .endObject()
                 .endObject());

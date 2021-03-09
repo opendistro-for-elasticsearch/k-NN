@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNNmsLibIndex;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.FilterLeafReader;
@@ -88,7 +89,7 @@ public class KNNIndexShard {
         Engine.Searcher searcher = indexShard.acquireSearcher("knn-warmup");
         List<KNNIndex> indices;
         try {
-            indices = knnIndexCache.getIndices(getHNSWPaths(searcher.getIndexReader()), getIndexName());
+            indices = knnIndexCache.getIndices(getAllEnginePaths(searcher.getIndexReader()), getIndexName());
         } finally {
             searcher.close();
         }
@@ -96,31 +97,35 @@ public class KNNIndexShard {
     }
 
     /**
-     * For the given shard, get all of its HNSW paths
+     * For the given shard, get all of its engine paths
      *
      * @param indexReader IndexReader to read the file paths for the shard
-     * @return List of HNSW Paths
+     * @return List of engine file Paths
      * @throws IOException Thrown when the SegmentReader is attempting to read the segments files
      */
-    public List<String> getHNSWPaths(IndexReader indexReader) throws IOException {
-        List<String> hnswFiles = new ArrayList<>();
+    public List<String> getAllEnginePaths(IndexReader indexReader) throws IOException {
+        List<String> engineFiles = new ArrayList<>();
+        for (KNNEngine knnEngine : KNNEngine.values()) {
+            engineFiles.addAll(getEnginePaths(indexReader, knnEngine));
+        }
+        return engineFiles;
+    }
+
+    private List<String> getEnginePaths(IndexReader indexReader, KNNEngine knnEngine) throws IOException {
+        List<String> engineFiles = new ArrayList<>();
         for (LeafReaderContext leafReaderContext : indexReader.leaves()) {
             SegmentReader reader = (SegmentReader) FilterLeafReader.unwrap(leafReaderContext.reader());
             Path shardPath = ((FSDirectory) FilterDirectory.unwrap(reader.directory())).getDirectory();
-            hnswFiles.addAll(reader.getSegmentInfo().files().stream()
-                    .filter(fileName -> fileName.endsWith(getHNSWFileExtension(reader.getSegmentInfo().info)))
+            engineFiles.addAll(reader.getSegmentInfo().files().stream()
+                    .filter(fileName -> fileName.endsWith(getEngineFileExtension(reader.getSegmentInfo().info, knnEngine)))
                     .map(fileName -> shardPath.resolve(fileName).toString())
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList()));
         }
-        return hnswFiles;
+        return engineFiles;
     }
 
-    private ShardPath shardPath() {
-        return indexShard.shardPath();
-    }
-
-    private String getHNSWFileExtension(SegmentInfo info) {
-        return info.getUseCompoundFile() ? KNNCodecUtil.HNSW_COMPOUND_EXTENSION : KNNCodecUtil.HNSW_EXTENSION;
+    private String getEngineFileExtension(SegmentInfo info, KNNEngine knnEngine) {
+        return info.getUseCompoundFile() ? knnEngine.getCompoundExtension() : knnEngine.getExtension();
     }
 }

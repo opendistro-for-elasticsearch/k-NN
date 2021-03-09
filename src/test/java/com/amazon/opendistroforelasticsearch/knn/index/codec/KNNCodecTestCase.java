@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import com.amazon.opendistroforelasticsearch.knn.index.VectorField;
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN87Codec.KNN87Codec;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.document.Document;
@@ -90,7 +91,7 @@ public class  KNNCodecTestCase extends KNNTestCase {
         LeafReaderContext lrc = reader.getContext().leaves().iterator().next(); // leaf reader context
         SegmentReader segmentReader = (SegmentReader) FilterLeafReader.unwrap(lrc.reader());
         String hnswFileExtension = segmentReader.getSegmentInfo().info.getUseCompoundFile()
-                ? KNNCodecUtil.HNSW_COMPOUND_EXTENSION : KNNCodecUtil.HNSW_EXTENSION;
+                ? KNNEngine.NMSLIB.getCompoundExtension() : KNNEngine.NMSLIB.getExtension();
         String hnswSuffix = "test_vector" + hnswFileExtension;
         List<String> hnswFiles = segmentReader.getSegmentInfo().files().stream()
                 .filter(fileName -> fileName.endsWith(hnswSuffix))

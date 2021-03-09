@@ -28,5 +28,5 @@ public class KNNConstants {
     public static final String HAMMING_BIT = "hammingbit";
     public static final String INNER_PROD = "innerproduct";
     public static final String DIMENSION = "dimension";
-    public static final String KNNEngine = "knnEngine";
+    public static final String KNNEngine = "engine";
 }

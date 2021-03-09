@@ -1,5 +1,5 @@
 /*
- *   Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -110,14 +110,14 @@ public class KNNIndexShardTests extends KNNSingleNodeTestCase {
         knnIndexShard = new KNNIndexShard(indexShard);
 
         searcher = indexShard.acquireSearcher("test-hnsw-paths-1");
-        hnswPaths = knnIndexShard.getHNSWPaths(searcher.getIndexReader());
+        hnswPaths = knnIndexShard.getAllEnginePaths(searcher.getIndexReader());
         assertEquals(0, hnswPaths.size());
         searcher.close();
 
         addKnnDoc(testIndexName, "1", testFieldName, new Float[] {2.5F, 3.5F});
 
         searcher = indexShard.acquireSearcher("test-hnsw-paths-2");
-        hnswPaths = knnIndexShard.getHNSWPaths(searcher.getIndexReader());
+        hnswPaths = knnIndexShard.getAllEnginePaths(searcher.getIndexReader());
         assertEquals(1, hnswPaths.size());
         assertTrue(hnswPaths.get(0).contains("hnsw") || hnswPaths.get(0).contains("hnswc"));
         searcher.close();

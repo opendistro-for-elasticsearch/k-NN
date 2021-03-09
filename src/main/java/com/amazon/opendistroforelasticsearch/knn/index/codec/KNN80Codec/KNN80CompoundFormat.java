@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -15,9 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
-import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.codecs.CompoundDirectory;
 import org.apache.lucene.codecs.CompoundFormat;
@@ -34,9 +32,6 @@ import java.util.stream.Collectors;
  * Class to encode/decode compound file
  */
 public class KNN80CompoundFormat extends CompoundFormat {
-
-    private final Logger logger = LogManager.getLogger(KNN80CompoundFormat.class);
-
     public KNN80CompoundFormat() {
     }
 
@@ -47,24 +42,30 @@ public class KNN80CompoundFormat extends CompoundFormat {
 
     @Override
     public void write(Directory dir, SegmentInfo si, IOContext context) throws IOException {
-        /**
-         * If hnsw file present, remove it from the compounding file list to avoid header/footer checks
-         * and create a new compounding file format with extension .hnswc.
-         */
-        Set<String> hnswFiles = si.files().stream().filter(file -> file.endsWith(KNNCodecUtil.HNSW_EXTENSION))
-                                     .collect(Collectors.toSet());
-
-        Set<String> segmentFiles = new HashSet<>();
-        segmentFiles.addAll(si.files());
-
-        if (!hnswFiles.isEmpty()) {
-            for (String hnswFile: hnswFiles) {
-                String hnswCompoundFile = hnswFile + "c";
-                dir.copyFrom(dir, hnswFile, hnswCompoundFile, context);
-            }
-            segmentFiles.removeAll(hnswFiles);
-            si.setFiles(segmentFiles);
+        for (KNNEngine knnEngine : KNNEngine.values()) {
+            writeEngineFiles(dir, si, context, knnEngine.getExtension());
         }
         Codec.getDefault().compoundFormat().write(dir, si, context);
+    }
+
+    private void writeEngineFiles(Directory dir, SegmentInfo si, IOContext context, String engineExtension)
+            throws IOException {
+        /*
+         * If engine file present, remove it from the compounding file list to avoid header/footer checks
+         * and create a new compounding file format with extension engine + c.
+         */
+        Set<String> engineFiles = si.files().stream().filter(file -> file.endsWith(engineExtension))
+                .collect(Collectors.toSet());
+
+        Set<String> segmentFiles = new HashSet<>(si.files());
+
+        if (!engineFiles.isEmpty()) {
+            for (String engineFile : engineFiles) {
+                String engineCompoundFile = engineFile + "c";
+                dir.copyFrom(dir, engineFile, engineCompoundFile, context);
+            }
+            segmentFiles.removeAll(engineFiles);
+            si.setFiles(segmentFiles);
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- *   Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  *   Licensed under the Apache License, Version 2.0 (the "License").
  *   You may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
+import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFaissIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNNmsLibIndex;
@@ -74,18 +74,26 @@ public class KNNWeight extends Weight {
             SegmentReader reader = (SegmentReader) FilterLeafReader.unwrap(context.reader());
             String directory = ((FSDirectory) FilterDirectory.unwrap(reader.directory())).getDirectory().toString();
 
-            /**
-             * In case of compound file, extension would be .hnswc otherwise .hnsw
-             */
-            String hnswFileExtension = reader.getSegmentInfo().info.getUseCompoundFile()
-                                               ? KNNCodecUtil.HNSW_COMPOUND_EXTENSION : KNNCodecUtil.HNSW_EXTENSION;
-            String hnswSuffix = knnQuery.getField() + hnswFileExtension;
-            List<String> hnswFiles = reader.getSegmentInfo().files().stream()
-                    .filter(fileName -> fileName.endsWith(hnswSuffix))
+            FieldInfo fieldInfo = reader.getFieldInfos().fieldInfo(knnQuery.getField());
+
+            if (fieldInfo == null) {
+                logger.debug("[KNN] Field info not found for {}:{}", knnQuery.getField(),
+                        reader.getSegmentName());
+                return null;
+            }
+
+            KNNEngine knnEngine = KNNEngine.getEngine(fieldInfo.getAttribute(KNNConstants.KNNEngine));
+            logger.debug("[KNN] knnEngine for " + knnQuery.getField() + ": " + knnEngine.getKnnEngineName());
+
+            String fileExtension = reader.getSegmentInfo().info.getUseCompoundFile()
+                                               ? knnEngine.getCompoundExtension() : knnEngine.getExtension();
+            String suffix = knnQuery.getField() + fileExtension;
+            List<String> engineFiles = reader.getSegmentInfo().files().stream()
+                    .filter(fileName -> fileName.endsWith(suffix))
                     .collect(Collectors.toList());
 
-            if(hnswFiles.isEmpty()) {
-                logger.debug("[KNN] No hnsw index found for field {} for segment {}",
+            if(engineFiles.isEmpty()) {
+                logger.debug("[KNN] No engine index found for field {} for segment {}",
                         knnQuery.getField(), reader.getSegmentName());
                 return null;
             }
@@ -93,38 +101,30 @@ public class KNNWeight extends Weight {
             FieldInfo queryFieldInfo = reader.getFieldInfos().fieldInfo(knnQuery.getField());
             Map<String, String> fieldAttributes = queryFieldInfo.attributes();
 
-            /**
-             * in the name of the file. As of now we have one version 2.0.11 with NMSLIB and 1.6.5 with FAISS
-             * So deferring this to future releases
-             */
-
-            Path indexPath = PathUtils.get(directory, hnswFiles.get(0));
+            Path indexPath = PathUtils.get(directory, engineFiles.get(0));
             final KNNQueryResult[] results;
-
             final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
-            //we check instance of KNNINdex
-            if (fieldAttributes.containsValue(KNNEngine.NMSLIB.getKnnEngineName())) {
-                assert(index instanceof KNNNmsLibIndex);
+
+            if ((fieldAttributes.containsValue(KNNEngine.NMSLIB.getKnnEngineName()) && index instanceof KNNNmsLibIndex)
+                    || (fieldAttributes.containsValue(KNNEngine.FAISS.getKnnEngineName())
+                    && index instanceof KNNFaissIndex)) {
                 results = index.queryIndex(
                         knnQuery.getQueryVector(),
                         knnQuery.getK()
                 );
             } else {
-                assert(index instanceof KNNFaissIndex);
-                results = index.queryIndex(
-                        knnQuery.getQueryVector(),
-                        knnQuery.getK()
-                );
+                throw new IllegalStateException("Unable to retrieve k-NN engine for index path: "
+                        + indexPath.toString());
             }
 
-            /**
+            /*
              * Scores represent the distance of the documents with respect to given query vector.
              * Lesser the score, the closer the document is to the query vector.
              * Since by default results are retrieved in the descending order of scores, to get the nearest
              * neighbors we are inverting the scores.
              */
             Map<Integer, Float> scores = Arrays.stream(results).collect(
-                    Collectors.toMap(result -> result.getId(), result -> normalizeScore(result.getScore())));
+                    Collectors.toMap(KNNQueryResult::getId, result -> normalizeScore(result.getScore())));
             int maxDoc = Collections.max(scores.keySet()) + 1;
             DocIdSetBuilder docIdSetBuilder = new DocIdSetBuilder(maxDoc);
             DocIdSetBuilder.BulkAdder setAdder = docIdSetBuilder.grow(maxDoc);
@@ -144,4 +144,3 @@ public class KNNWeight extends Weight {
         return 2 + ( 1 / (score - 1) );
     }
 }
-

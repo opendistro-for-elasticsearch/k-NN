@@ -16,9 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Enum contains space type key-value pairs for k-NN similarity search.
@@ -60,7 +58,7 @@ public enum SpaceTypes {
   public String getKey() { return key; }
 
   /**
-   * Get space type name in nmslib
+   * Get space type name in engine
    *
    * @return name
    */
