@@ -20,8 +20,14 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.Index;
+import org.elasticsearch.index.mapper.NumberFieldMapper;
 import org.elasticsearch.index.query.QueryShardContext;
-import org.mockito.Mockito;
+
+import java.io.IOException;
+
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class KNNQueryBuilderTests extends KNNTestCase {
 
@@ -79,15 +85,44 @@ public class KNNQueryBuilderTests extends KNNTestCase {
         actualBuilder.equals(knnQueryBuilder);
     }
 
-    public void testDoToQuery() throws Exception {
+    public void testDoToQuery_Normal() throws Exception {
         float[] queryVector = {1.0f, 2.0f, 3.0f, 4.0f};
         KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1);
         Index dummyIndex = new Index("dummy", "dummy");
-        QueryShardContext mockQueryShardContext = Mockito.mock(QueryShardContext.class);
-        Mockito.when(mockQueryShardContext.index()).thenReturn(dummyIndex);
+        QueryShardContext mockQueryShardContext = mock(QueryShardContext.class);
+        KNNVectorFieldMapper.KNNVectorFieldType mockKNNVectorField = mock(KNNVectorFieldMapper.KNNVectorFieldType.class);
+        when(mockQueryShardContext.index()).thenReturn(dummyIndex);
+        when(mockKNNVectorField.getDimension()).thenReturn(4);
+        when(mockQueryShardContext.fieldMapper(anyString())).thenReturn(mockKNNVectorField);
         KNNQuery query = (KNNQuery)knnQueryBuilder.doToQuery(mockQueryShardContext);
         assertEquals(knnQueryBuilder.getK(), query.getK());
         assertEquals(knnQueryBuilder.fieldName(), query.getField());
         assertEquals(knnQueryBuilder.vector(), query.getQueryVector());
+    }
+
+
+    public void testDoToQuery_InvalidDimensions() {
+        float[] queryVector = {1.0f, 2.0f, 3.0f, 4.0f};
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("myvector", queryVector, 1);
+        Index dummyIndex = new Index("dummy", "dummy");
+        QueryShardContext mockQueryShardContext = mock(QueryShardContext.class);
+        KNNVectorFieldMapper.KNNVectorFieldType mockKNNVectorField = mock(KNNVectorFieldMapper.KNNVectorFieldType.class);
+        when(mockQueryShardContext.index()).thenReturn(dummyIndex);
+        when(mockKNNVectorField.getDimension()).thenReturn(400);
+        when(mockQueryShardContext.fieldMapper(anyString())).thenReturn(mockKNNVectorField);
+        expectThrows(IllegalArgumentException.class, () -> knnQueryBuilder.doToQuery(mockQueryShardContext));
+        when(mockKNNVectorField.getDimension()).thenReturn(1);
+        expectThrows(IllegalArgumentException.class, () -> knnQueryBuilder.doToQuery(mockQueryShardContext));
+    }
+
+    public void testDoToQuery_InvalidFieldType() throws IOException {
+        float[] queryVector = {1.0f, 2.0f, 3.0f, 4.0f};
+        KNNQueryBuilder knnQueryBuilder = new KNNQueryBuilder("mynumber", queryVector, 1);
+        Index dummyIndex = new Index("dummy", "dummy");
+        QueryShardContext mockQueryShardContext = mock(QueryShardContext.class);
+        NumberFieldMapper.NumberFieldType mockNumberField = mock(NumberFieldMapper.NumberFieldType.class);
+        when(mockQueryShardContext.index()).thenReturn(dummyIndex);
+        when(mockQueryShardContext.fieldMapper(anyString())).thenReturn(mockNumberField);
+        expectThrows(IllegalArgumentException.class, () -> knnQueryBuilder.doToQuery(mockQueryShardContext));
     }
 }
