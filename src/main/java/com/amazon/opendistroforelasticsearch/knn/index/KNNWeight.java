@@ -127,7 +127,7 @@ public class KNNWeight extends Weight {
     public static float normalizeScore(float score) {
         if (score >= 0)
             return 1 / (1 + score);
-        return 2 + ( 1 / (score - 1) );
+        return -score + 1;
     }
 }
 
