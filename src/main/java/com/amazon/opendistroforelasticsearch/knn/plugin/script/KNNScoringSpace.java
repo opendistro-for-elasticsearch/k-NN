@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
+import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNWeight;
 import org.apache.lucene.index.LeafReaderContext;
