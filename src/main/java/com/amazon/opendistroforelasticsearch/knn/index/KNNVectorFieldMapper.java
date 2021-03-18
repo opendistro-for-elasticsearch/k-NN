@@ -27,7 +27,9 @@ import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.search.DocValuesFieldExistsQuery;
 import org.apache.lucene.search.Query;
 import org.elasticsearch.common.Explicit;
+import org.elasticsearch.common.ValidationException;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
@@ -103,6 +105,27 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         private final Parameter<String> knnEngine = new Parameter<>(KNNConstants.KNNEngine, false,
                 KNNEngine.DEFAULT::getKnnEngineName, (n, c, o) -> KNNEngine.getEngine((String) o).getKnnEngineName(),
                 m -> toType(m).knnEngine);
+
+        private final Parameter<KNNMethodContext> knnMethodContext = new Parameter<>(KNNConstants.KNNMethod, false,
+                () -> new KNNMethodContext(KNNEngine.NMSLIB, SpaceTypes.L2, null, null, null),
+                (n, c, o) -> {
+                    try {
+                        return KNNMethodContext.parse(o, null, null);
+                    } catch (IOException e) {
+                        throw new MapperParsingException("Unable to parse k-NN Method Context parameter: " + e);
+                    }
+                }, m -> toType(m).knnMethod)
+                .setSerializer(((b, n, v) ->{
+                    b.startObject(n);
+                    v.toXContent(b, ToXContent.EMPTY_PARAMS);
+                    b.endObject();
+                }), KNNMethodContext::getName)
+                .setValidator(knnMethodContext1 -> {
+                    if (!knnMethodContext1.validate()) {
+                        throw new ValidationException();
+                    }
+                });
+
         private final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
         private String spaceType;
@@ -122,7 +145,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         @Override
         protected List<Parameter<?>> getParameters() {
-            return Arrays.asList(stored, hasDocValues, dimension, meta, knnEngine);
+            return Arrays.asList(stored, hasDocValues, dimension, meta, knnEngine, knnMethodContext);
         }
 
         protected Explicit<Boolean> ignoreMalformed(BuilderContext context) {
@@ -254,6 +277,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
     protected final String efConstruction;
     private final Integer dimension;
     protected final String knnEngine;
+    protected final KNNMethodContext knnMethod;
 
     public KNNVectorFieldMapper(String simpleName, MappedFieldType mappedFieldType, MultiFields multiFields,
                                 Explicit<Boolean> ignoreMalformed, String spaceType, String m, String efConstruction,
@@ -263,7 +287,8 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         this.stored = builder.stored.getValue();
         this.hasDocValues = builder.hasDocValues.getValue();
         this.dimension = builder.dimension.getValue();
-        this.knnEngine = builder.knnEngine.getValue();
+        this.knnMethod = builder.knnMethodContext.getValue();
+        this.knnEngine = knnMethod.getEngine().getKnnEngineName();
         this.ignoreMalformed = ignoreMalformed;
         this.spaceType = spaceType;
         this.m = m;
@@ -273,6 +298,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_M, m);
         this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, efConstruction);
         this.fieldType.putAttribute(KNNConstants.KNNEngine, knnEngine);
+        this.fieldType.putAttribute(KNNConstants.KNNMethod, knnMethod.generateMethod());
         this.fieldType.freeze();
     }
 

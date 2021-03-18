@@ -23,4 +23,5 @@ public class KNNConstants {
     public static final String HNSW_ALGO_INDEX_THREAD_QTY = "indexThreadQty";
     public static final String DIMENSION = "dimension";
     public static final String KNNEngine = "engine";
+    public static final String KNNMethod = "method";
 }
