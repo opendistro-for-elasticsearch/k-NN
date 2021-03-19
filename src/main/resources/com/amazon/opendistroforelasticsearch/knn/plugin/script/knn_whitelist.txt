@@ -14,6 +14,7 @@
 # Painless definition of classes used by knn plugin
 
 class com.amazon.opendistroforelasticsearch.knn.index.KNNVectorScriptDocValues {
+  float[] getValue()
 }
 static_import {
   float l2Squared(List, com.amazon.opendistroforelasticsearch.knn.index.KNNVectorScriptDocValues) from_class com.amazon.opendistroforelasticsearch.knn.plugin.script.KNNScoringUtil

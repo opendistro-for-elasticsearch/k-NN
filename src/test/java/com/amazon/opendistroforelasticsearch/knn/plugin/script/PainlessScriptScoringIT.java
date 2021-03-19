@@ -72,6 +72,15 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
         }
     }
 
+    private Map<String, Float[]> getKnnVectorTestData() {
+        Map<String, Float[]> data = new HashMap<>();
+        data.put("1", new Float[]{100.0f, 1.0f});
+        data.put("2", new Float[]{99.0f, 2.0f});
+        data.put("3", new Float[]{97.0f, 3.0f});
+        data.put("4", new Float[]{98.0f, 4.0f});
+        return data;
+    }
+
     private Map<String, Float[]> getL2TestData() {
         Map<String, Float[]> data = new HashMap<>();
         data.put("1", new Float[]{6.0f, 6.0f});
@@ -156,6 +165,66 @@ public class PainlessScriptScoringIT extends KNNRestTestCase {
 
 
         String[] expectedDocIDs = {"2", "4", "3", "1"};
+        for (int i = 0; i < results.size(); i++) {
+            assertEquals(expectedDocIDs[i], results.get(i).getDocId());
+        }
+        deleteKNNIndex(INDEX_NAME);
+    }
+
+    public void testGetValueReturnsDocValues() throws Exception {
+
+        String source = String.format("doc['%s'].value[0]", FIELD_NAME);
+        Map<String, Float[]> testData = getKnnVectorTestData();
+        Request request = buildPainlessScriptRequest(source, testData.size(), testData);
+
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        assertEquals(testData.size(),results.size());
+
+
+        String[] expectedDocIDs = {"1", "2", "4", "3"};
+        for (int i = 0; i < results.size(); i++) {
+            assertEquals(expectedDocIDs[i], results.get(i).getDocId());
+        }
+        deleteKNNIndex(INDEX_NAME);
+    }
+
+    public void testGetValueScriptFailsWithMissingField() throws Exception {
+        String source = String.format("doc['%s']", FIELD_NAME);
+        Request request = buildPainlessScriptRequest(source, 3, getKnnVectorTestData());
+        addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
+        expectThrows(ResponseException.class, () -> client().performRequest(request));
+        deleteKNNIndex(INDEX_NAME);
+    }
+
+    public void testGetValueScriptFailsWithOutOfBoundException() throws Exception {
+        Map<String, Float[]> testData = getKnnVectorTestData();
+        String source = String.format("doc['%s'].value[%d]", FIELD_NAME, testData.get("1").length);
+        Request request = buildPainlessScriptRequest(source, testData.size(), testData);
+        expectThrows(ResponseException.class, () -> client().performRequest(request));
+        deleteKNNIndex(INDEX_NAME);
+    }
+
+
+    public void testGetValueScriptScoreWithNumericField() throws Exception {
+
+        String source = String.format(
+                "doc['%s'].size() == 0 ? 0 : doc['%s'].value[0]", FIELD_NAME, FIELD_NAME);
+        Map<String, Float[]> testData = getKnnVectorTestData();
+        Request request = buildPainlessScriptRequest(source, testData.size(), testData);
+        addDocWithNumericField(INDEX_NAME, "100", NUMERIC_INDEX_FIELD_NAME, 1000);
+        Response response = client().performRequest(request);
+        assertEquals(request.getEndpoint() + ": failed", RestStatus.OK,
+                RestStatus.fromCode(response.getStatusLine().getStatusCode()));
+
+        List<KNNResult> results = parseSearchResponse(EntityUtils.toString(response.getEntity()), FIELD_NAME);
+        assertEquals(testData.size(), results.size());
+
+
+        String[] expectedDocIDs = {"1", "2", "4", "3"};
         for (int i = 0; i < results.size(); i++) {
             assertEquals(expectedDocIDs[i], results.get(i).getDocId());
         }
