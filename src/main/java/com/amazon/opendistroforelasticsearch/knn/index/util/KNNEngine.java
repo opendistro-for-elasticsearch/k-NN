@@ -103,7 +103,8 @@ public enum KNNEngine {
 
         @Override
         public String generateMethod(KNNMethodContext knnMethodContext) {
-            StringBuilder result = new StringBuilder(this.methods.get(knnMethodContext.getName()).getName());
+            String methodName = this.methods.get(knnMethodContext.getName()).getName();
+            StringBuilder result = new StringBuilder(methodName);
 
             Iterator<Object> parameters = knnMethodContext.getParameters().values().iterator();
 
@@ -131,6 +132,9 @@ public enum KNNEngine {
                         result.append("_");
                     }
                 }
+            } else if ("IVF".equals(methodName)) {
+                //TODO: Everything should have an encoding
+                result.append(",Flat");
             }
 
             return result.toString();

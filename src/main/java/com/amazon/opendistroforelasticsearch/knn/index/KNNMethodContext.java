@@ -95,10 +95,6 @@ public class KNNMethodContext implements ToXContentFragment {
         return knnEngine.generateMethod(this);
     }
 
-    //TODO: Today
-    // (4) Add functionality for faiss to produce string from Context
-    // (5) Add testing logic for code changes
-    // (6) Submit PR to faiss branch
     public static KNNMethodContext parse(Object in, KNNEngine parentEngine, SpaceTypes parentSpace) throws IOException {
         if (in instanceof Map) {
             @SuppressWarnings("unchecked")

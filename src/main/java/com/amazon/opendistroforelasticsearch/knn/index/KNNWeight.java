@@ -123,6 +123,11 @@ public class KNNWeight extends Weight {
              * Since by default results are retrieved in the descending order of scores, to get the nearest
              * neighbors we are inverting the scores.
              */
+            if (results.length == 0) {
+                logger.debug("[KNN] Query yielded 0 results");
+                return null;
+            }
+
             Map<Integer, Float> scores = Arrays.stream(results).collect(
                     Collectors.toMap(KNNQueryResult::getId,
                             result -> knnEngine.score(result.getScore(), index.getSpaceType())));

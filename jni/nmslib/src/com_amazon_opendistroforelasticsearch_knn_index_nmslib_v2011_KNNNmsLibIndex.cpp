@@ -61,7 +61,9 @@ struct IndexWrapper {
 };
 
 
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_saveIndex(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams, jstring spaceType)
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_saveIndex
+(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams,
+ jstring spaceType, jstring method)
 {
     Space<float>* space = nullptr;
     ObjectVector dataset;

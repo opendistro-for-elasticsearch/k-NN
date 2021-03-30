@@ -77,7 +77,7 @@ public class KNNNmsLibIndex extends KNNIndex {
     // JNI FUNCTIONS
     // Builds index and writes to disk (no index pointer escapes).
     public static native void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams,
-                                        String spaceType);
+                                        String spaceType, String method);
 
     // Queries index (thread safe with other readers, blocked by write lock)
     private static native KNNQueryResult[] queryIndex(long indexPointer, float[] query, int k);

@@ -13,7 +13,7 @@ extern "C" {
  * Signature: ([I[[FLjava/lang/String;[Ljava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_saveIndex
-  (JNIEnv *, jclass, jintArray, jobjectArray, jstring, jobjectArray, jstring);
+  (JNIEnv *, jclass, jintArray, jobjectArray, jstring, jobjectArray, jstring, jstring);
 
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex

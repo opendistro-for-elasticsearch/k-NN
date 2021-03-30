@@ -86,6 +86,11 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             String[] algoParams = getKNNIndexParams(fieldAttributes);
             KNNEngine knnEngine = KNNEngine.getEngine(engineName);
 
+            String method = fieldAttributes.get(KNNConstants.KNNMethod);
+            if (method == null) {
+                throw new NullPointerException("Method cannot be null");
+            }
+
             /**
              * We always write with latest engine version
              */
@@ -116,9 +121,11 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             AccessController.doPrivileged(
                     (PrivilegedAction<Void>) () -> {
                         if(KNNEngine.NMSLIB.getKnnEngineName().equals(knnEngine.getKnnEngineName())) {
-                            KNNNmsLibIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
+                            KNNNmsLibIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType,
+                                    method);
                         } else if (KNNEngine.FAISS.getKnnEngineName().equals(knnEngine.getKnnEngineName())) {
-                            KNNFaissIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType);
+                            KNNFaissIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType,
+                                    method);
                         } else {
                             throw new IllegalStateException("Invalid engine");
                         }

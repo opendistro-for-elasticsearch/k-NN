@@ -25,6 +25,7 @@
 #include "faiss/MetaIndexes.h"
 #include "faiss/index_io.h"
 #include "faiss/IndexHNSW.h"
+#include "faiss/IndexIVFFlat.h"
 
 
 using std::string;
@@ -36,19 +37,30 @@ std::unordered_map<string, faiss::MetricType> mapMetric = {
 	{"innerproduct", faiss::METRIC_INNER_PRODUCT}
 };
 
+void TrainIndex(faiss::Index * index, faiss::Index::idx_t n, const float* x) {
+    if (auto * indexIvf = dynamic_cast<const faiss::IndexIVF*>(index)) {
+        if (indexIvf->quantizer_trains_alone == 2) {
+            TrainIndex(indexIvf->quantizer, n, x);
+        }
+    }
+
+    if (!index->is_trained) {
+        index->train(n, x);
+    }
+}
 
 /**
  * Method: saveIndex
  *
  */
 	JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_saveIndex
-(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams, jstring spaceType)
+(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams,
+ jstring spaceType, jstring indexDescription)
 {
 	vector<int64_t> idVector;
 	vector<float>   dataset;
 	vector<string> paramsList;
 	//TODO we can support other FAISS index in the future, may be paramsList can add index=xxxx
-	string indexDescription = "HNSW32";
 	faiss::MetricType metric = faiss::METRIC_L2;
 	std::unique_ptr<faiss::Index> indexWriter;
 	int dim = 0;
@@ -80,23 +92,6 @@ std::unordered_map<string, faiss::MetricType> mapMetric = {
 		env->ReleaseStringUTFChars(indexPath, indexString);
         knn_jni::HasExceptionInStack(env);
 
-		//---- algoParams
-		int paramsCount = env->GetArrayLength(algoParams);
-		for (int i=0; i<paramsCount; i++) {
-			jstring param = (jstring) (env->GetObjectArrayElement(algoParams, i));
-			const char *rawString = env->GetStringUTFChars(param, 0);
-			paramsList.push_back(rawString);
-
-			int M = 32;
-			if (sscanf(rawString, "M=%d", &M) == 1) {
-				indexDescription="HNSW"+std::to_string(M);
-			}
-			env->ReleaseStringUTFChars(param, rawString);
-
-		}
-        knn_jni::HasExceptionInStack(env);
-
-
 		//---- space
 		const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, 0);
 		string spaceTypeString(spaceTypeCStr);
@@ -108,35 +103,24 @@ std::unordered_map<string, faiss::MetricType> mapMetric = {
 		}
 
 		//---- Create IndexWriter from faiss index_factory
-		indexWriter.reset(faiss::index_factory(dim, indexDescription.data(), metric));
-
-		//Preparation And TODO Verify IndexWriter
-		//Some Param Can not Create from IndexFactory, Like HNSW efSearch and efCOnstruction
-		//----FOR HNSW 1st PARAM: M(HNSW32->M=32), efConstruction, efSearch
-		if(indexDescription.find("HNSW") != std::string::npos) {
-			for(int i = 0; i < paramsCount; ++i) {
-				const string& param = paramsList[i];
-				int efConstruction = 40; //default
-				int efSearch = 16;//default
-				if(param.find("efConstruction") != std::string::npos &&
-						sscanf(param.data(), "efConstruction=%d", &efConstruction) == 1) {
-					faiss::IndexHNSW* ihp = reinterpret_cast<faiss::IndexHNSW*>(indexWriter.get());
-					ihp->hnsw.efConstruction = efConstruction;
-				} else if (param.find("efSearch") != std::string::npos &&
-						sscanf(param.data(), "efSearch=%d", &efSearch) == 1){
-					faiss::IndexHNSW* ihp = reinterpret_cast<faiss::IndexHNSW*>(indexWriter.get());
-					ihp->hnsw.efSearch = efSearch;
-				}
-			}
-		}
+		std::string description = knn_jni::GetStringJenv(env, indexDescription);
+		indexWriter.reset(faiss::index_factory(dim, description.c_str(), metric));
 
 		//---- Do Index
 		//----- 1. Train
 		if(!indexWriter->is_trained) {
-			//TODO if we use like PQ, we have to train dataset
-			// but when a lucene segment only one document, it
-			// can not train the data.
+		    //TODO: Right now, we are just using random data for training. We should replace this with the user defined
+		    // data
+		    int points_cnt = 10000*dim;
+		    float * points = new float[points_cnt];
+		    for (int i = 0; i < points_cnt; i++) {
+		        points[i] = rand();
+		    }
+
+		    TrainIndex(indexWriter.get(), points_cnt/dim, points);
+            delete [] points;
 		}
+
 		//----- 2. Add IDMap
 		// default all use self defined IndexIDMap cause some class no add_with_ids
 		faiss::IndexIDMap idMap =  faiss::IndexIDMap(indexWriter.get());
@@ -148,7 +132,6 @@ std::unordered_map<string, faiss::MetricType> mapMetric = {
 		//Explicit delete object
 		faiss::Index* indexPointer = indexWriter.release();
 		if(indexPointer) delete indexPointer;
-
 	}
 	catch(...) {
 		faiss::Index* indexPointer = indexWriter.release();
