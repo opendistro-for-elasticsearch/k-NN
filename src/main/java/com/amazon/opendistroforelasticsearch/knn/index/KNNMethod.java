@@ -23,7 +23,7 @@ import java.util.Set;
 public class KNNMethod {
 
     public KNNMethod(String name, Set<SpaceTypes> validSpaces, Map<String, Class<?>> validParameters,
-                     Map<String, Map<String, Class<?>>> validEncoders, boolean isCourseQuantizerAvailable) {
+                     Map<String, KNNEncoder> validEncoders, boolean isCourseQuantizerAvailable) {
         this.name = name;
         this.validSpaces = validSpaces;
         this.validParameters = validParameters;
@@ -34,7 +34,7 @@ public class KNNMethod {
     private String name;
     private Set<SpaceTypes> validSpaces;
     private Map<String, Class<?>> validParameters;
-    private Map<String, Map<String, Class<?>>> validEncoders;
+    private Map<String, KNNEncoder> validEncoders;
     private boolean isCourseQuantizerAvailable;
 
     public boolean validate(KNNMethodContext knnMethodContext, KNNEngine knnEngine) {
@@ -67,20 +67,18 @@ public class KNNMethod {
                 return false;
             }
 
-            Map<String, Object> parameters = encoderContext.getParameters();
-
-            if (parameters != null) {
-                Map<String, Class<?>> validParameters = validEncoders.get(encoderContext.getName());
-                for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-                    if (!validParameters.containsKey(entry.getKey()) ||
-                            validParameters.get(entry.getKey()) != entry.getValue().getClass()) {
-                        return false;
-                    }
-                }
+            if (!validEncoders.get(encoderContext.getName()).validate(encoderContext)) {
+                return false;
             }
-
         }
         return true;
+    }
+
+    public KNNEncoder getEncoder(String encoderName) {
+        if (!validEncoders.containsKey(encoderName)) {
+            throw new IllegalArgumentException("Invalid encoder: " + encoderName);
+        }
+        return validEncoders.get(encoderName);
     }
 
     public String getName() {

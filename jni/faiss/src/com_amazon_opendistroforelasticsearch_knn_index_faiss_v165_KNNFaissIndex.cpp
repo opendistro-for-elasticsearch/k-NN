@@ -111,7 +111,7 @@ void TrainIndex(faiss::Index * index, faiss::Index::idx_t n, const float* x) {
 		if(!indexWriter->is_trained) {
 		    //TODO: Right now, we are just using random data for training. We should replace this with the user defined
 		    // data
-		    int points_cnt = 10000*dim;
+		    int points_cnt = 500*dim;
 		    float * points = new float[points_cnt];
 		    for (int i = 0; i < points_cnt; i++) {
 		        points[i] = rand();

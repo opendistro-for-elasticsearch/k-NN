@@ -124,8 +124,10 @@ public class KNNWeight extends Weight {
              * neighbors we are inverting the scores.
              */
             if (results.length == 0) {
-                logger.debug("[KNN] Query yielded 0 results");
+                logger.info("[KNN] Query yielded 0 results");
                 return null;
+            } else {
+                logger.info("[KNN] Query yielded >0 results");
             }
 
             Map<Integer, Float> scores = Arrays.stream(results).collect(

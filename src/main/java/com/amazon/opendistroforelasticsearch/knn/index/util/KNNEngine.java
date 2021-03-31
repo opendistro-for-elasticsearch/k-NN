@@ -15,11 +15,14 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.util;
 
+import com.amazon.opendistroforelasticsearch.knn.index.KNNEncoder;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNMethod;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNMethodContext;
 import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,117 +32,137 @@ import java.util.Set;
 import java.util.function.Function;
 
 public enum KNNEngine {
-    NMSLIB("NMSLIB", ".hnsw", Collections.singletonMap(
-            "hnsw",
-            new KNNMethod(
-                    "hnsw",
-                    ImmutableSet.of(
-                            SpaceTypes.L2,
-                            SpaceTypes.L1,
-                            SpaceTypes.LINF,
-                            SpaceTypes.COSINESIMIL,
-                            SpaceTypes.INNER_PRODUCT
-                    ),
-                    ImmutableMap.of(
-                            "m", Integer.class,
-                            "ef_construction", Integer.class,
-                            "ef_search", Integer.class
-                    ),
-                    Collections.emptyMap(),
-                    false
-            )),
-            Collections.emptyMap()) {
-        @Override
-        public String getLatestBuildVersion() {
-            return NmsLibVersion.LATEST.buildVersion;
-        }
+    NMSLIB("NMSLIB", ".hnsw",
+            Collections.singletonMap(
+                "hnsw",
+                new KNNMethod(
+                        "hnsw",
+                        ImmutableSet.of(
+                                SpaceTypes.L2,
+                                SpaceTypes.L1,
+                                SpaceTypes.LINF,
+                                SpaceTypes.COSINESIMIL,
+                                SpaceTypes.INNER_PRODUCT
+                        ),
+                        ImmutableMap.of(
+                                "m", Integer.class,
+                                "ef_construction", Integer.class,
+                                "ef_search", Integer.class
+                        ),
+                        Collections.emptyMap(),
+                        false
+                )
+            ),
+            Collections.emptyMap())
+            {
+                @Override
+                public String getLatestBuildVersion() {
+                    return NmsLibVersion.LATEST.buildVersion;
+                }
 
-        @Override
-        public String getLatestLibVersion() {
-            return NmsLibVersion.LATEST.indexLibraryVersion();
-        }
-    },
-    FAISS("FAISS", ".faiss", ImmutableMap.of(
-            "hnsw",
-            new KNNMethod(
-                    "HNSW",
-                    ImmutableSet.of(
-                            SpaceTypes.L2,
-                            SpaceTypes.INNER_PRODUCT
-                    ),
-                    //TODO: verify parameter order is maintained
-                    ImmutableMap.of(
-                            "m", Integer.class
-                    ),
-                    Collections.emptyMap(),
-                    false
-            ), "ivf",
-            new KNNMethod(
-                    "IVF",
-                    ImmutableSet.of(
-                            SpaceTypes.L2,
-                            SpaceTypes.INNER_PRODUCT
-                    ),
-                    ImmutableMap.of(
-                            "ncentroids", Integer.class
-                    ),
-                    Collections.emptyMap(),
-                    true
-            )
-    ),
+                @Override
+                public String getLatestLibVersion() {
+                    return NmsLibVersion.LATEST.indexLibraryVersion();
+                }
+            },
+    FAISS("FAISS", ".faiss",
+            ImmutableMap.of(
+                "hnsw",
+                new KNNMethod(
+                        "HNSW",
+                        ImmutableSet.of(
+                                SpaceTypes.L2,
+                                SpaceTypes.INNER_PRODUCT
+                        ),
+                        //TODO: verify parameter order is maintained
+                        ImmutableMap.of(
+                                "m", Integer.class
+                        ),
+                        Collections.emptyMap(),
+                        false
+                ), "ivf",
+                new KNNMethod(
+                        "IVF",
+                        ImmutableSet.of(
+                                SpaceTypes.L2,
+                                SpaceTypes.INNER_PRODUCT
+                        ),
+                        ImmutableMap.of(
+                                "ncentroids", Integer.class
+                        ),
+                        ImmutableMap.of(
+                                "pq", new KNNEncoder("PQ",  ImmutableMap.of("code_size", Integer.class)) {
+                                    @Override
+                                    public String buildString(KNNMethodContext.ComponentContext encoderContext) {
+                                        StringBuilder result = new StringBuilder(this.name);
+
+                                        Iterator<Object> parameters = encoderContext.getParameters().values().iterator();
+
+                                        while (parameters.hasNext()) {
+                                            result.append(parameters.next().toString());
+                                            if (parameters.hasNext()) {
+                                                result.append("_");
+                                            }
+                                        }
+                                        return result.toString();
+                                    }
+                                }
+                        ),
+                        true
+                )
+            ),
             Collections.singletonMap(
                     SpaceTypes.INNER_PRODUCT, rawScore ->
                             SpaceTypes.INNER_PRODUCT.scoreTranslation(-1*rawScore)
-            )) {
-        @Override
-        public String getLatestBuildVersion() {
-            return FAISSLibVersion.LATEST.buildVersion;
-        }
-
-        @Override
-        public String getLatestLibVersion() {
-            return FAISSLibVersion.LATEST.indexLibraryVersion();
-        }
-
-        @Override
-        public String generateMethod(KNNMethodContext knnMethodContext) {
-            String methodName = this.methods.get(knnMethodContext.getName()).getName();
-            StringBuilder result = new StringBuilder(methodName);
-
-            Iterator<Object> parameters = knnMethodContext.getParameters().values().iterator();
-
-            while (parameters.hasNext()) {
-                result.append(parameters.next().toString());
-                if (parameters.hasNext()) {
-                    result.append("_");
+            ))
+            {
+                @Override
+                public String getLatestBuildVersion() {
+                    return FAISSLibVersion.LATEST.buildVersion;
                 }
-            }
 
-            if (knnMethodContext.getCourseQuantizer() != null) {
-                result.append("(");
-                result.append(this.generateMethod(knnMethodContext.getCourseQuantizer()));
-                result.append(")");
-            }
+                @Override
+                public String getLatestLibVersion() {
+                    return FAISSLibVersion.LATEST.indexLibraryVersion();
+                }
 
-            if (knnMethodContext.getEncoding() != null) {
-                result.append(",");
-                result.append(knnMethodContext.getEncoding().getName());
+                @Override
+                public String generateMethod(KNNMethodContext knnMethodContext) {
+                    KNNMethod method = this.methods.get(knnMethodContext.getName());
+                    String methodName = this.methods.get(knnMethodContext.getName()).getName();
+                    StringBuilder result = new StringBuilder(methodName);
 
-                Iterator<Object> encodingParameters = knnMethodContext.getEncoding().getParameters().values().iterator();
-                while (encodingParameters.hasNext()) {
-                    result.append(encodingParameters.next().toString());
-                    if (encodingParameters.hasNext()) {
-                        result.append("_");
+                    Iterator<Object> parameters = knnMethodContext.getParameters().values().iterator();
+
+                    while (parameters.hasNext()) {
+                        result.append(parameters.next().toString());
+                        if (parameters.hasNext()) {
+                            result.append("_");
+                        }
                     }
-                }
-            } else if ("IVF".equals(methodName)) {
-                //TODO: Everything should have an encoding
-                result.append(",Flat");
-            }
 
-            return result.toString();
-        }
-    };
+                    if (knnMethodContext.getCourseQuantizer() != null) {
+                        result.append("(");
+                        result.append(this.generateMethod(knnMethodContext.getCourseQuantizer()));
+                        result.append(")");
+                    }
+
+                    if (result.length() > 0) {
+                        result.append(",");
+                    }
+
+                    if (knnMethodContext.getEncoding() != null) {
+                        result.append(method.getEncoder(knnMethodContext.getEncoding().getName())
+                                .buildString(knnMethodContext.getEncoding()));
+                    } else {
+                        result.append("Flat");
+                    }
+
+                    logger.info("Result: " + result.toString());
+                    return result.toString();
+                }
+            };
+
     public static final KNNEngine DEFAULT = NMSLIB;
 
     KNNEngine(String knnEngineName, String extension, Map<String, KNNMethod> methods,
@@ -154,6 +177,7 @@ public enum KNNEngine {
     private String extension;
     protected Map<String, KNNMethod> methods;
     private Map<SpaceTypes, Function<Float, Float>> scoreTranslation;
+    private static Logger logger = LogManager.getLogger(KNNEngine.class);
 
     public abstract String getLatestBuildVersion();
     public abstract String getLatestLibVersion();
