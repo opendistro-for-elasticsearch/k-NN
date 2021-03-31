@@ -158,7 +158,7 @@ public enum KNNEngine {
                         result.append("Flat");
                     }
 
-                    logger.info("Result: " + result.toString());
+                    logger.debug("[KNN] Result: " + result.toString());
                     return result.toString();
                 }
             };
