@@ -103,22 +103,28 @@ void TrainIndex(faiss::Index * index, faiss::Index::idx_t n, const float* x) {
 		}
 
 		//---- Create IndexWriter from faiss index_factory
-		std::string description = knn_jni::GetStringJenv(env, indexDescription);
-		indexWriter.reset(faiss::index_factory(dim, description.c_str(), metric));
+        // If data is less than a certain amount, just create a flat index
+        //TODO: Make this configurable
+		if (idVector.size() < 1000) {
+            indexWriter.reset(faiss::index_factory(dim, "Flat", metric));
+		} else {
+            std::string description = knn_jni::GetStringJenv(env, indexDescription);
+            indexWriter.reset(faiss::index_factory(dim, description.c_str(), metric));
+		}
 
 		//---- Do Index
 		//----- 1. Train
 		if(!indexWriter->is_trained) {
-		    //TODO: Right now, we are just using random data for training. We should replace this with the user defined
-		    // data
-		    int points_cnt = 500*dim;
-		    float * points = new float[points_cnt];
-		    for (int i = 0; i < points_cnt; i++) {
-		        points[i] = rand();
-		    }
-
-		    TrainIndex(indexWriter.get(), points_cnt/dim, points);
-            delete [] points;
+		    //TODO: Make this configurable
+		    int dataLimit = 500;
+		    if (idVector.size() <= dataLimit) {
+                TrainIndex(indexWriter.get(), idVector.size(), dataset.data());
+		    } else {
+                vector<float>::const_iterator first = dataset.begin();
+                vector<float>::const_iterator last = dataset.begin() + dataLimit*dim;
+                vector<float> subDataVector(first, last);
+                TrainIndex(indexWriter.get(), dataLimit, subDataVector.data());
+            }
 		}
 
 		//----- 2. Add IDMap
