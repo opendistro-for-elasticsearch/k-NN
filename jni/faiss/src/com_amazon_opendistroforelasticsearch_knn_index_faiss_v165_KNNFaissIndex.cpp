@@ -116,7 +116,7 @@ void TrainIndex(faiss::Index * index, faiss::Index::idx_t n, const float* x) {
 		//----- 1. Train
 		if(!indexWriter->is_trained) {
 		    //TODO: Make this configurable
-		    int dataLimit = 500;
+		    int dataLimit = 5000;
 		    if (idVector.size() <= dataLimit) {
                 TrainIndex(indexWriter.get(), idVector.size(), dataset.data());
 		    } else {
