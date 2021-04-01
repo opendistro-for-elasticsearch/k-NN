@@ -109,7 +109,8 @@ public enum KNNEngine {
                                 }
                         ),
                         true
-                )
+                ), "flat", new KNNMethod("", ImmutableSet.of(SpaceTypes.L2, SpaceTypes.INNER_PRODUCT),
+                            Collections.emptyMap(), Collections.emptyMap(), false)
             ),
             Collections.singletonMap(
                     SpaceTypes.INNER_PRODUCT, rawScore ->
@@ -132,14 +133,17 @@ public enum KNNEngine {
                     String methodName = this.methods.get(knnMethodContext.getName()).getName();
                     StringBuilder result = new StringBuilder(methodName);
 
-                    Iterator<Object> parameters = knnMethodContext.getParameters().values().iterator();
+                    if (knnMethodContext.getParameters() != null) {
+                        Iterator<Object> parameters = knnMethodContext.getParameters().values().iterator();
 
-                    while (parameters.hasNext()) {
-                        result.append(parameters.next().toString());
-                        if (parameters.hasNext()) {
-                            result.append("_");
+                        while (parameters.hasNext()) {
+                            result.append(parameters.next().toString());
+                            if (parameters.hasNext()) {
+                                result.append("_");
+                            }
                         }
                     }
+
 
                     if (knnMethodContext.getCourseQuantizer() != null) {
                         result.append("(");

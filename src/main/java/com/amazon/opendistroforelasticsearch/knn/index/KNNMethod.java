@@ -41,15 +41,18 @@ public class KNNMethod {
         //TODO: Probably need to throw exception instead of boolean
 
         // Validate parameters
-        for (Map.Entry<String, Object> parameter : knnMethodContext.getParameters().entrySet()) {
-            if (!validParameters.containsKey(parameter.getKey())) {
-                return false;
-            }
+        if (knnMethodContext.getParameters() != null) {
+            for (Map.Entry<String, Object> parameter : knnMethodContext.getParameters().entrySet()) {
+                if (!validParameters.containsKey(parameter.getKey())) {
+                    return false;
+                }
 
-            if (validParameters.get(parameter.getKey()) != parameter.getValue().getClass()) {
-                return false;
+                if (validParameters.get(parameter.getKey()) != parameter.getValue().getClass()) {
+                    return false;
+                }
             }
         }
+
 
         // Validate CourseQuantizer
         KNNMethodContext courseQuantizer = knnMethodContext.getCourseQuantizer();
