@@ -152,11 +152,17 @@ public class KNNMethod {
             return Collections.emptyMap();
         }
 
-        // Filter out invalid parameters and parameters that are included as a part of the method string
-        Map<String, Object> extraParameters = new HashMap<>(knnMethodContext.getMethodComponent().getParameters()
-                .entrySet().stream()
-                .filter(m -> parameters.containsKey(m.getKey()) && !parameters.get(m.getKey()).isInMethodString())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+        Map<String, Object> extraParameters = new HashMap<>();
+        Map<String, Object> parameters = knnMethodContext.getMethodComponent().getParameters();
+        for (Map.Entry<String, MethodParameter<?>> parameter : getParameters().entrySet().stream()
+                .filter(m -> !m.getValue().isInMethodString())
+                .collect(Collectors.toSet())) {
+            if (parameters != null && parameters.containsKey(parameter.getKey())) {
+                extraParameters.put(parameter.getKey(), parameters.get(parameter.getKey()));
+            } else {
+                extraParameters.put(parameter.getKey(), parameter.getValue().getDefaultValue());
+            }
+        }
 
         KNNMethodContext courseQuantizer = knnMethodContext.getCourseQuantizer();
         if (courseQuantizer != null) {

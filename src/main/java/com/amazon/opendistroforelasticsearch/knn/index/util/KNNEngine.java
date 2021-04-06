@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * KNNEngine provides the functionality to validate and transform user defined indices into information that can be
@@ -57,21 +58,19 @@ public enum KNNEngine {
                     String methodName = this.methods.get(knnMethodContext.getMethodComponent().getName()).getName();
                     StringBuilder result = new StringBuilder(methodName);
 
-                    if (knnMethodContext.getMethodComponent().getParameters() != null) {
-                        Iterator<Map.Entry<String, Object>> parameters = knnMethodContext.getMethodComponent().getParameters().entrySet().iterator();
-
-                        String prefix = "";
-                        Map.Entry<String, Object> methodParam;
-                        while (parameters.hasNext()) {
-                            methodParam = parameters.next();
-                            if (method.isParameterInMethodString(methodParam.getKey())) {
-                                result.append(prefix);
-                                prefix = "_";
-                                result.append(methodParam.getValue());
-                            }
+                    Map<String, Object> parameters = knnMethodContext.getMethodComponent().getParameters();
+                    String prefix = "";
+                    for (Map.Entry<String, MethodParameter<?>> parameter : method.getParameters().entrySet().stream()
+                            .filter(m -> m.getValue().isInMethodString())
+                            .collect(Collectors.toSet())) {
+                        result.append(prefix);
+                        if (parameters != null && parameters.containsKey(parameter.getKey())) {
+                            result.append(parameters.get(parameter.getKey()));
+                        } else {
+                            result.append(parameter.getValue().getDefaultValue());
                         }
+                        prefix = "_";
                     }
-
 
                     if (knnMethodContext.getCourseQuantizer() != null) {
                         result.append("(");
