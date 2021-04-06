@@ -41,7 +41,7 @@ public enum KNNEngine {
     NMSLIB("NMSLIB", ".hnsw",
             getNmslibSupportedMethods(),
             Collections.emptyMap(),
-            NmsLibVersion.LATEST.buildVersion,
+            NmsLibVersion.LATEST.getBuildVersion(),
             NmsLibVersion.LATEST.indexLibraryVersion()),
     FAISS("FAISS", ".faiss",
             getFaissSupportedMethods(),
@@ -49,7 +49,7 @@ public enum KNNEngine {
                     SpaceType.INNER_PRODUCT, rawScore ->
                             SpaceType.INNER_PRODUCT.scoreTranslation(-1*rawScore)
             ),
-            FAISSLibVersion.LATEST.buildVersion,
+            FAISSLibVersion.LATEST.getBuildVersion(),
             FAISSLibVersion.LATEST.indexLibraryVersion()) {
                 @Override
                 public String generateMethod(KNNMethodContext knnMethodContext) {

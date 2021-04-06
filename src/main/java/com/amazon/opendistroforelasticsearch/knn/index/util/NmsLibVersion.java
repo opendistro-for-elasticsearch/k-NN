@@ -29,7 +29,7 @@ public enum NmsLibVersion {
 
     public static final NmsLibVersion LATEST = VNMSLIB_2011;
 
-    public String buildVersion;
+    private String buildVersion;
 
     NmsLibVersion(String buildVersion) {
         this.buildVersion = buildVersion;
