@@ -19,12 +19,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Enum contains spaces supported for approximate nearest neighbor search in the k-NN plugin. Each engine is expected
- * to support a subset of these spaces. Validation should be done in the jni layer and an exception should be
+ * Enum contains spaces supported for approximate nearest neighbor search in the k-NN plugin. Each engine's methods are
+ * expected to support a subset of these spaces. Validation should be done in the jni layer and an exception should be
  * propagated up to the Java layer. Additionally, naming translations should be done in jni layer as well. For example,
  * nmslib calls the inner_product space "negdotprod". This translation should take place in the nmslib's jni layer.
  */
-public enum SpaceTypes {
+public enum SpaceType {
     L2("l2") {
         @Override
         public float scoreTranslation(float rawScore) {
@@ -53,13 +53,7 @@ public enum SpaceTypes {
         /**
          * The inner product has a range of [-Float.MAX_VALUE, Float.MAX_VALUE], with a more similar result being
          * represented by a more negative value. In Lucene, scores have to be in the range of [0, Float.MAX_VALUE],
-         * where a higher score represents a more similar result.
-         *
-         * To perform this translation, we have to map [-Float.MAX_VALUE, Float.MAX_VALUE] to [0, Float.MAX_VALUE]
-         * where more negative scores are translated to larger values. With this mapping, we will lose 1 bit of
-         * precision. We will treat the most significant bit of the exponent value in the float as a pseudo sign bit,
-         * where 1 represents a negative value and 0 represents a positive number. To build the rest of the exponent,
-         * we will just shift the old exponent by 1. The mantissa will remain unchanged.
+         * where a higher score represents a more similar result. So, we convert here.
          *
          * @param rawScore score returned from underlying library
          * @return Lucene scaled score
@@ -81,7 +75,7 @@ public enum SpaceTypes {
 
     private final String value;
 
-    SpaceTypes(String value) {
+    SpaceType(String value) {
         this.value = value;
     }
 
@@ -97,14 +91,14 @@ public enum SpaceTypes {
     public static Set<String> getValues() {
         Set<String> values = new HashSet<>();
 
-        for (SpaceTypes spaceType : SpaceTypes.values()) {
+        for (SpaceType spaceType : SpaceType.values()) {
             values.add(spaceType.getValue());
         }
         return values;
     }
 
-    public static SpaceTypes getSpace(String spaceTypeName) {
-        for (SpaceTypes currentSpaceType : SpaceTypes.values()) {
+    public static SpaceType getSpace(String spaceTypeName) {
+        for (SpaceType currentSpaceType : SpaceType.values()) {
             if (currentSpaceType.getValue().equalsIgnoreCase(spaceTypeName)) {
                 return currentSpaceType;
             }

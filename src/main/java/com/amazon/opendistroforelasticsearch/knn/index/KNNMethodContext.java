@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -16,163 +16,225 @@
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.mapper.MapperParsingException;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COURSE_QUANTIZER;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.ENCODER;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_ENGINE;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.NAME;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.PARAMETERS;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.SPACE_TYPE;
+
 /**
- * KNNMethodContext will contain the information necessary to produce an index from a mapping. It will encompass all
- * parameters necessary to build the index.
+ * KNNMethodContext will contain the information necessary to produce a library index from an Elasticsearch mapping.
+ * It will encompass all parameters necessary to build the index.
  *
- * Based on faiss, we break an index into 5 parts
- *  1. A list of vector transform operations - Hold off for now
- *  2. The method of the index to be searched
- *  3. An optional course quantizer
- *  4. An encoding scheme
- *  5. A refinement step - hold off for now
- *
- * KNNMethod context will need an engine associated with it
- *
- * validation will need to be performed by engine
- *
- * also, engine should be able to produce input to jni
+ * We define 5 components that a k-NN library index can be made up of:
+ * 1. KNNEngine is the underlying library that will be used to build/search the index (nmslib or faiss)
+ * 2. SpaceType is the space that the index should be built with
+ * 3. Main method component is the top level library index definition
+ * 4. Course quantization component is the KNNMethodContext for the course quantizer
+ * 5. Encoder defines how vectors should be encoded
  *
  */
 public class KNNMethodContext implements ToXContentFragment {
-    public KNNMethodContext(KNNEngine knnEngine, SpaceTypes spaceTypes, ComponentContext methodComponent,
-                             KNNMethodContext courseQuantizerContext, ComponentContext encodingScheme) {
+    public KNNMethodContext(KNNEngine knnEngine, SpaceType spaceType, MethodComponentContext methodComponent,
+                            KNNMethodContext courseQuantizerContext, MethodComponentContext encoder) {
         this.knnEngine = knnEngine;
-        this.spaceTypes = spaceTypes;
+        this.spaceType = spaceType;
         this.methodComponent = methodComponent;
         this.courseQuantizerContext = courseQuantizerContext;
-        this.encodingScheme = encodingScheme;
+        this.encoder = encoder;
     }
 
     private KNNEngine knnEngine;
-    private SpaceTypes spaceTypes;
-    private ComponentContext methodComponent;
+    private SpaceType spaceType;
+    private MethodComponentContext methodComponent;
     private KNNMethodContext courseQuantizerContext;
-    private ComponentContext encodingScheme;
+    private MethodComponentContext encoder;
 
-    public String getName() {
-        return methodComponent.name;
+    /**
+     * Gets the main method component
+     *
+     * @return methodComponent
+     */
+    public MethodComponentContext getMethodComponent() {
+        return methodComponent;
     }
 
-    public Map<String, Object> getParameters() {
-        return methodComponent.parameters;
-    }
-
+    /**
+     * Gets the engine to be used for this context
+     *
+     * @return knnEngine
+     */
     public KNNEngine getEngine() {
         return knnEngine;
     }
 
-    public SpaceTypes getSpaceTypes() {
-        return spaceTypes;
+    /**
+     * Gets the space type for this context
+     *
+     * @return spaceType
+     */
+    public SpaceType getSpaceType() {
+        return spaceType;
     }
 
+    /**
+     * Gets the quantizer context for this component
+     *
+     * @return courseQuantizerContext
+     */
     public KNNMethodContext getCourseQuantizer() {
         return courseQuantizerContext;
     }
 
-    public ComponentContext getEncoding() {
-        return encodingScheme;
+    /**
+     * Gets the encoder comoponent for this context
+     *
+     * @return encoder
+     */
+    public MethodComponentContext getEncoder() {
+        return encoder;
     }
 
     /**
-     * This function uses the knnEngine to validate that the method can be used with this engine
+     * This method uses the knnEngine to validate that the method is compatible with the engine
      *
-     * @return whether method is valid
      */
-    public boolean validate() {
-        return knnEngine.validateMethod(this);
+    public void validate() {
+        knnEngine.validateMethod(this);
     }
 
+    /**
+     * This method generates the string describing the method to the jni layer. For some engines, this string will just
+     * be the name of the method. For others, this string may contain parameters and be passed to an index factory. The
+     * engine will take care of generating this string based on the context
+     *
+     * @return method string to be passed to engine library
+     */
     public String generateMethod() {
         return knnEngine.generateMethod(this);
     }
 
-    public static KNNMethodContext parse(Object in, KNNEngine parentEngine, SpaceTypes parentSpace) throws IOException {
+    /**
+     * Some engine libraries may require extra parameters to be explicitly set on the index. For example, for faiss, the
+     * constructor for HNSW does not allow you to pass efConstruction or efSearch. To allow users to configure these
+     * parameters for their library index, we need to build a map of "extra" parameters that will be passed to the
+     * jni layer. In the jni layer, this map will be parsed. The key of the map will allow the jni layer to determine
+     * what to do with the value.
+     *
+     * Further, in order to pass this map to the Codec's docValueConsumer, we need to encode it as a string. This is
+     * because Lucene's fieldType's attributes is a map String, String. So, we use the engine to build the map and use
+     * XContent factory to encode it as a string. The engine is in charge of determining which parameters should be
+     * considered "extra".
+     *
+     * @return Json string representing the Map String, Object containing extra parameters
+     */
+    public String generateExtraParameters() {
+        try {
+            return Strings.toString(XContentFactory.jsonBuilder().map(knnEngine.generateExtraParameterMap(this)));
+        } catch (IOException ioe) {
+            throw new IllegalStateException("Unable to generate xcontent string for extra parameter map: " + ioe);
+        }
+    }
+
+    /**
+     * Parses an Object into a KNNMethodContext. This can be called recursively for course quantizers
+     *
+     * @param in Object containing mapping to be parsed
+     * @param parentEngine engine type of parent. Relevant for recursion with course quantizers. Course quantizers must
+     *                     have the same engine type as their parent index
+     * @param parentSpace spaceType of parent index. Relevant for recursion with course quantizers. For top level index,
+     *                    this can be null
+     * @return KNNMethodContext
+     */
+    public static KNNMethodContext parse(Object in, KNNEngine parentEngine, SpaceType parentSpace) {
         if (in instanceof Map) {
             @SuppressWarnings("unchecked")
-            Map<String, ?> methodMap = (Map<String, ?>) in;
+            Map<String, Object> methodMap = (Map<String, Object>) in;
 
-            // Parse engine
-            Object engine = methodMap.get("engine");
+            Object engine = methodMap.get(KNN_ENGINE);
             KNNEngine knnEngine;
-
             if (parentEngine != null) {
                 knnEngine = parentEngine;
             } else if (engine == null) {
                 knnEngine = KNNEngine.DEFAULT;
             } else if (!(engine instanceof String)) {
-                throw new MapperParsingException("'engine' must be a string");
+                throw new MapperParsingException("\"" + KNN_ENGINE + "\" must be a string");
             } else {
                 knnEngine = KNNEngine.getEngine((String) engine);
             }
 
-            // Parse space
-            Object space = methodMap.get("space_type");
-            SpaceTypes knnSpaceType;
+            Object space = methodMap.get(SPACE_TYPE);
+            SpaceType knnSpaceType;
             if (parentSpace != null) {
                 knnSpaceType = parentSpace;
+            } else if (space == null) {
+                knnSpaceType = SpaceType.L2;
             } else if (!(space instanceof String)) {
-                knnSpaceType = SpaceTypes.L2;
+                throw new MapperParsingException("\"" + SPACE_TYPE + "\" must be a string");
             } else {
-                knnSpaceType = SpaceTypes.getSpace((String) space);
+                knnSpaceType = SpaceType.getSpace((String) space);
             }
 
-            // Parse method
-            ComponentContext knnMethod = ComponentContext.parse(in);
+            MethodComponentContext knnMethod = MethodComponentContext.parse(in);
 
-            // Parse courseQuantizer
-            Object courseQuantizer = methodMap.get("course_quantizer");
+            Object courseQuantizer = methodMap.get(COURSE_QUANTIZER);
             KNNMethodContext knnCourseQuantizer = null;
 
             if (courseQuantizer != null) {
-                knnCourseQuantizer = parse(methodMap.get("course_quantizer"), knnEngine, knnSpaceType);
+                knnCourseQuantizer = parse(courseQuantizer, knnEngine, knnSpaceType);
             }
 
-            // Parse encoding scheme
-            Object encoder = methodMap.get("encoder");
-            ComponentContext knnEncoder = null;
+            Object encoder = methodMap.get(ENCODER);
+            MethodComponentContext knnEncoder = null;
 
             if (encoder != null) {
-                knnEncoder = ComponentContext.parse(encoder);
+                knnEncoder = MethodComponentContext.parse(encoder);
             }
 
             return new KNNMethodContext(knnEngine, knnSpaceType, knnMethod, knnCourseQuantizer, knnEncoder);
         }
 
-        throw new MapperParsingException("Unable to parse mapping");
+        throw new MapperParsingException("Unable to parse mapping into KNNMethodContext. Object not of type \"Map\"");
     }
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.field("engine", knnEngine.getKnnEngineName());
-        builder.field("space_type", spaceTypes.getValue());
+        builder.field(KNN_ENGINE, knnEngine.getName());
+        builder.field(SPACE_TYPE, spaceType.getValue());
         builder = methodComponent.toXContent(builder, params);
 
         if (courseQuantizerContext != null) {
-            builder.startObject("course_quantizer");
+            builder.startObject(COURSE_QUANTIZER);
             builder = courseQuantizerContext.toXContent(builder, params);
             builder.endObject();
         }
 
-        if (encodingScheme != null) {
-            builder.startObject("encoder");
-            builder = encodingScheme.toXContent(builder, params);
+        if (encoder != null) {
+            builder.startObject(ENCODER);
+            builder = encoder.toXContent(builder, params);
             builder.endObject();
         }
 
         return builder;
     }
 
-    public static class ComponentContext implements ToXContentFragment {
-        public ComponentContext(String name, Map<String, Object> parameters) {
+    /**
+     * MethodComponentContext represents a single building block of a knn library index.
+     *
+     * Each component is composed of a name and a map of parameters.
+     */
+    public static class MethodComponentContext implements ToXContentFragment {
+        public MethodComponentContext(String name, Map<String, Object> parameters) {
             this.name = name;
             this.parameters = parameters;
         }
@@ -180,28 +242,34 @@ public class KNNMethodContext implements ToXContentFragment {
         private String name;
         private Map<String, Object> parameters;
 
-        public static ComponentContext parse(Object in) {
+        /**
+         * Parses the object into MethodComponentContext
+         *
+         * @param in Object to be parsed
+         * @return MethodComponentContext
+         */
+        public static MethodComponentContext parse(Object in) {
             if (in instanceof Map) {
                 @SuppressWarnings("unchecked")
-                Map<String, ?> methodMap = (Map<String, ?>) in;
+                Map<String, Object> methodMap = (Map<String, Object>) in;
 
-                // get name
-                Object name = methodMap.get("name");
+                Object name = methodMap.get(NAME);
 
-                if (!(name instanceof String)) {
-                    throw new MapperParsingException("Unable to parse mapping 1");
+                if (name == null) {
+                    throw new MapperParsingException("Component name needs to be set");
+                } else if (!(name instanceof String)) {
+                    throw new MapperParsingException("Component name should be a string");
                 }
                 String knnName = (String) name;
 
-                // get parameters
-                Object parameters = methodMap.get("parameters");
+                Object parameters = methodMap.get(PARAMETERS);
                 Map<String, Object> knnParameters;
 
                 if (parameters == null) {
                     knnParameters = null;
                 } else if (parameters instanceof Map) {
                     @SuppressWarnings("unchecked")
-                    Map<String, Object> knnParameters1 = Collections.checkedMap((Map<String, Object>) parameters, String.class, Object.class);
+                    Map<String, Object> knnParameters1 = (Map<String, Object>) parameters;
 
                     for (Object parameter : knnParameters1.values()) {
                         if (!(parameter instanceof String || parameter instanceof Integer)) {
@@ -211,25 +279,35 @@ public class KNNMethodContext implements ToXContentFragment {
 
                     knnParameters = knnParameters1;
                 } else {
-                    throw new MapperParsingException("Unable to parse mapping 2  ");
+                    throw new MapperParsingException("Unable to parse parameters of MethodComponent: " + name);
                 }
 
-                return new ComponentContext(knnName, knnParameters);
+                return new MethodComponentContext(knnName, knnParameters);
             }
-            throw new MapperParsingException("Unable to parse mapping 3");
+            throw new MapperParsingException("Unable to parse MethodComponent");
         }
 
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            builder.field("name", name);
-            builder.field("parameters", parameters);
+            builder.field(NAME, name);
+            builder.field(PARAMETERS, parameters);
             return builder;
         }
 
+        /**
+         * Gets the name of the component
+         *
+         * @return name
+         */
         public String getName() {
             return name;
         }
 
+        /**
+         * Gets the parameters of the component
+         *
+         * @return parameters
+         */
         public Map<String, Object> getParameters() {
             return parameters;
         }

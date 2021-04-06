@@ -22,6 +22,11 @@ public class KNNConstants {
     public static final String HNSW_ALGO_EF_SEARCH = "efSearch";
     public static final String HNSW_ALGO_INDEX_THREAD_QTY = "indexThreadQty";
     public static final String DIMENSION = "dimension";
-    public static final String KNNEngine = "engine";
-    public static final String KNNMethod = "method";
+    public static final String KNN_ENGINE = "engine";
+    public static final String KNN_METHOD= "method";
+    public static final String EXTRA_PARAMETERS = "extraParameters";
+    public static final String COURSE_QUANTIZER = "course_quantizer";
+    public static final String ENCODER = "encoder";
+    public static final String NAME = "name";
+    public static final String PARAMETERS = "parameters";
 }

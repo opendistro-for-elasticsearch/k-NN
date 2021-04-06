@@ -37,6 +37,26 @@ namespace knn_jni {
         }
     }
 
+    inline void HasExceptionInStack(JNIEnv* env, const std::string& message)
+    {
+        if (env->ExceptionCheck() == JNI_TRUE) {
+            throw std::runtime_error(message);
+        }
+    }
+
+    inline jclass FindClass(JNIEnv * env, const std::string& className) {
+        jclass jClass = env->FindClass(className.c_str());
+        if (jClass == nullptr) {
+            throw std::runtime_error("Unable to load class \"" + className + "\"");
+        }
+        return jClass;
+    }
+
+    inline jmethodID FindMethod(JNIEnv * env, jclass jClass, const std::string& methodName, const std::string& methodSignature) {
+        jmethodID methodId = env->GetMethodID(jClass, methodName.c_str(), methodSignature.c_str());
+        knn_jni::HasExceptionInStack(env, "Could not find \"" + methodName + "\" method");
+        return methodId;
+    }
 
     // Catches a C++ exception and throws the corresponding exception to the JVM
     void CatchCppExceptionAndThrowJava(JNIEnv* env);

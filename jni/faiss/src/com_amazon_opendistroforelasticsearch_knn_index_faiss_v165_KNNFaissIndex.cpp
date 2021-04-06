@@ -38,10 +38,11 @@ std::unordered_map<string, faiss::MetricType> mapMetric = {
 };
 
 void TrainIndex(faiss::Index * index, faiss::Index::idx_t n, const float* x) {
-    if (auto * indexIvf = dynamic_cast<const faiss::IndexIVF*>(index)) {
+    if (auto * indexIvf = dynamic_cast<faiss::IndexIVF*>(index)) {
         if (indexIvf->quantizer_trains_alone == 2) {
             TrainIndex(indexIvf->quantizer, n, x);
         }
+        indexIvf->make_direct_map();
     }
 
     if (!index->is_trained) {
@@ -49,106 +50,174 @@ void TrainIndex(faiss::Index * index, faiss::Index::idx_t n, const float* x) {
     }
 }
 
+void SetExtraParameters(JNIEnv *env, jobject parameterMap, faiss::Index * index) {
+    // Here, we parse parameterMap, which is a java Map<String, Object>. In order to implement this, I referred to
+    // https://stackoverflow.com/questions/4844022/jni-create-hashmap
+
+    // Load all of the class and methods to iterate over a map
+    jclass mapClass = knn_jni::FindClass(env, "java/util/Map");
+    jmethodID entrySet = knn_jni::FindMethod(env, mapClass, "entrySet", "()Ljava/util/Set;");
+
+    jobject parameterEntrySet = env->CallObjectMethod(parameterMap, entrySet);
+    knn_jni::HasExceptionInStack(env, "Unable to call \"entrySet\" method on \"java/util/Map\"");
+
+    jclass setClass = knn_jni::FindClass(env, "java/util/Set");
+
+    jmethodID iterator = knn_jni::FindMethod(env, setClass, "iterator", "()Ljava/util/Iterator;");
+
+    jclass iteratorClass = knn_jni::FindClass(env, "java/util/Iterator");
+
+    jobject iter = env->CallObjectMethod(parameterEntrySet, iterator);
+    knn_jni::HasExceptionInStack(env, "Call to \"iterator\" method failed");
+
+    jmethodID hasNext = knn_jni::FindMethod(env, iteratorClass, "hasNext", "()Z");
+    jmethodID next = knn_jni::FindMethod(env, iteratorClass, "next", "()Ljava/lang/Object;");
+
+    jclass entryClass = knn_jni::FindClass(env, "java/util/Map$Entry");
+
+    jmethodID getKey = knn_jni::FindMethod(env, entryClass, "getKey", "()Ljava/lang/Object;");
+
+    jmethodID getValue = knn_jni::FindMethod(env, entryClass, "getValue", "()Ljava/lang/Object;");
+
+    jclass integerClass = knn_jni::FindClass(env, "java/lang/Integer");
+
+    jmethodID intValue = knn_jni::FindMethod(env, integerClass, "intValue", "()I");
+
+    // Iterate over the entry Set
+    jobject entry;
+    std::string key;
+    jobject value;
+    while (env->CallBooleanMethod(iter, hasNext)) {
+        entry = env->CallObjectMethod(iter, next);
+        knn_jni::HasExceptionInStack(env, "Could not call \"next\" method");
+
+        key = knn_jni::GetStringJenv(env, (jstring) env->CallObjectMethod(entry, getKey));
+        knn_jni::HasExceptionInStack(env, "Could not call \"getKey\" method");
+
+        value = env->CallObjectMethod(entry, getValue);
+        knn_jni::HasExceptionInStack(env, "Could not call \"getValue\" method");
+
+        if (auto * indexIvf = dynamic_cast<faiss::IndexIVF*>(index)) {
+            if (key == "nprobes") {
+                if (env->IsInstanceOf(value, integerClass)) {
+                    indexIvf->nprobe = env->CallIntMethod(value, intValue);
+                    knn_jni::HasExceptionInStack(env, "Could not call \"intValue\" method on Integer");
+                } else {
+                    throw std::runtime_error("Cannot call IntMethod on non-integer class");
+                }
+            } else if (key == "course_quantizer" && indexIvf->quantizer != nullptr) {
+                SetExtraParameters(env, value, indexIvf->quantizer);
+            }
+            env->DeleteLocalRef(value);
+        }
+        env->DeleteLocalRef(entry);
+    }
+    env->DeleteLocalRef(parameterEntrySet);
+    knn_jni::HasExceptionInStack(env, "Could not call \"hasNext\" method");
+}
+
 /**
  * Method: saveIndex
  *
  */
-	JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_saveIndex
-(JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams,
- jstring spaceType, jstring indexDescription)
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_saveIndex
+        (JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobject parameterMap,
+         jstring spaceType, jstring indexDescription)
 {
-	vector<int64_t> idVector;
-	vector<float>   dataset;
-	vector<string> paramsList;
-	//TODO we can support other FAISS index in the future, may be paramsList can add index=xxxx
-	faiss::MetricType metric = faiss::METRIC_L2;
-	std::unique_ptr<faiss::Index> indexWriter;
-	int dim = 0;
-	try {
-		//---- ids
-		int* object_ids = nullptr;
-		object_ids = env->GetIntArrayElements(ids, 0);
-		for(int i = 0; i < env->GetArrayLength(ids); ++i) {
-			idVector.push_back(object_ids[i]);
-		}
-		env->ReleaseIntArrayElements(ids, object_ids, 0);
-		knn_jni::HasExceptionInStack(env);
+    vector<int64_t> idVector;
+    vector<float>   dataset;
+    vector<string> paramsList;
 
-		//---- vectors
-		for (int i = 0; i < env->GetArrayLength(vectors); ++i) {
-			auto vectorArray = (jfloatArray)env->GetObjectArrayElement(vectors, i);
-			float* vector = env->GetFloatArrayElements(vectorArray, 0);
-			dim = env->GetArrayLength(vectorArray);
-			for(int j = 0; j < dim; ++j) {
-				dataset.push_back(vector[j]);
-			}
-			env->ReleaseFloatArrayElements(vectorArray, vector, 0);
-		}
+    faiss::MetricType metric = faiss::METRIC_L2;
+    std::unique_ptr<faiss::Index> indexWriter;
+    int dim = 0;
+    try {
+        //---- ids
+        int* object_ids = nullptr;
+        object_ids = env->GetIntArrayElements(ids, 0);
+        for(int i = 0; i < env->GetArrayLength(ids); ++i) {
+            idVector.push_back(object_ids[i]);
+        }
+        env->ReleaseIntArrayElements(ids, object_ids, 0);
         knn_jni::HasExceptionInStack(env);
 
-		//---- indexPath
-		const char *indexString = env->GetStringUTFChars(indexPath, 0);
-		string indexPathString(indexString);
-		env->ReleaseStringUTFChars(indexPath, indexString);
+        //---- vectors
+        for (int i = 0; i < env->GetArrayLength(vectors); ++i) {
+            auto vectorArray = (jfloatArray)env->GetObjectArrayElement(vectors, i);
+            float* vector = env->GetFloatArrayElements(vectorArray, 0);
+            dim = env->GetArrayLength(vectorArray);
+            for(int j = 0; j < dim; ++j) {
+                dataset.push_back(vector[j]);
+            }
+            env->ReleaseFloatArrayElements(vectorArray, vector, 0);
+        }
         knn_jni::HasExceptionInStack(env);
 
-		//---- space
-		const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, 0);
-		string spaceTypeString(spaceTypeCStr);
-		env->ReleaseStringUTFChars(spaceType, spaceTypeCStr);
+        //---- indexPath
+        const char *indexString = env->GetStringUTFChars(indexPath, 0);
+        string indexPathString(indexString);
+        env->ReleaseStringUTFChars(indexPath, indexString);
         knn_jni::HasExceptionInStack(env);
-		// space mapping faiss::MetricType
-		if(mapMetric.find(spaceTypeString) != mapMetric.end()) {
-			metric = mapMetric[spaceTypeString];
-		}
 
-		//---- Create IndexWriter from faiss index_factory
+        //---- space
+        const char *spaceTypeCStr = env->GetStringUTFChars(spaceType, 0);
+        string spaceTypeString(spaceTypeCStr);
+        env->ReleaseStringUTFChars(spaceType, spaceTypeCStr);
+        knn_jni::HasExceptionInStack(env);
+        // space mapping faiss::MetricType
+        if(mapMetric.find(spaceTypeString) != mapMetric.end()) {
+            metric = mapMetric[spaceTypeString];
+        }
+
+        //---- Create IndexWriter from faiss index_factory
         // If data is less than a certain amount, just create a flat index
         //TODO: Make this configurable
-		if (idVector.size() < 1000) {
+        if (idVector.size() < 1000) {
             indexWriter.reset(faiss::index_factory(dim, "Flat", metric));
-		} else {
+        } else {
             std::string description = knn_jni::GetStringJenv(env, indexDescription);
             indexWriter.reset(faiss::index_factory(dim, description.c_str(), metric));
-		}
+        }
 
-		//---- Do Index
-		//----- 1. Train
-		if(!indexWriter->is_trained) {
-		    //TODO: Make this configurable
-		    int dataLimit = 5000;
-		    if (idVector.size() <= dataLimit) {
+        // Add extra parameters that cant be configured with the index factory
+        SetExtraParameters(env, parameterMap, indexWriter.get());
+        env->DeleteLocalRef(parameterMap);
+
+        //---- Do Index
+        if(!indexWriter->is_trained) {
+            //TODO: Make this configurable
+            int dataLimit = 5000;
+            if (idVector.size() <= dataLimit) {
                 TrainIndex(indexWriter.get(), idVector.size(), dataset.data());
-		    } else {
+            } else {
                 vector<float>::const_iterator first = dataset.begin();
                 vector<float>::const_iterator last = dataset.begin() + dataLimit*dim;
                 vector<float> subDataVector(first, last);
                 TrainIndex(indexWriter.get(), dataLimit, subDataVector.data());
             }
-		}
+        }
 
-		//----- 2. Add IDMap
-		// default all use self defined IndexIDMap cause some class no add_with_ids
-		faiss::IndexIDMap idMap =  faiss::IndexIDMap(indexWriter.get());
-		idMap.add_with_ids(idVector.size(), dataset.data(), idVector.data());
+        //----- 2. Add IDMap
+        faiss::IndexIDMap idMap =  faiss::IndexIDMap(indexWriter.get());
+        idMap.add_with_ids(idVector.size(), dataset.data(), idVector.data());
 
 		//----- 3. WriteIndex
 		faiss::write_index(&idMap, indexPathString.c_str());
 
 		//Explicit delete object
 		faiss::Index* indexPointer = indexWriter.release();
-		if(indexPointer) delete indexPointer;
+		delete indexPointer;
 	}
 	catch(...) {
 		faiss::Index* indexPointer = indexWriter.release();
-		if(indexPointer) delete indexPointer;
+		delete indexPointer;
         knn_jni::CatchCppExceptionAndThrowJava(env);
 	}
 }
 
 
-	JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_queryIndex
-(JNIEnv* env, jclass cls, jlong indexPointer, jfloatArray queryVector, jint k)
+JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_queryIndex
+        (JNIEnv* env, jclass cls, jlong indexPointer, jfloatArray queryVector, jint k)
 {
 	faiss::Index *indexReader = nullptr;
 	try {
@@ -190,8 +259,8 @@ void TrainIndex(faiss::Index * index, faiss::Index::idx_t n, const float* x) {
 	return NULL;
 }
 
-	JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_init
-(JNIEnv* env, jclass cls,  jstring indexPath, jobjectArray algoParams, jstring spaceType)
+JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_init
+        (JNIEnv* env, jclass cls,  jstring indexPath, jobjectArray algoParams, jstring spaceType)
 {
 
 	faiss::Index* indexReader = nullptr;

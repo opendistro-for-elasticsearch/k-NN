@@ -314,10 +314,11 @@ public class KNNIndexCache implements Closeable {
 
         // loadIndex from different library
         final KNNIndex knnIndex;
-        SpaceTypes spaceType = SpaceTypes.getSpace(KNNSettings.getSpaceType(indexName));
+        SpaceType spaceType = SpaceType.getSpace(KNNSettings.getSpaceType(indexName));
         if (indexPathUrl.contains(KNNEngine.NMSLIB.getExtension())) {
             knnIndex = KNNNmsLibIndex.loadIndex(indexPathUrl, getQueryParams(indexName), spaceType);
         } else if (indexPathUrl.contains(KNNEngine.FAISS.getExtension())) {
+            //TODO: Faiss doesnt need spaceType
             knnIndex = KNNFaissIndex.loadIndex(indexPathUrl, getQueryParams(indexName), spaceType);
         } else {
             throw new IllegalArgumentException("[KNN] Invalid engine type for path: " + indexPathUrl);

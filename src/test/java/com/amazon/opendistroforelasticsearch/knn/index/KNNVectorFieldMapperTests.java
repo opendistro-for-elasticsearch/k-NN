@@ -77,7 +77,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
 
         Settings settings = Settings.builder()
                 .put(settings(CURRENT).build())
-                .put(KNNSettings.KNN_SPACE_TYPE, SpaceTypes.COSINESIMIL.getValue())
+                .put(KNNSettings.KNN_SPACE_TYPE, SpaceType.COSINESIMIL.getValue())
                 .put(KNNSettings.KNN_ALGO_PARAM_M, m)
                 .put(KNNSettings.KNN_ALGO_PARAM_EF_CONSTRUCTION, efConstruction)
                 .build();
@@ -106,7 +106,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         Mapper.BuilderContext builderContext = new Mapper.BuilderContext(settings, new ContentPath());
         KNNVectorFieldMapper knnVectorFieldMapper = builder.build(builderContext);
 
-        assertEquals(SpaceTypes.COSINESIMIL.getValue(), knnVectorFieldMapper.spaceType);
+        assertEquals(SpaceType.COSINESIMIL.getValue(), knnVectorFieldMapper.spaceType);
         assertEquals(String.valueOf(m), knnVectorFieldMapper.m);
         assertEquals(String.valueOf(efConstruction), knnVectorFieldMapper.efConstruction);
     }

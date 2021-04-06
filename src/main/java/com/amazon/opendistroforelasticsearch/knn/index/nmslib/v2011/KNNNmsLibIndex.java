@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
-import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
+import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
 
 import java.security.AccessController;
@@ -49,13 +49,13 @@ public class KNNNmsLibIndex extends KNNIndex {
      * @param spaceType space type of the index
      * @return knn index that can be queried for k nearest neighbours
      */
-    public static KNNNmsLibIndex loadIndex(String indexPath, final String[] algoParams, final SpaceTypes spaceType) {
+    public static KNNNmsLibIndex loadIndex(String indexPath, final String[] algoParams, final SpaceType spaceType) {
         long fileSize = computeFileSize(indexPath);
         long indexPointer = init(indexPath, algoParams, spaceType.getValue());
         return new KNNNmsLibIndex(indexPointer, fileSize, spaceType);
     }
 
-    private KNNNmsLibIndex(final long indexPointer, final long indexSize, final SpaceTypes spaceType) {
+    private KNNNmsLibIndex(final long indexPointer, final long indexSize, final SpaceType spaceType) {
         super(indexPointer, indexSize, spaceType);
     }
 

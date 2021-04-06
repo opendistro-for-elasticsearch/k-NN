@@ -17,11 +17,12 @@ package com.amazon.opendistroforelasticsearch.knn.index.faiss.v165;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
-import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
+import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
 import com.amazon.opendistroforelasticsearch.knn.index.util.FAISSLibVersion;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Map;
 
 import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter.GRAPH_INDEX_REQUESTS;
 
@@ -43,13 +44,13 @@ public class KNNFaissIndex extends KNNIndex  {
      * @param spaceType space type of the index
      * @return knn index that can be queried for k nearest neighbours
      */
-    public static KNNFaissIndex loadIndex(String indexPath, final String[] algoParams, final SpaceTypes spaceType) {
+    public static KNNFaissIndex loadIndex(String indexPath, final String[] algoParams, final SpaceType spaceType) {
         long fileSize = computeFileSize(indexPath);
         long indexPointer = init(indexPath, algoParams, spaceType.getValue());
         return new KNNFaissIndex(indexPointer, fileSize, spaceType);
     }
 
-    private KNNFaissIndex(final long indexPointer, final long indexSize, final SpaceTypes spaceType) {
+    private KNNFaissIndex(final long indexPointer, final long indexSize, final SpaceType spaceType) {
         super(indexPointer, indexSize, spaceType);
     }
 
@@ -70,7 +71,7 @@ public class KNNFaissIndex extends KNNIndex  {
 
     // JNI FUNCTIONS
     // Builds index and writes to disk (no index pointer escapes).
-    public static native void saveIndex(int[] ids, float[][] data, String indexPath, String[] algoParams,
+    public static native void saveIndex(int[] ids, float[][] data, String indexPath, Map<String, Object> algoParams,
                                         String spaceType, String method);
 
     // Queries index (thread safe with other readers, blocked by write lock)

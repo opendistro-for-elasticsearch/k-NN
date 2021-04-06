@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
-import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
+import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFaissIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.util.FAISSLibVersion;
@@ -41,6 +41,10 @@ import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
 import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
 import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNNmsLibIndex;
+import org.elasticsearch.common.xcontent.DeprecationHandler;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentType;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -48,6 +52,7 @@ import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -81,12 +86,12 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
              * First Get Attribute from field
              */
             Map<String, String> fieldAttributes = field.attributes();
-            String engineName = fieldAttributes.getOrDefault(KNNConstants.KNNEngine, KNNEngine.DEFAULT.getKnnEngineName());
-            String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceTypes.L2.getValue());
+            String engineName = fieldAttributes.getOrDefault(KNNConstants.KNN_ENGINE, KNNEngine.DEFAULT.getName());
+            String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceType.L2.getValue());
             String[] algoParams = getKNNIndexParams(fieldAttributes);
             KNNEngine knnEngine = KNNEngine.getEngine(engineName);
 
-            String method = fieldAttributes.get(KNNConstants.KNNMethod);
+            String method = fieldAttributes.get(KNNConstants.KNN_METHOD);
             if (method == null) {
                 throw new NullPointerException("Method cannot be null");
             }
@@ -120,11 +125,22 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             String tempIndexPath = indexPath + TEMP_SUFFIX;
             AccessController.doPrivileged(
                     (PrivilegedAction<Void>) () -> {
-                        if(KNNEngine.NMSLIB.getKnnEngineName().equals(knnEngine.getKnnEngineName())) {
+                        if(KNNEngine.NMSLIB.getName().equals(knnEngine.getName())) {
                             KNNNmsLibIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType,
                                     method);
-                        } else if (KNNEngine.FAISS.getKnnEngineName().equals(knnEngine.getKnnEngineName())) {
-                            KNNFaissIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType,
+                        } else if (KNNEngine.FAISS.getName().equals(knnEngine.getName())) {
+                            String extraParametersString = fieldAttributes.getOrDefault(KNNConstants.EXTRA_PARAMETERS, null);
+                            Map<String, Object> extraParameterMap = Collections.emptyMap();
+                            if (extraParametersString != null) {
+                                try {
+                                    extraParameterMap = XContentFactory.xContent(XContentType.JSON).createParser(NamedXContentRegistry.EMPTY, DeprecationHandler.THROW_UNSUPPORTED_OPERATION, extraParametersString).map();
+                                } catch (IOException e) {
+                                    throw new IllegalStateException(e);
+                                }
+
+                            }
+
+                            KNNFaissIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, extraParameterMap, spaceType,
                                     method);
                         } else {
                             throw new IllegalStateException("Invalid engine");

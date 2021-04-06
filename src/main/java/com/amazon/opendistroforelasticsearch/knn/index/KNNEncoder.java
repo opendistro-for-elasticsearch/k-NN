@@ -17,33 +17,39 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import java.util.Map;
 
+/**
+ * This needs to be refactored a little bit
+ *
+ * What is it's purpose?
+ *
+ * This is really not different than any component. I dont think we need a separate class for this
+ */
 public class KNNEncoder {
 
-    public KNNEncoder(String name, Map<String, Class<?>> validParameters) {
+    public KNNEncoder(String name, Map<String, MethodParameter<?>> validParameters) {
         this.name = name;
         this.validParameters = validParameters;
     }
 
     // An encoder will need a Name, a set of allowed parameters
     protected String name;
-    private Map<String, Class<?>> validParameters;
+    private Map<String, MethodParameter<?>> validParameters;
 
 
-    public boolean validate(KNNMethodContext.ComponentContext encoderContext) {
-        // Validate parameters
+    public boolean validate(KNNMethodContext.MethodComponentContext encoderContext) {
         for (Map.Entry<String, Object> parameter : encoderContext.getParameters().entrySet()) {
             if (!validParameters.containsKey(parameter.getKey())) {
                 return false;
             }
 
-            if (validParameters.get(parameter.getKey()) != parameter.getValue().getClass()) {
+            if (validParameters.get(parameter.getKey()).checkType(parameter.getValue())) {
                 return false;
             }
         }
         return true;
     }
 
-    public String buildString(KNNMethodContext.ComponentContext encoderContext) {
+    public String buildString(KNNMethodContext.MethodComponentContext encoderContext) {
         return name;
     }
 }

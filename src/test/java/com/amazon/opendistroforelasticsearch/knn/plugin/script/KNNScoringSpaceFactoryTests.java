@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
-import com.amazon.opendistroforelasticsearch.knn.index.SpaceTypes;
+import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 
 import java.util.ArrayList;
@@ -35,18 +35,18 @@ public class KNNScoringSpaceFactoryTests extends KNNTestCase {
         List<Float> floatQueryObject = new ArrayList<>();
         Long longQueryObject = 0L;
 
-        assertTrue(KNNScoringSpaceFactory.create(SpaceTypes.L2.getValue(), floatQueryObject, knnVectorFieldType)
+        assertTrue(KNNScoringSpaceFactory.create(SpaceType.L2.getValue(), floatQueryObject, knnVectorFieldType)
                 instanceof KNNScoringSpace.L2);
-        assertTrue(KNNScoringSpaceFactory.create(SpaceTypes.COSINESIMIL.getValue(), floatQueryObject,
+        assertTrue(KNNScoringSpaceFactory.create(SpaceType.COSINESIMIL.getValue(), floatQueryObject,
                 knnVectorFieldType) instanceof KNNScoringSpace.CosineSimilarity);
-        assertTrue(KNNScoringSpaceFactory.create(SpaceTypes.INNER_PRODUCT.getValue(), floatQueryObject,
+        assertTrue(KNNScoringSpaceFactory.create(SpaceType.INNER_PRODUCT.getValue(), floatQueryObject,
                 knnVectorFieldType) instanceof KNNScoringSpace.InnerProd);
-        assertTrue(KNNScoringSpaceFactory.create(SpaceTypes.HAMMING_BIT.getValue(), longQueryObject, numberFieldType)
+        assertTrue(KNNScoringSpaceFactory.create(SpaceType.HAMMING_BIT.getValue(), longQueryObject, numberFieldType)
                 instanceof KNNScoringSpace.HammingBit);
     }
 
     public void testInvalidSpace() {
-        expectThrows(IllegalArgumentException.class, () -> KNNScoringSpaceFactory.create(SpaceTypes.L2.getValue(),
+        expectThrows(IllegalArgumentException.class, () -> KNNScoringSpaceFactory.create(SpaceType.L2.getValue(),
                 null, null));
     }
 }

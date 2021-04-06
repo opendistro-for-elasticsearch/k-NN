@@ -27,7 +27,6 @@ import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.search.DocValuesFieldExistsQuery;
 import org.apache.lucene.search.Query;
 import org.elasticsearch.common.Explicit;
-import org.elasticsearch.common.ValidationException;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -51,10 +50,13 @@ import org.elasticsearch.search.lookup.SearchLookup;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_ENGINE;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_METHOD;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION;
@@ -64,6 +66,8 @@ import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_
 
 /**
  * Field Mapper for KNN vector type.
+ *
+ * Extends ParametrizedFieldMapper in order to easily configure mapping parameters.
  */
 public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
@@ -72,12 +76,20 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
     public static final String CONTENT_TYPE = "knn_vector";
     public static final String KNN_FIELD = "knn_field";
 
+    /**
+     * Define the max dimension a knn_vector mapping can have. This limit is somewhat arbitrary. In the future, we
+     * should make this configurable.
+     */
     static final int MAX_DIMENSION = 10000;
 
     private static KNNVectorFieldMapper toType(FieldMapper in) {
         return (KNNVectorFieldMapper) in;
     }
 
+    /**
+     * Builder for KNNVectorFieldMapper. This class defines the set of parameters that can be applied to the knn_vector
+     * field type
+     */
     public static class Builder extends ParametrizedFieldMapper.Builder {
         protected Boolean ignoreMalformed;
 
@@ -102,29 +114,21 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                     }
                     return value;
                 }, m -> toType(m).dimension);
-        private final Parameter<String> knnEngine = new Parameter<>(KNNConstants.KNNEngine, false,
-                KNNEngine.DEFAULT::getKnnEngineName, (n, c, o) -> KNNEngine.getEngine((String) o).getKnnEngineName(),
-                m -> toType(m).knnEngine);
 
-        private final Parameter<KNNMethodContext> knnMethodContext = new Parameter<>(KNNConstants.KNNMethod, false,
-                () -> new KNNMethodContext(KNNEngine.NMSLIB, SpaceTypes.L2, null, null, null),
-                (n, c, o) -> {
-                    try {
-                        return KNNMethodContext.parse(o, null, null);
-                    } catch (IOException e) {
-                        throw new MapperParsingException("Unable to parse k-NN Method Context parameter: " + e);
-                    }
-                }, m -> toType(m).knnMethod)
+        /**
+         * knnMethodContext parameter allows a user to define their k-NN library index configuration. Defaults to an L2
+         * hnsw default engine index without any parameters set
+         */
+        private final Parameter<KNNMethodContext> knnMethodContext = new Parameter<>(KNN_METHOD, false,
+                () -> new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.L2,
+                        new KNNMethodContext.MethodComponentContext("hnsw", Collections.emptyMap()), null, null),
+                (n, c, o) -> KNNMethodContext.parse(o, null, null), m -> toType(m).knnMethod)
                 .setSerializer(((b, n, v) ->{
                     b.startObject(n);
                     v.toXContent(b, ToXContent.EMPTY_PARAMS);
                     b.endObject();
-                }), KNNMethodContext::getName)
-                .setValidator(knnMethodContext1 -> {
-                    if (!knnMethodContext1.validate()) {
-                        throw new ValidationException();
-                    }
-                });
+                }), m -> m.getMethodComponent().getName())
+                .setValidator(KNNMethodContext::validate);
 
         private final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
@@ -145,7 +149,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         @Override
         protected List<Parameter<?>> getParameters() {
-            return Arrays.asList(stored, hasDocValues, dimension, meta, knnEngine, knnMethodContext);
+            return Arrays.asList(stored, hasDocValues, dimension, meta, knnMethodContext);
         }
 
         protected Explicit<Boolean> ignoreMalformed(BuilderContext context) {
@@ -160,20 +164,25 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         @Override
         public KNNVectorFieldMapper build(BuilderContext context) {
-            if (this.spaceType == null) {
-                this.spaceType = getSpaceType(context.indexSettings());
-            }
+            // Originally, a user using nmslib would set spaceType, m and efConstruction with index settings. We are in
+            // the process of moving these settings to mapping parameters. However, in order to support this legacy
+            // operation, we read index settings here
+            if (knnMethodContext.getValue().getEngine() == KNNEngine.NMSLIB) {
+                if (this.spaceType == null) {
+                    this.spaceType = getSpaceType(context.indexSettings());
+                }
 
-            if (this.m == null) {
-                this.m = getM(context.indexSettings());
-            }
+                if (this.m == null) {
+                    this.m = getM(context.indexSettings());
+                }
 
-            if (this.efConstruction == null) {
-                this.efConstruction = getEfConstruction(context.indexSettings());
+                if (this.efConstruction == null) {
+                    this.efConstruction = getEfConstruction(context.indexSettings());
+                }
             }
 
             return new KNNVectorFieldMapper(name, new KNNVectorFieldType(buildFullName(context), meta.getValue(),
-                    dimension.getValue(), knnEngine.getValue()), multiFieldsBuilder.build(this, context),
+                    dimension.getValue()), multiFieldsBuilder.build(this, context),
                     ignoreMalformed(context), this.spaceType, this.m, this.efConstruction, copyTo.build(), this);
         }
 
@@ -218,6 +227,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
             Builder builder = new KNNVectorFieldMapper.Builder(name);
             builder.parse(name, parserContext, node);
 
+            //TODO: Move validation to the parameter
             if (builder.dimension.getValue() == -1) {
                 throw new IllegalArgumentException("Dimension value missing for vector: " + name);
             }
@@ -229,12 +239,10 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
     public static class KNNVectorFieldType extends MappedFieldType {
 
         int dimension;
-        String knnEngine;
 
-        public KNNVectorFieldType(String name, Map<String, String> meta, int dimension, String knnEngine) {
+        public KNNVectorFieldType(String name, Map<String, String> meta, int dimension) {
             super(name, false, false, true, TextSearchInfo.NONE, meta);
             this.dimension = dimension;
-            this.knnEngine = knnEngine;
         }
 
         @Override
@@ -288,17 +296,22 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         this.hasDocValues = builder.hasDocValues.getValue();
         this.dimension = builder.dimension.getValue();
         this.knnMethod = builder.knnMethodContext.getValue();
-        this.knnEngine = knnMethod.getEngine().getKnnEngineName();
+        this.knnEngine = knnMethod.getEngine().getName();
         this.ignoreMalformed = ignoreMalformed;
         this.spaceType = spaceType;
         this.m = m;
         this.efConstruction = efConstruction;
         this.fieldType = new FieldType(Defaults.FIELD_TYPE);
-        this.fieldType.putAttribute(KNNConstants.SPACE_TYPE, spaceType);
-        this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_M, m);
-        this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, efConstruction);
-        this.fieldType.putAttribute(KNNConstants.KNNEngine, knnEngine);
-        this.fieldType.putAttribute(KNNConstants.KNNMethod, knnMethod.generateMethod());
+
+        if (KNNEngine.NMSLIB.getName().equals(knnEngine)) {
+            this.fieldType.putAttribute(KNNConstants.SPACE_TYPE, spaceType);
+            this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_M, m);
+            this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, efConstruction);
+        }
+
+        this.fieldType.putAttribute(KNN_ENGINE, knnEngine);
+        this.fieldType.putAttribute(KNN_METHOD, knnMethod.generateMethod());
+        this.fieldType.putAttribute(KNNConstants.EXTRA_PARAMETERS, knnMethod.generateExtraParameters());
         this.fieldType.freeze();
     }
 
@@ -319,7 +332,6 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
             FIELD_TYPE.setIndexOptions(IndexOptions.NONE);
             FIELD_TYPE.setDocValuesType(DocValuesType.BINARY);
             FIELD_TYPE.putAttribute(KNN_FIELD, "true"); //This attribute helps to determine knn field type
-            FIELD_TYPE.putAttribute(KNNConstants.KNNEngine, KNNEngine.DEFAULT.getKnnEngineName());
             FIELD_TYPE.freeze();
 
         }

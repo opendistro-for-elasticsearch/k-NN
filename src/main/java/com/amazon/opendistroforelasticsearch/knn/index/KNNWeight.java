@@ -82,8 +82,8 @@ public class KNNWeight extends Weight {
                 return null;
             }
 
-            KNNEngine knnEngine = KNNEngine.getEngine(fieldInfo.getAttribute(KNNConstants.KNNEngine));
-            logger.debug("[KNN] knnEngine for " + knnQuery.getField() + ": " + knnEngine.getKnnEngineName());
+            KNNEngine knnEngine = KNNEngine.getEngine(fieldInfo.getAttribute(KNNConstants.KNN_ENGINE));
+            logger.debug("[KNN] knnEngine for " + knnQuery.getField() + ": " + knnEngine.getName());
 
             String fileExtension = reader.getSegmentInfo().info.getUseCompoundFile()
                                                ? knnEngine.getCompoundExtension() : knnEngine.getExtension();
@@ -105,8 +105,8 @@ public class KNNWeight extends Weight {
             final KNNQueryResult[] results;
             final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
 
-            if ((fieldAttributes.containsValue(KNNEngine.NMSLIB.getKnnEngineName()) && index instanceof KNNNmsLibIndex)
-                    || (fieldAttributes.containsValue(KNNEngine.FAISS.getKnnEngineName())
+            if ((fieldAttributes.containsValue(KNNEngine.NMSLIB.getName()) && index instanceof KNNNmsLibIndex)
+                    || (fieldAttributes.containsValue(KNNEngine.FAISS.getName())
                     && index instanceof KNNFaissIndex)) {
                 results = index.queryIndex(
                         knnQuery.getQueryVector(),
