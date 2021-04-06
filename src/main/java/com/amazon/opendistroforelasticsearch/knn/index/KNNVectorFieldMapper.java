@@ -311,7 +311,11 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         this.fieldType.putAttribute(KNN_ENGINE, knnEngine);
         this.fieldType.putAttribute(KNN_METHOD, knnMethod.generateMethod());
-        this.fieldType.putAttribute(KNNConstants.EXTRA_PARAMETERS, knnMethod.generateExtraParameters());
+
+        if (KNNEngine.FAISS.getName().equals(knnEngine)) {
+            this.fieldType.putAttribute(KNNConstants.EXTRA_PARAMETERS, knnMethod.generateExtraParameters());
+        }
+
         this.fieldType.freeze();
     }
 
