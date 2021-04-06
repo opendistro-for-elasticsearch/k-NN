@@ -318,8 +318,7 @@ public class KNNIndexCache implements Closeable {
         if (indexPathUrl.contains(KNNEngine.NMSLIB.getExtension())) {
             knnIndex = KNNNmsLibIndex.loadIndex(indexPathUrl, getQueryParams(indexName), spaceType);
         } else if (indexPathUrl.contains(KNNEngine.FAISS.getExtension())) {
-            //TODO: Faiss doesnt need spaceType
-            knnIndex = KNNFaissIndex.loadIndex(indexPathUrl, getQueryParams(indexName), spaceType);
+            knnIndex = KNNFaissIndex.loadIndex(indexPathUrl, spaceType);
         } else {
             throw new IllegalArgumentException("[KNN] Invalid engine type for path: " + indexPathUrl);
         }

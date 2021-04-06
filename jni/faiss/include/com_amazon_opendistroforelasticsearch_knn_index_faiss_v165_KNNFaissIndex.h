@@ -29,7 +29,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
  * Signature: (Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_init
-  (JNIEnv *, jclass, jstring, jobjectArray, jstring);
+  (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex

@@ -40,13 +40,12 @@ public class KNNFaissIndex extends KNNIndex  {
      * Loads the knn index to memory for querying the neighbours
      *
      * @param indexPath path where the hnsw index is stored
-     * @param algoParams hnsw algorithm parameters
      * @param spaceType space type of the index
      * @return knn index that can be queried for k nearest neighbours
      */
-    public static KNNFaissIndex loadIndex(String indexPath, final String[] algoParams, final SpaceType spaceType) {
+    public static KNNFaissIndex loadIndex(String indexPath,final SpaceType spaceType) {
         long fileSize = computeFileSize(indexPath);
-        long indexPointer = init(indexPath, algoParams, spaceType.getValue());
+        long indexPointer = init(indexPath);
         return new KNNFaissIndex(indexPointer, fileSize, spaceType);
     }
 
@@ -79,7 +78,7 @@ public class KNNFaissIndex extends KNNIndex  {
 
 
     // Loads index and returns pointer to index
-    private static native long init(String indexPath, String[] algoParams, String spaceType);
+    private static native long init(String indexPath);
 
     // Deletes memory pointed to by index pointer (needs write lock)
     private static native void gc(long indexPointer);

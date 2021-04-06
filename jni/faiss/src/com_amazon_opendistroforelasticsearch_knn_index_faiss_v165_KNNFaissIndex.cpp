@@ -260,7 +260,7 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
 }
 
 JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_init
-        (JNIEnv* env, jclass cls,  jstring indexPath, jobjectArray algoParams, jstring spaceType)
+        (JNIEnv* env, jclass cls,  jstring indexPath)
 {
 
 	faiss::Index* indexReader = nullptr;
