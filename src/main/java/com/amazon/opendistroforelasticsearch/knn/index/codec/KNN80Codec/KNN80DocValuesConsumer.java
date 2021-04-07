@@ -58,6 +58,7 @@ import java.util.Map;
 
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.FAISS_NAME;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.NMSLIB_NAME;
+import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil.buildEngineFileName;
 
 /**
  * This class writes the KNN docvalues to the segments
@@ -113,7 +114,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
              * Make Engine Name Into FileName
              */
             BinaryDocValues values = valuesProducer.getBinary(field);
-            String engineFileName = String.format("%s_%s_%s%s", state.segmentInfo.name, knnEngine.getLatestBuildVersion(),
+            String engineFileName = buildEngineFileName(state.segmentInfo.name, knnEngine.getLatestBuildVersion(),
                     field.name, knnEngine.getExtension());
             String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(state.directory))).getDirectory().toString(),
                     engineFileName).toString();

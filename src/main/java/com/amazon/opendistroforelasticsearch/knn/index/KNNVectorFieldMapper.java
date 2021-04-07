@@ -60,6 +60,7 @@ import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_HNSW;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_EF_CONSTRUCTION;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_M;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.SPACE_TYPE;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION;
@@ -206,6 +207,8 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                                 .getDefaultValue().toString();
                     }
                 }
+            } else {
+                this.spaceType = knnMethodContext.getValue().getSpaceType().getValue();
             }
 
             return new KNNVectorFieldMapper(name, new KNNVectorFieldType(buildFullName(context), meta.getValue(),
@@ -216,7 +219,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         private String getSpaceType(Settings indexSettings) {
             String spaceType =  indexSettings.get(INDEX_KNN_SPACE_TYPE.getKey());
             if (spaceType == null) {
-                logger.info("[KNN] The setting \"" + KNNConstants.SPACE_TYPE + "\" was not set for the index. " +
+                logger.info("[KNN] The setting \"" + SPACE_TYPE + "\" was not set for the index. " +
                         "Likely caused by recent version upgrade. Setting the setting to the default value="
                         + INDEX_KNN_DEFAULT_SPACE_TYPE);
                 return INDEX_KNN_DEFAULT_SPACE_TYPE;
@@ -331,12 +334,12 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
         this.fieldType = new FieldType(Defaults.FIELD_TYPE);
 
         if (KNNEngine.NMSLIB.getName().equals(knnEngine)) {
-            this.fieldType.putAttribute(KNNConstants.SPACE_TYPE, spaceType);
             this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_M, m);
             this.fieldType.putAttribute(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, efConstruction);
         }
 
         this.fieldType.putAttribute(KNN_ENGINE, knnEngine);
+        this.fieldType.putAttribute(SPACE_TYPE, spaceType);
         this.fieldType.putAttribute(KNN_METHOD, knnMethod.generateMethod());
 
         if (KNNEngine.FAISS.getName().equals(knnEngine)) {

@@ -53,4 +53,9 @@ public class KNNCodecUtil {
         }
         return new KNNCodecUtil.Pair(docIdList.stream().mapToInt(Integer::intValue).toArray(), vectorList.toArray(new float[][]{}));
     }
+
+    public static String buildEngineFileName(String segmentName, String latestBuildVersion, String fieldName,
+                                             String extension) {
+        return String.format("%s_%s_%s%s", segmentName, latestBuildVersion, fieldName, extension);
+    }
 }

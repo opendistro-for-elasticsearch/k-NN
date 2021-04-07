@@ -148,10 +148,10 @@ public class KNNIndexCache implements Closeable {
      * @param indexName index name
      * @return KNNIndex holding the heap pointer of the loaded graph
      */
-    public KNNIndex getIndex(String key, final String indexName) {
+    public KNNIndex getIndex(String key, final String indexName, SpaceType spaceType) {
         try {
             //TODO if Type Not consistent
-            final KNNIndexCacheEntry knnIndexCacheEntry = cache.get(key, () -> loadIndex(key, indexName));
+            final KNNIndexCacheEntry knnIndexCacheEntry = cache.get(key, () -> loadIndex(key, indexName, spaceType));
             return knnIndexCacheEntry.getKnnIndex();
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
@@ -166,8 +166,9 @@ public class KNNIndexCache implements Closeable {
      * @param indexName Name of index
      * @return List of KNNIndex's from the segment paths
      */
-    public List<KNNIndex> getIndices(List<String> segmentPaths, String indexName) {
-        return segmentPaths.stream().map(segmentPath -> getIndex(segmentPath, indexName))
+    public List<KNNIndex> getIndices(Map<String, SpaceType> segmentPaths, String indexName) {
+        return segmentPaths.entrySet().stream()
+                .map(segmentPath -> getIndex(segmentPath.getKey(), indexName, segmentPath.getValue()))
                 .collect(Collectors.toList());
     }
 
@@ -294,7 +295,7 @@ public class KNNIndexCache implements Closeable {
      * @throws Exception Exception could occur when registering the index path
      * to Resource watcher or if the JNI call throws
      */
-    public KNNIndexCacheEntry loadIndex(String indexPathUrl, String indexName) throws Exception {
+    public KNNIndexCacheEntry loadIndex(String indexPathUrl, String indexName, SpaceType spaceType) throws Exception {
         if(Strings.isNullOrEmpty(indexPathUrl))
             throw new IllegalStateException("indexPath is null while performing load index");
         logger.debug("[KNN] Loading index: {}", indexPathUrl);
@@ -314,7 +315,7 @@ public class KNNIndexCache implements Closeable {
 
         // loadIndex from different library
         final KNNIndex knnIndex;
-        SpaceType spaceType = SpaceType.getSpace(KNNSettings.getSpaceType(indexName));
+
         if (indexPathUrl.contains(KNNEngine.NMSLIB.getExtension())) {
             knnIndex = KNNNmsLibIndex.loadIndex(indexPathUrl, getQueryParams(indexName), spaceType);
         } else if (indexPathUrl.contains(KNNEngine.FAISS.getExtension())) {

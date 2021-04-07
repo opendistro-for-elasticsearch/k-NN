@@ -83,6 +83,7 @@ public class KNNWeight extends Weight {
             }
 
             KNNEngine knnEngine = KNNEngine.getEngine(fieldInfo.getAttribute(KNNConstants.KNN_ENGINE));
+            SpaceType spaceType = SpaceType.getSpace(fieldInfo.getAttribute(KNNConstants.SPACE_TYPE));
             logger.debug("[KNN] knnEngine for " + knnQuery.getField() + ": " + knnEngine.getName());
 
             String fileExtension = reader.getSegmentInfo().info.getUseCompoundFile()
@@ -103,7 +104,7 @@ public class KNNWeight extends Weight {
 
             Path indexPath = PathUtils.get(directory, engineFiles.get(0));
             final KNNQueryResult[] results;
-            final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName());
+            final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName(), spaceType);
 
             if ((fieldAttributes.containsValue(KNNEngine.NMSLIB.getName()) && index instanceof KNNNmsLibIndex)
                     || (fieldAttributes.containsValue(KNNEngine.FAISS.getName())

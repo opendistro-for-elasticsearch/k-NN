@@ -15,28 +15,30 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
-import com.amazon.opendistroforelasticsearch.knn.index.nmslib.v2011.KNNNmsLibIndex;
+import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FilterLeafReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.SegmentInfo;
 import org.apache.lucene.index.SegmentReader;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.FilterDirectory;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.shard.IndexShard;
-import org.elasticsearch.index.shard.ShardPath;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil.buildEngineFileName;
+
 
 /**
  * KNNIndexShard wraps IndexShard and adds methods to perform k-NN related operations against the shard
@@ -89,7 +91,8 @@ public class KNNIndexShard {
         Engine.Searcher searcher = indexShard.acquireSearcher("knn-warmup");
         List<KNNIndex> indices;
         try {
-            indices = knnIndexCache.getIndices(getAllEnginePaths(searcher.getIndexReader()), getIndexName());
+            Map<String, SpaceType> allEnginePaths = getAllEnginePaths(searcher.getIndexReader());
+            indices = knnIndexCache.getIndices(allEnginePaths, getIndexName());
         } finally {
             searcher.close();
         }
@@ -103,29 +106,37 @@ public class KNNIndexShard {
      * @return List of engine file Paths
      * @throws IOException Thrown when the SegmentReader is attempting to read the segments files
      */
-    public List<String> getAllEnginePaths(IndexReader indexReader) throws IOException {
-        List<String> engineFiles = new ArrayList<>();
+    public Map<String, SpaceType> getAllEnginePaths(IndexReader indexReader) throws IOException {
+        Map<String, SpaceType> engineFiles = new HashMap<>();
         for (KNNEngine knnEngine : KNNEngine.values()) {
-            engineFiles.addAll(getEnginePaths(indexReader, knnEngine));
+            engineFiles.putAll(getEnginePaths(indexReader, knnEngine));
         }
         return engineFiles;
     }
 
-    private List<String> getEnginePaths(IndexReader indexReader, KNNEngine knnEngine) throws IOException {
-        List<String> engineFiles = new ArrayList<>();
+    private Map<String, SpaceType> getEnginePaths(IndexReader indexReader, KNNEngine knnEngine) throws IOException {
+        Map<String, SpaceType> engineFiles = new HashMap<>();
+
         for (LeafReaderContext leafReaderContext : indexReader.leaves()) {
             SegmentReader reader = (SegmentReader) FilterLeafReader.unwrap(leafReaderContext.reader());
             Path shardPath = ((FSDirectory) FilterDirectory.unwrap(reader.directory())).getDirectory();
-            engineFiles.addAll(reader.getSegmentInfo().files().stream()
-                    .filter(fileName -> fileName.endsWith(getEngineFileExtension(reader.getSegmentInfo().info, knnEngine)))
-                    .map(fileName -> shardPath.resolve(fileName).toString())
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList()));
+            String fileExtension = reader.getSegmentInfo().info.getUseCompoundFile()
+                    ? knnEngine.getCompoundExtension() : knnEngine.getExtension();
+
+            for (FieldInfo fieldInfo : reader.getFieldInfos()) {
+                if (fieldInfo.attributes().containsKey(KNNVectorFieldMapper.KNN_FIELD)) {
+                    SpaceType spaceType = SpaceType.getSpace(fieldInfo.attributes().get(KNNConstants.SPACE_TYPE));
+                    String engineFileName = buildEngineFileName(reader.getSegmentInfo().info.name,
+                            knnEngine.getLatestBuildVersion(), fieldInfo.name, fileExtension);
+
+                    engineFiles.putAll(reader.getSegmentInfo().files().stream()
+                            .filter(fileName -> fileName.equals(engineFileName))
+                            .map(fileName -> shardPath.resolve(fileName).toString())
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toMap(fileName -> fileName, fileName -> spaceType)));
+                }
+            }
         }
         return engineFiles;
-    }
-
-    private String getEngineFileExtension(SegmentInfo info, KNNEngine knnEngine) {
-        return info.getUseCompoundFile() ? knnEngine.getCompoundExtension() : knnEngine.getExtension();
     }
 }
