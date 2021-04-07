@@ -56,6 +56,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.FAISS_NAME;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.NMSLIB_NAME;
+
 /**
  * This class writes the KNN docvalues to the segments
  */
@@ -101,9 +104,9 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
              */
             if (!isKnnLibLatest()) {
                 KNNCounter.GRAPH_INDEX_ERRORS.increment();
-                throw new IllegalStateException("KNN library version mismatch. Correct version: " +
-                                                "HnswLib: " + NmsLibVersion.VNMSLIB_2011.indexLibraryVersion() +
-                                                "Faiss: "   + FAISSLibVersion.VFAISS_165.indexLibraryVersion());
+                throw new IllegalStateException("KNN library version mismatch. Correct version: " + NMSLIB_NAME + ": "
+                        + NmsLibVersion.VNMSLIB_2011.indexLibraryVersion() + FAISS_NAME + ": "
+                        + FAISSLibVersion.VFAISS_165.indexLibraryVersion());
             }
 
             /**

@@ -29,4 +29,22 @@ public class KNNConstants {
     public static final String ENCODER = "encoder";
     public static final String NAME = "name";
     public static final String PARAMETERS = "parameters";
+
+    public static final String NMSLIB_NAME = "NMSLIB";
+    public static final String FAISS_NAME = "FAISS";
+
+    public static final String NMSLIB_EXTENSION = ".hnsw";
+    public static final String FAISS_EXTENSION = ".faiss";
+
+    public static final String METHOD_HNSW = "hnsw";
+    public static final String METHOD_IVF = "ivf";
+
+    public static final String METHOD_PARAMETER_EF_CONSTRUCTION = "ef_construction";
+    public static final String METHOD_PARAMETER_M = "m";
+    public static final String METHOD_PARAMETER_NCENTROIDS = "ncentroids";
+    public static final String METHOD_PARAMETER_NPROBES = "nprobes";
+    public static final String METHOD_PARAMETER_CODE_SIZE = "code_size";
+
+    public static final String ENCODER_PQ = "pq";
+    public static final String ENCODER_FLAT = "flat";
 }

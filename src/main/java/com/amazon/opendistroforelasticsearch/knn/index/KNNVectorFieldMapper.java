@@ -57,6 +57,9 @@ import java.util.function.Supplier;
 
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_ENGINE;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_METHOD;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_HNSW;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_EF_CONSTRUCTION;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_M;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION;
@@ -121,7 +124,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
          */
         private final Parameter<KNNMethodContext> knnMethodContext = new Parameter<>(KNN_METHOD, false,
                 () -> new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.L2,
-                        new KNNMethodContext.MethodComponentContext("hnsw", Collections.emptyMap()), null, null),
+                        new KNNMethodContext.MethodComponentContext(METHOD_HNSW, Collections.emptyMap()), null, null),
                 (n, c, o) -> KNNMethodContext.parse(o, null, null), m -> toType(m).knnMethod)
                 .setSerializer(((b, n, v) ->{
                     b.startObject(n);
@@ -177,14 +180,14 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                 if (this.m == null && context.indexSettings().hasValue(INDEX_KNN_ALGO_PARAM_M_SETTING.getKey())) {
                     this.m = getM(context.indexSettings());
                 } else if (this.m == null) {
-                    KNNMethod knnMethod = KNNEngine.NMSLIB.getMethod("hnsw");
+                    KNNMethod knnMethod = KNNEngine.NMSLIB.getMethod(METHOD_HNSW);
                     KNNMethod.MethodComponent encoderComponent = knnMethod.getMainMethodComponent();
                     Map<String, Object> parameters = knnMethodContext.getValue().getMethodComponent().getParameters();
 
-                    if (parameters != null && parameters.containsKey("m")) {
-                        this.m = parameters.get("m").toString();
+                    if (parameters != null && parameters.containsKey(METHOD_PARAMETER_M)) {
+                        this.m = parameters.get(METHOD_PARAMETER_M).toString();
                     } else {
-                        this.m = encoderComponent.getParameters().get("m").getDefaultValue().toString();
+                        this.m = encoderComponent.getParameters().get(METHOD_PARAMETER_M).getDefaultValue().toString();
                     }
                 }
 
@@ -192,15 +195,15 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                         .hasValue(INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING.getKey())) {
                     this.efConstruction = getEfConstruction(context.indexSettings());
                 } else if (this.efConstruction == null) {
-                    KNNMethod knnMethod = KNNEngine.NMSLIB.getMethod("hnsw");
+                    KNNMethod knnMethod = KNNEngine.NMSLIB.getMethod(METHOD_HNSW);
                     KNNMethod.MethodComponent encoderComponent = knnMethod.getMainMethodComponent();
                     Map<String, Object> parameters = knnMethodContext.getValue().getMethodComponent().getParameters();
 
-                    if (parameters != null && parameters.containsKey("ef_construction")) {
-                        this.efConstruction = parameters.get("ef_construction").toString();
+                    if (parameters != null && parameters.containsKey(METHOD_PARAMETER_EF_CONSTRUCTION)) {
+                        this.efConstruction = parameters.get(METHOD_PARAMETER_EF_CONSTRUCTION).toString();
                     } else {
-                        this.efConstruction = encoderComponent.getParameters().get("ef_construction").getDefaultValue()
-                                .toString();
+                        this.efConstruction = encoderComponent.getParameters().get(METHOD_PARAMETER_EF_CONSTRUCTION)
+                                .getDefaultValue().toString();
                     }
                 }
             }

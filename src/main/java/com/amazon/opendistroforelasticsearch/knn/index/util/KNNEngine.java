@@ -31,6 +31,20 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COARSE_QUANTIZER;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.ENCODER_FLAT;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.ENCODER_PQ;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.FAISS_EXTENSION;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.FAISS_NAME;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_HNSW;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_IVF;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_CODE_SIZE;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_EF_CONSTRUCTION;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_M;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_NCENTROIDS;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_NPROBES;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.NMSLIB_EXTENSION;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.NMSLIB_NAME;
+
 
 /**
  * KNNEngine provides the functionality to validate and transform user defined indices into information that can be
@@ -39,12 +53,12 @@ import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COAR
  * Included in each engine definition are the supported methods with supported spaces and parameters.
  */
 public enum KNNEngine {
-    NMSLIB("NMSLIB", ".hnsw",
+    NMSLIB(NMSLIB_NAME, NMSLIB_EXTENSION,
             getNmslibSupportedMethods(),
             Collections.emptyMap(),
             NmsLibVersion.LATEST.getBuildVersion(),
             NmsLibVersion.LATEST.indexLibraryVersion()),
-    FAISS("FAISS", ".faiss",
+    FAISS(FAISS_NAME, FAISS_EXTENSION,
             getFaissSupportedMethods(),
             Collections.singletonMap(
                     SpaceType.INNER_PRODUCT, rawScore ->
@@ -324,7 +338,8 @@ public enum KNNEngine {
      */
     public static Map<String, KNNMethod> getNmslibSupportedMethods() {
         return Collections.singletonMap(
-                "hnsw", new KNNMethod("hnsw",
+                METHOD_HNSW, new KNNMethod(
+                        "hnsw",
                         ImmutableSet.of(
                                 SpaceType.L2,
                                 SpaceType.L1,
@@ -333,9 +348,8 @@ public enum KNNEngine {
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                "m", new KNNMethod.Parameter.IntegerParameter(16, false),
-                                "ef_construction", new KNNMethod.Parameter.IntegerParameter(512, false),
-                                "ef_search", new KNNMethod.Parameter.IntegerParameter(512, false)
+                                METHOD_PARAMETER_M, new KNNMethod.Parameter.IntegerParameter(16, false),
+                                METHOD_PARAMETER_EF_CONSTRUCTION, new KNNMethod.Parameter.IntegerParameter(512, false)
                         ),
                         getNmslibEncoders(),
                         false
@@ -350,32 +364,37 @@ public enum KNNEngine {
      */
     public static Map<String, KNNMethod> getFaissSupportedMethods() {
         return ImmutableMap.of(
-                "hnsw", new KNNMethod(
+                METHOD_HNSW, new KNNMethod(
                         "HNSW",
                         ImmutableSet.of(
                                 SpaceType.L2,
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                "m", new KNNMethod.Parameter.IntegerParameter(16, true)
+                                METHOD_PARAMETER_M, new KNNMethod.Parameter.IntegerParameter(16, true)
                         ),
                         getFaissEncoders(),
                         false
-                ), "ivf",
-                new KNNMethod(
+                ), METHOD_IVF, new KNNMethod(
                         "IVF",
                         ImmutableSet.of(
                                 SpaceType.L2,
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                "ncentroids", new KNNMethod.Parameter.IntegerParameter(16, true),
-                                "nprobes", new KNNMethod.Parameter.IntegerParameter(1, false)
+                                METHOD_PARAMETER_NCENTROIDS, new KNNMethod.Parameter.IntegerParameter(16, true),
+                                METHOD_PARAMETER_NPROBES, new KNNMethod.Parameter.IntegerParameter(1, false)
                         ),
                         getFaissEncoders(),
                         true
-                ), "flat", new KNNMethod("", ImmutableSet.of(SpaceType.L2, SpaceType.INNER_PRODUCT),
-                        Collections.emptyMap(), Collections.emptyMap(), false));
+                ), ENCODER_FLAT, new KNNMethod(
+                        "",
+                        ImmutableSet.of(SpaceType.L2, SpaceType.INNER_PRODUCT),
+                        Collections.emptyMap(),
+                        Collections.emptyMap(),
+                        false
+                )
+        );
     }
 
     /**
@@ -394,8 +413,8 @@ public enum KNNEngine {
      */
     public static Map<String, KNNMethod.MethodComponent> getFaissEncoders() {
         return ImmutableMap.of(
-                "pq", new KNNMethod.MethodComponent(
-                        "PQ",  ImmutableMap.of("code_size", new KNNMethod.Parameter.IntegerParameter(16, true))
+                ENCODER_PQ, new KNNMethod.MethodComponent(
+                        "PQ",  ImmutableMap.of(METHOD_PARAMETER_CODE_SIZE, new KNNMethod.Parameter.IntegerParameter(16, true))
                 )
         );
     }
