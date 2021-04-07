@@ -168,16 +168,40 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
             // the process of moving these settings to mapping parameters. However, in order to support this legacy
             // operation, we read index settings here
             if (knnMethodContext.getValue().getEngine() == KNNEngine.NMSLIB) {
-                if (this.spaceType == null) {
+                if (this.spaceType == null && context.indexSettings().hasValue(INDEX_KNN_SPACE_TYPE.getKey())) {
                     this.spaceType = getSpaceType(context.indexSettings());
+                } else if (this.spaceType == null) {
+                    this.spaceType = knnMethodContext.getValue().getSpaceType().getValue();
                 }
 
-                if (this.m == null) {
+                if (this.m == null && context.indexSettings().hasValue(INDEX_KNN_ALGO_PARAM_M_SETTING.getKey())) {
                     this.m = getM(context.indexSettings());
+                } else if (this.m == null) {
+                    KNNMethod knnMethod = KNNEngine.NMSLIB.getMethod("hnsw");
+                    KNNMethod.MethodComponent encoderComponent = knnMethod.getMainMethodComponent();
+                    Map<String, Object> parameters = knnMethodContext.getValue().getMethodComponent().getParameters();
+
+                    if (parameters != null && parameters.containsKey("m")) {
+                        this.m = parameters.get("m").toString();
+                    } else {
+                        this.m = encoderComponent.getParameters().get("m").getDefaultValue().toString();
+                    }
                 }
 
-                if (this.efConstruction == null) {
+                if (this.efConstruction == null && context.indexSettings()
+                        .hasValue(INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING.getKey())) {
                     this.efConstruction = getEfConstruction(context.indexSettings());
+                } else if (this.efConstruction == null) {
+                    KNNMethod knnMethod = KNNEngine.NMSLIB.getMethod("hnsw");
+                    KNNMethod.MethodComponent encoderComponent = knnMethod.getMainMethodComponent();
+                    Map<String, Object> parameters = knnMethodContext.getValue().getMethodComponent().getParameters();
+
+                    if (parameters != null && parameters.containsKey("ef_construction")) {
+                        this.efConstruction = parameters.get("ef_construction").toString();
+                    } else {
+                        this.efConstruction = encoderComponent.getParameters().get("ef_construction").getDefaultValue()
+                                .toString();
+                    }
                 }
             }
 

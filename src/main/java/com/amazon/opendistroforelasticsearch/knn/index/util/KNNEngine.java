@@ -187,6 +187,19 @@ public enum KNNEngine {
     }
 
     /**
+     * Get method associated with method name
+     *
+     * @param methodName name of method to be retrieved
+     * @return KNNMethod
+     */
+    public KNNMethod getMethod(String methodName) {
+        if (!methods.containsKey(methodName)) {
+            throw new IllegalArgumentException("Invalid method name: " + methodName);
+        }
+        return methods.get(methodName);
+    }
+
+    /**
      * Get the engine
      * @param name of engine to be fetched
      * @return KNNEngine corresponding to name
