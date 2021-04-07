@@ -17,13 +17,8 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import org.elasticsearch.common.ValidationException;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COURSE_QUANTIZER;
 
 /**
  * KNNMethod is used to define the structure of a method supported by a particular k-NN library. It is used to validate
@@ -35,38 +30,118 @@ public class KNNMethod {
      * KNNMethod Constructor
      *
      * @param name name of the method that is compatible with underlying library
-     * @param validSpaces set of valid space types that the method supports
+     * @param spaces set of valid space types that the method supports
      * @param parameters Map of parameters that the method requires
-     * @param validEncoders set of encoders that this method supports
+     * @param encoders set of encoders that this method supports
      * @param isCourseQuantizerAvailable whether this method can take a courseQuantizer
      */
-    public KNNMethod(String name, Set<SpaceType> validSpaces, Map<String, MethodParameter<?>> parameters,
-                     Map<String, KNNEncoder> validEncoders, boolean isCourseQuantizerAvailable) {
-        this.name = name;
-        this.validSpaces = validSpaces;
-        this.parameters = parameters;
-        this.validEncoders = validEncoders;
+    public KNNMethod(String name, Set<SpaceType> spaces, Map<String, Parameter<?>> parameters,
+                     Map<String, MethodComponent> encoders, boolean isCourseQuantizerAvailable) {
+        this.mainMethodComponent = new MethodComponent(name, parameters);
+        this.spaces = spaces;
+        this.encoders = encoders;
         this.isCourseQuantizerAvailable = isCourseQuantizerAvailable;
     }
 
-    private String name;
-    private Set<SpaceType> validSpaces;
-    private Map<String, MethodParameter<?>> parameters;
-    private Map<String, KNNEncoder> validEncoders;
+    private MethodComponent mainMethodComponent;
+    private Set<SpaceType> spaces;
+    private Map<String, MethodComponent> encoders;
     private boolean isCourseQuantizerAvailable;
 
     /**
-     * Validate that the knnMethodContext is compatible with this defined method structure. The method will throw a
-     * ValidationException if the knnMethodContext is deemed to be incompatible.
+     * getMainMethodComponent
      *
-     * @param knnMethodContext to be validated
+     * @return mainMethodComponent
      */
-    public void validate(KNNMethodContext knnMethodContext) {
-        // Validate that the parameters passed in for the main index are supported by this method and have the
-        // correct type
-        Map<String, Object> methodParameters = knnMethodContext.getMethodComponent().getParameters();
-        if (methodParameters != null) {
-            for (Map.Entry<String, Object> parameter : methodParameters.entrySet()) {
+    public MethodComponent getMainMethodComponent() {
+        return mainMethodComponent;
+    }
+
+    /**
+     * Determines whether the provided space is supported for this method
+     *
+     * @param space to be checked
+     * @return true if the space is supported; false otherwise
+     */
+    public boolean hasSpace(SpaceType space) {
+        return spaces.contains(space);
+    }
+
+    /**
+     * Return the encoder with encoderName as name
+     *
+     * @param encoderName name of encoder to be looked up
+     * @return KNNEncoder corresponding to encoderName
+     */
+    public MethodComponent getEncoder(String encoderName) {
+        if (!encoders.containsKey(encoderName)) {
+            throw new IllegalArgumentException("Invalid encoder: " + encoderName);
+        }
+        return encoders.get(encoderName);
+    }
+
+    /**
+     * Determine if this method supports a given encoder
+     *
+     * @param encoderName name of encoder to be looked up
+     * @return true if
+     */
+    public boolean hasEncoder(String encoderName) {
+        return encoders.containsKey(encoderName);
+    }
+
+    /**
+     * isCourseQuantizerAvailable
+     *
+     * @return true if course quantizer can be used with this method; false otherwise
+     */
+    public boolean isCourseQuantizerAvailable() {
+        return isCourseQuantizerAvailable;
+    }
+
+    /**
+     * MethodComponent defines the structure of an individual component that can make up an index
+     */
+    public static class MethodComponent {
+
+        /**
+         * Constructor
+         * @param name name of component
+         * @param parameters parameters that the component can take
+         */
+        public MethodComponent(String name, Map<String, Parameter<?>> parameters) {
+            this.name = name;
+            this.parameters = parameters;
+        }
+
+        protected String name;
+        private Map<String, Parameter<?>> parameters;
+
+        /**
+         * Get the name of the component
+         *
+         * @return name
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * Get the parameters for the component
+         *
+         * @return parameters
+         */
+        public Map<String, Parameter<?>> getParameters() {
+            return parameters;
+        }
+
+        /**
+         * Validate that the methodComponentContext is a valid configuration for this methodComponent
+         *
+         * @param methodComponentContext to be validated
+         */
+        public void validate(KNNMethodContext.MethodComponentContext methodComponentContext) {
+            for (Map.Entry<String, Object> parameter : methodComponentContext.getParameters().entrySet()) {
                 if (!parameters.containsKey(parameter.getKey())) {
                     throw new ValidationException();
                 }
@@ -76,99 +151,66 @@ public class KNNMethod {
                 }
             }
         }
+    }
 
+    /**
+     * Parameter that can be set for a method component
+     *
+     * @param <T> Type parameter takes
+     */
+    public static abstract class Parameter<T> {
+        /**
+         * Constructor
+         *
+         * @param defaultValue of the parameter
+         * @param inMethodString whether the parameter is included in method string
+         */
+        public Parameter(T defaultValue, boolean inMethodString) {
+            this.defaultValue = defaultValue;
+            this.inMethodString = inMethodString;
+        }
 
-        // If a course quantizer is provided by knnMethodContext, recursively validate the course quantizer
-        KNNMethodContext courseQuantizer = knnMethodContext.getCourseQuantizer();
-        if (courseQuantizer != null) {
-            if (!isCourseQuantizerAvailable) {
-                throw new ValidationException();
+        private T defaultValue;
+        private boolean inMethodString;
+
+        /**
+         * Get default value for parameter
+         *
+         * @return default value of the parameter
+         */
+        public T getDefaultValue() {
+            return defaultValue;
+        }
+
+        /**
+         * Is the parameter included in the method string
+         *
+         * @return true if the parameter should be included in the method string; false otherwise
+         */
+        public boolean isInMethodString() {
+            return inMethodString;
+        }
+
+        /**
+         * Check if the value passed in matches the parameter type
+         *
+         * @param value to be checked
+         * @return true if the type is correct; false otherwise
+         */
+        public abstract boolean checkType(Object value);
+
+        /**
+         * Integer method parameter
+         */
+        public static class IntegerParameter extends Parameter<Integer> {
+            public IntegerParameter(Integer defaultValue, boolean inMethodString) {
+                super(defaultValue, inMethodString);
             }
-            knnMethodContext.getEngine().validateMethod(courseQuantizer);
-        }
 
-        // Check if the provided encoder is valid
-        KNNMethodContext.MethodComponentContext encoderContext = knnMethodContext.getEncoder();
-
-        if (encoderContext != null) {
-            if (!validEncoders.containsKey(encoderContext.getName())) {
-                throw new ValidationException();
-            }
-
-            validEncoders.get(encoderContext.getName()).validate(encoderContext);
-        }
-    }
-
-    /**
-     * Return the encoder with encoderName as name
-     *
-     * @param encoderName name of encoder to be looked up
-     * @return KNNEncoder corresponding to encoderName
-     */
-    public KNNEncoder getEncoder(String encoderName) {
-        if (!validEncoders.containsKey(encoderName)) {
-            throw new IllegalArgumentException("Invalid encoder: " + encoderName);
-        }
-        return validEncoders.get(encoderName);
-    }
-
-    /**
-     * getName
-     *
-     * @return name of method
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Get valid parameters for this method
-     *
-     * @return valid parameters for this method
-     */
-    public Map<String, MethodParameter<?>> getParameters() {
-        return parameters;
-    }
-
-    /**
-     * Determines whether the parameter should be included as a part of the method string
-     *
-     * @param parameter to be checked
-     * @return true if the parameter should be included in the method string passed to the jni layer; false otherwise
-     */
-    public boolean isParameterInMethodString(String parameter) {
-        return parameters.containsKey(parameter) && parameters.get(parameter).isInMethodString();
-    }
-
-    /**
-     * Generates a map of the extra parameters that may not be included as a part of the method string. This function
-     * is called recursively in order to support sub-indices used for the courseQuantizer
-     *
-     * @param knnMethodContext to generate map for
-     * @return Map of extra parameters that can be passed to jni
-     */
-    public Map<String, Object> generateExtraParametersMap(KNNMethodContext knnMethodContext) {
-        if (knnMethodContext == null) {
-            return Collections.emptyMap();
-        }
-
-        Map<String, Object> extraParameters = new HashMap<>();
-        Map<String, Object> parameters = knnMethodContext.getMethodComponent().getParameters();
-        for (Map.Entry<String, MethodParameter<?>> parameter : getParameters().entrySet().stream()
-                .filter(m -> !m.getValue().isInMethodString())
-                .collect(Collectors.toSet())) {
-            if (parameters != null && parameters.containsKey(parameter.getKey())) {
-                extraParameters.put(parameter.getKey(), parameters.get(parameter.getKey()));
-            } else {
-                extraParameters.put(parameter.getKey(), parameter.getValue().getDefaultValue());
+            @Override
+            public boolean checkType(Object value) {
+                return value == null || value instanceof Integer;
             }
         }
-
-        KNNMethodContext courseQuantizer = knnMethodContext.getCourseQuantizer();
-        if (courseQuantizer != null) {
-            extraParameters.put(COURSE_QUANTIZER, generateExtraParametersMap(courseQuantizer));
-        }
-
-        return extraParameters;
     }
 }

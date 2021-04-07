@@ -15,8 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.util;
 
-import com.amazon.opendistroforelasticsearch.knn.index.MethodParameter;
-import com.amazon.opendistroforelasticsearch.knn.index.KNNEncoder;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNMethod;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNMethodContext;
 import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
@@ -27,10 +25,12 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.ValidationException;
 
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COURSE_QUANTIZER;
 
 /**
  * KNNEngine provides the functionality to validate and transform user defined indices into information that can be
@@ -52,47 +52,72 @@ public enum KNNEngine {
             ),
             FAISSLibVersion.LATEST.getBuildVersion(),
             FAISSLibVersion.LATEST.indexLibraryVersion()) {
-                @Override
-                public String generateMethod(KNNMethodContext knnMethodContext) {
-                    KNNMethod method = this.methods.get(knnMethodContext.getMethodComponent().getName());
-                    String methodName = this.methods.get(knnMethodContext.getMethodComponent().getName()).getName();
-                    StringBuilder result = new StringBuilder(methodName);
+        @Override
+        public String generateMethod(KNNMethodContext knnMethodContext) {
+            String methodName = knnMethodContext.getMethodComponent().getName();
+            KNNMethod knnMethod = methods.get(methodName);
 
-                    Map<String, Object> parameters = knnMethodContext.getMethodComponent().getParameters();
-                    String prefix = "";
-                    for (Map.Entry<String, MethodParameter<?>> parameter : method.getParameters().entrySet().stream()
-                            .filter(m -> m.getValue().isInMethodString())
-                            .collect(Collectors.toSet())) {
-                        result.append(prefix);
-                        if (parameters != null && parameters.containsKey(parameter.getKey())) {
-                            result.append(parameters.get(parameter.getKey()));
-                        } else {
-                            result.append(parameter.getValue().getDefaultValue());
-                        }
-                        prefix = "_";
-                    }
+            if (knnMethod == null) {
+                throw new IllegalArgumentException("Invalid method for faiss engine: " + methodName);
+            }
 
-                    if (knnMethodContext.getCourseQuantizer() != null) {
-                        result.append("(");
-                        result.append(this.generateMethod(knnMethodContext.getCourseQuantizer()));
-                        result.append(")");
-                    }
+            StringBuilder methodStringBuilder = new StringBuilder(knnMethod.getMainMethodComponent().getName());
 
-                    if (result.length() > 0) {
-                        result.append(",");
-                    }
-
-                    if (knnMethodContext.getEncoder() != null) {
-                        result.append(method.getEncoder(knnMethodContext.getEncoder().getName())
-                                .buildString(knnMethodContext.getEncoder()));
-                    } else {
-                        result.append("Flat");
-                    }
-
-                    logger.debug("[KNN] Faiss factory method description: " + result.toString());
-                    return result.toString();
+            // Attach all of the parameters for the main method component
+            Map<String, Object> parameters = knnMethodContext.getMethodComponent().getParameters();
+            String prefix = "";
+            for (Map.Entry<String, KNNMethod.Parameter<?>> parameter : knnMethod.getMainMethodComponent()
+                    .getParameters().entrySet().stream().filter(m -> m.getValue().isInMethodString())
+                    .collect(Collectors.toSet())) {
+                methodStringBuilder.append(prefix);
+                if (parameters != null && parameters.containsKey(parameter.getKey())) {
+                    methodStringBuilder.append(parameters.get(parameter.getKey()));
+                } else {
+                    methodStringBuilder.append(parameter.getValue().getDefaultValue());
                 }
-            };
+                prefix = "_";
+            }
+
+            // Add course quantizer if necessary
+            if (knnMethodContext.getCourseQuantizer() != null && !knnMethod.isCourseQuantizerAvailable()) {
+                throw new IllegalArgumentException("Cannot pass course quantizer for method: " + methodName);
+            } else if (knnMethodContext.getCourseQuantizer() != null) {
+                methodStringBuilder.append("(");
+                methodStringBuilder.append(generateMethod(knnMethodContext.getCourseQuantizer()));
+                methodStringBuilder.append(")");
+            }
+
+            if (methodStringBuilder.length() > 0) {
+                methodStringBuilder.append(",");
+            }
+
+            // Add encoding parameters
+            KNNMethodContext.MethodComponentContext encoderContext = knnMethodContext.getEncoder();
+            if (encoderContext != null && !knnMethod.hasEncoder(encoderContext.getName())) {
+                throw new IllegalArgumentException("Invalid encoder: " + encoderContext.getName());
+            } else if (encoderContext != null) {
+                KNNMethod.MethodComponent encoderComponent = knnMethod.getEncoder(encoderContext.getName());
+                methodStringBuilder.append(encoderComponent.getName());
+                parameters = encoderContext.getParameters();
+                prefix = "";
+                for (Map.Entry<String, KNNMethod.Parameter<?>> parameter : encoderComponent.getParameters().entrySet()
+                        .stream().filter(m -> m.getValue().isInMethodString()).collect(Collectors.toSet())) {
+                    methodStringBuilder.append(prefix);
+                    if (parameters != null && parameters.containsKey(parameter.getKey())) {
+                        methodStringBuilder.append(parameters.get(parameter.getKey()));
+                    } else {
+                        methodStringBuilder.append(parameter.getValue().getDefaultValue());
+                    }
+                    prefix = "_";
+                }
+            } else {
+                methodStringBuilder.append("Flat");
+            }
+
+            logger.debug("[KNN] Faiss factory method description: " + methodStringBuilder.toString());
+            return methodStringBuilder.toString();
+        }
+    };
 
     public static final KNNEngine DEFAULT = NMSLIB;
 
@@ -205,17 +230,41 @@ public enum KNNEngine {
             throw new ValidationException();
         }
 
-        methods.get(methodName).validate(knnMethodContext);
+        KNNMethod knnMethod = methods.get(methodName);
+
+        if (!knnMethod.hasSpace(knnMethodContext.getSpaceType())) {
+            throw new ValidationException();
+        }
+
+        knnMethod.getMainMethodComponent().validate(knnMethodContext.getMethodComponent());
+
+        KNNMethodContext courseQuantizerContext = knnMethodContext.getCourseQuantizer();
+        if (courseQuantizerContext != null && !knnMethod.isCourseQuantizerAvailable()) {
+            throw new ValidationException();
+        } else if (courseQuantizerContext != null) {
+            validateMethod(courseQuantizerContext);
+        }
+
+        KNNMethodContext.MethodComponentContext encoderContext = knnMethodContext.getEncoder();
+        if (encoderContext != null) {
+            knnMethod.getEncoder(encoderContext.getName()).validate(encoderContext);
+        }
     }
 
     /**
-     * Generate method string that will be passed to the library to build the index
+     * Generate method string that will be passed to the library to build the index. By default, the name of the
+     * method is returned. This should be overriden if an engine expects a different string description.
      *
      * @param knnMethodContext method definition to produce the string with
      * @return method string to be passed to the engine's library
      */
     public String generateMethod(KNNMethodContext knnMethodContext) {
-        return knnMethodContext.getMethodComponent().getName();
+        String methodName = knnMethodContext.getMethodComponent().getName();
+        if (!this.methods.containsKey(methodName)) {
+            throw new IllegalArgumentException("Invalid method: " + knnMethodContext.getMethodComponent().getName());
+        }
+
+        return this.methods.get(methodName).getMainMethodComponent().getName();
     }
 
     /**
@@ -226,8 +275,33 @@ public enum KNNEngine {
      * @return extra parameter map
      */
     public Map<String, Object> generateExtraParameterMap(KNNMethodContext knnMethodContext) {
-        KNNMethod method = this.methods.get(knnMethodContext.getMethodComponent().getName());
-        return method.generateExtraParametersMap(knnMethodContext);
+        String methodName = knnMethodContext.getMethodComponent().getName();
+        if (!this.methods.containsKey(methodName)) {
+            throw new IllegalArgumentException("Invalid method: " + knnMethodContext.getMethodComponent().getName());
+        }
+
+        KNNMethod knnMethod = this.methods.get(methodName);
+
+        Map<String, Object> extraParameterMap = new HashMap<>();
+        Map<String, Object> parameters = knnMethodContext.getMethodComponent().getParameters();
+
+        for (Map.Entry<String, KNNMethod.Parameter<?>> parameter : knnMethod.getMainMethodComponent()
+                .getParameters().entrySet().stream().filter(m -> !m.getValue().isInMethodString())
+                .collect(Collectors.toSet())) {
+            if (parameters != null && parameters.containsKey(parameter.getKey())) {
+                extraParameterMap.put(parameter.getKey(), parameters.get(parameter.getKey()));
+            } else {
+                extraParameterMap.put(parameter.getKey(), parameter.getValue().getDefaultValue());
+            }
+        }
+
+        if (knnMethodContext.getCourseQuantizer() != null && !knnMethod.isCourseQuantizerAvailable()) {
+            throw new IllegalArgumentException("Cannot pass course quantizer for method: " + methodName);
+        } else if (knnMethodContext.getCourseQuantizer() != null) {
+            extraParameterMap.put(COURSE_QUANTIZER, generateExtraParameterMap(knnMethodContext.getCourseQuantizer()));
+        }
+
+        return extraParameterMap;
     }
 
     /**
@@ -246,9 +320,9 @@ public enum KNNEngine {
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                "m", new MethodParameter.IntegerMethodParameter(16, false),
-                                "ef_construction", new MethodParameter.IntegerMethodParameter(512, false),
-                                "ef_search", new MethodParameter.IntegerMethodParameter(512, false)
+                                "m", new KNNMethod.Parameter.IntegerParameter(16, false),
+                                "ef_construction", new KNNMethod.Parameter.IntegerParameter(512, false),
+                                "ef_search", new KNNMethod.Parameter.IntegerParameter(512, false)
                         ),
                         getNmslibEncoders(),
                         false
@@ -270,7 +344,7 @@ public enum KNNEngine {
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                "m", new MethodParameter.IntegerMethodParameter(16, true)
+                                "m", new KNNMethod.Parameter.IntegerParameter(16, true)
                         ),
                         getFaissEncoders(),
                         false
@@ -282,8 +356,8 @@ public enum KNNEngine {
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                "ncentroids", new MethodParameter.IntegerMethodParameter(16, true),
-                                "nprobes", new MethodParameter.IntegerMethodParameter(1, false)
+                                "ncentroids", new KNNMethod.Parameter.IntegerParameter(16, true),
+                                "nprobes", new KNNMethod.Parameter.IntegerParameter(1, false)
                         ),
                         getFaissEncoders(),
                         true
@@ -296,7 +370,7 @@ public enum KNNEngine {
      *
      * @return Map of encoders nmslib supports
      */
-    public static Map<String, KNNEncoder> getNmslibEncoders() {
+    public static Map<String, KNNMethod.MethodComponent> getNmslibEncoders() {
         return Collections.emptyMap();
     }
 
@@ -305,26 +379,11 @@ public enum KNNEngine {
      *
      * @return Map of encoders faiss supports
      */
-    public static Map<String, KNNEncoder> getFaissEncoders() {
+    public static Map<String, KNNMethod.MethodComponent> getFaissEncoders() {
         return ImmutableMap.of(
-                "pq", new KNNEncoder(
-                        "PQ",  ImmutableMap.of("code_size", new MethodParameter.IntegerMethodParameter(16, true))
-                ) {
-                    @Override
-                    public String buildString(KNNMethodContext.MethodComponentContext encoderContext) {
-                        StringBuilder result = new StringBuilder(this.name);
-
-                        Iterator<Object> parameters = encoderContext.getParameters().values().iterator();
-
-                        while (parameters.hasNext()) {
-                            result.append(parameters.next().toString());
-                            if (parameters.hasNext()) {
-                                result.append("_");
-                            }
-                        }
-                        return result.toString();
-                    }
-                }
+                "pq", new KNNMethod.MethodComponent(
+                        "PQ",  ImmutableMap.of("code_size", new KNNMethod.Parameter.IntegerParameter(16, true))
+                )
         );
     }
 }
