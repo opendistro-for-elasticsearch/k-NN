@@ -33,20 +33,20 @@ public class KNNMethod {
      * @param spaces set of valid space types that the method supports
      * @param parameters Map of parameters that the method requires
      * @param encoders set of encoders that this method supports
-     * @param isCourseQuantizerAvailable whether this method can take a courseQuantizer
+     * @param isCoarseQuantizerAvailable whether this method can take a coarseQuantizer
      */
     public KNNMethod(String name, Set<SpaceType> spaces, Map<String, Parameter<?>> parameters,
-                     Map<String, MethodComponent> encoders, boolean isCourseQuantizerAvailable) {
+                     Map<String, MethodComponent> encoders, boolean isCoarseQuantizerAvailable) {
         this.mainMethodComponent = new MethodComponent(name, parameters);
         this.spaces = spaces;
         this.encoders = encoders;
-        this.isCourseQuantizerAvailable = isCourseQuantizerAvailable;
+        this.isCoarseQuantizerAvailable = isCoarseQuantizerAvailable;
     }
 
     private MethodComponent mainMethodComponent;
     private Set<SpaceType> spaces;
     private Map<String, MethodComponent> encoders;
-    private boolean isCourseQuantizerAvailable;
+    private boolean isCoarseQuantizerAvailable;
 
     /**
      * getMainMethodComponent
@@ -91,12 +91,12 @@ public class KNNMethod {
     }
 
     /**
-     * isCourseQuantizerAvailable
+     * isCoarseQuantizerAvailable
      *
-     * @return true if course quantizer can be used with this method; false otherwise
+     * @return true if coarse quantizer can be used with this method; false otherwise
      */
-    public boolean isCourseQuantizerAvailable() {
-        return isCourseQuantizerAvailable;
+    public boolean isCoarseQuantizerAvailable() {
+        return isCoarseQuantizerAvailable;
     }
 
     /**

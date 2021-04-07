@@ -105,7 +105,7 @@ void SetExtraParameters(JNIEnv *env, jobject parameterMap, faiss::Index * index)
                 } else {
                     throw std::runtime_error("Cannot call IntMethod on non-integer class");
                 }
-            } else if (key == "course_quantizer" && indexIvf->quantizer != nullptr) {
+            } else if (key == "coarse_quantizer" && indexIvf->quantizer != nullptr) {
                 SetExtraParameters(env, value, indexIvf->quantizer);
             }
             env->DeleteLocalRef(value);

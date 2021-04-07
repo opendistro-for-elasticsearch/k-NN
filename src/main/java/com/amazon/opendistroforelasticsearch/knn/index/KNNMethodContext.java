@@ -25,7 +25,7 @@ import org.elasticsearch.index.mapper.MapperParsingException;
 import java.io.IOException;
 import java.util.Map;
 
-import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COURSE_QUANTIZER;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COARSE_QUANTIZER;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.ENCODER;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_ENGINE;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.NAME;
@@ -40,24 +40,24 @@ import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.SPAC
  * 1. KNNEngine is the underlying library that will be used to build/search the index (nmslib or faiss)
  * 2. SpaceType is the space that the index should be built with
  * 3. Main method component is the top level library index definition
- * 4. Course quantization component is the KNNMethodContext for the course quantizer
+ * 4. Coarse quantization component is the KNNMethodContext for the coarse quantizer
  * 5. Encoder defines how vectors should be encoded
  *
  */
 public class KNNMethodContext implements ToXContentFragment {
     public KNNMethodContext(KNNEngine knnEngine, SpaceType spaceType, MethodComponentContext methodComponent,
-                            KNNMethodContext courseQuantizerContext, MethodComponentContext encoder) {
+                            KNNMethodContext coarseQuantizerContext, MethodComponentContext encoder) {
         this.knnEngine = knnEngine;
         this.spaceType = spaceType;
         this.methodComponent = methodComponent;
-        this.courseQuantizerContext = courseQuantizerContext;
+        this.coarseQuantizerContext = coarseQuantizerContext;
         this.encoder = encoder;
     }
 
     private KNNEngine knnEngine;
     private SpaceType spaceType;
     private MethodComponentContext methodComponent;
-    private KNNMethodContext courseQuantizerContext;
+    private KNNMethodContext coarseQuantizerContext;
     private MethodComponentContext encoder;
 
     /**
@@ -90,10 +90,10 @@ public class KNNMethodContext implements ToXContentFragment {
     /**
      * Gets the quantizer context for this component
      *
-     * @return courseQuantizerContext
+     * @return coarseQuantizerContext
      */
-    public KNNMethodContext getCourseQuantizer() {
-        return courseQuantizerContext;
+    public KNNMethodContext getCoarseQuantizer() {
+        return coarseQuantizerContext;
     }
 
     /**
@@ -147,12 +147,12 @@ public class KNNMethodContext implements ToXContentFragment {
     }
 
     /**
-     * Parses an Object into a KNNMethodContext. This can be called recursively for course quantizers
+     * Parses an Object into a KNNMethodContext. This can be called recursively for coarse quantizers
      *
      * @param in Object containing mapping to be parsed
-     * @param parentEngine engine type of parent. Relevant for recursion with course quantizers. Course quantizers must
+     * @param parentEngine engine type of parent. Relevant for recursion with coarse quantizers. Coarse quantizers must
      *                     have the same engine type as their parent index
-     * @param parentSpace spaceType of parent index. Relevant for recursion with course quantizers. For top level index,
+     * @param parentSpace spaceType of parent index. Relevant for recursion with coarse quantizers. For top level index,
      *                    this can be null
      * @return KNNMethodContext
      */
@@ -187,11 +187,11 @@ public class KNNMethodContext implements ToXContentFragment {
 
             MethodComponentContext knnMethod = MethodComponentContext.parse(in);
 
-            Object courseQuantizer = methodMap.get(COURSE_QUANTIZER);
-            KNNMethodContext knnCourseQuantizer = null;
+            Object coarseQuantizer = methodMap.get(COARSE_QUANTIZER);
+            KNNMethodContext knnCoarseQuantizer = null;
 
-            if (courseQuantizer != null) {
-                knnCourseQuantizer = parse(courseQuantizer, knnEngine, knnSpaceType);
+            if (coarseQuantizer != null) {
+                knnCoarseQuantizer = parse(coarseQuantizer, knnEngine, knnSpaceType);
             }
 
             Object encoder = methodMap.get(ENCODER);
@@ -201,7 +201,7 @@ public class KNNMethodContext implements ToXContentFragment {
                 knnEncoder = MethodComponentContext.parse(encoder);
             }
 
-            return new KNNMethodContext(knnEngine, knnSpaceType, knnMethod, knnCourseQuantizer, knnEncoder);
+            return new KNNMethodContext(knnEngine, knnSpaceType, knnMethod, knnCoarseQuantizer, knnEncoder);
         }
 
         throw new MapperParsingException("Unable to parse mapping into KNNMethodContext. Object not of type \"Map\"");
@@ -213,9 +213,9 @@ public class KNNMethodContext implements ToXContentFragment {
         builder.field(SPACE_TYPE, spaceType.getValue());
         builder = methodComponent.toXContent(builder, params);
 
-        if (courseQuantizerContext != null) {
-            builder.startObject(COURSE_QUANTIZER);
-            builder = courseQuantizerContext.toXContent(builder, params);
+        if (coarseQuantizerContext != null) {
+            builder.startObject(COARSE_QUANTIZER);
+            builder = coarseQuantizerContext.toXContent(builder, params);
             builder.endObject();
         }
 

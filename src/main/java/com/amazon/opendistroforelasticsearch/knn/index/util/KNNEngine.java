@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COURSE_QUANTIZER;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COARSE_QUANTIZER;
 
 /**
  * KNNEngine provides the functionality to validate and transform user defined indices into information that can be
@@ -78,12 +78,12 @@ public enum KNNEngine {
                 prefix = "_";
             }
 
-            // Add course quantizer if necessary
-            if (knnMethodContext.getCourseQuantizer() != null && !knnMethod.isCourseQuantizerAvailable()) {
-                throw new IllegalArgumentException("Cannot pass course quantizer for method: " + methodName);
-            } else if (knnMethodContext.getCourseQuantizer() != null) {
+            // Add coarse quantizer if necessary
+            if (knnMethodContext.getCoarseQuantizer() != null && !knnMethod.isCoarseQuantizerAvailable()) {
+                throw new IllegalArgumentException("Cannot pass coarse quantizer for method: " + methodName);
+            } else if (knnMethodContext.getCoarseQuantizer() != null) {
                 methodStringBuilder.append("(");
-                methodStringBuilder.append(generateMethod(knnMethodContext.getCourseQuantizer()));
+                methodStringBuilder.append(generateMethod(knnMethodContext.getCoarseQuantizer()));
                 methodStringBuilder.append(")");
             }
 
@@ -238,11 +238,11 @@ public enum KNNEngine {
 
         knnMethod.getMainMethodComponent().validate(knnMethodContext.getMethodComponent());
 
-        KNNMethodContext courseQuantizerContext = knnMethodContext.getCourseQuantizer();
-        if (courseQuantizerContext != null && !knnMethod.isCourseQuantizerAvailable()) {
+        KNNMethodContext coarseQuantizerContext = knnMethodContext.getCoarseQuantizer();
+        if (coarseQuantizerContext != null && !knnMethod.isCoarseQuantizerAvailable()) {
             throw new ValidationException();
-        } else if (courseQuantizerContext != null) {
-            validateMethod(courseQuantizerContext);
+        } else if (coarseQuantizerContext != null) {
+            validateMethod(coarseQuantizerContext);
         }
 
         KNNMethodContext.MethodComponentContext encoderContext = knnMethodContext.getEncoder();
@@ -295,10 +295,10 @@ public enum KNNEngine {
             }
         }
 
-        if (knnMethodContext.getCourseQuantizer() != null && !knnMethod.isCourseQuantizerAvailable()) {
-            throw new IllegalArgumentException("Cannot pass course quantizer for method: " + methodName);
-        } else if (knnMethodContext.getCourseQuantizer() != null) {
-            extraParameterMap.put(COURSE_QUANTIZER, generateExtraParameterMap(knnMethodContext.getCourseQuantizer()));
+        if (knnMethodContext.getCoarseQuantizer() != null && !knnMethod.isCoarseQuantizerAvailable()) {
+            throw new IllegalArgumentException("Cannot pass coarse quantizer for method: " + methodName);
+        } else if (knnMethodContext.getCoarseQuantizer() != null) {
+            extraParameterMap.put(COARSE_QUANTIZER, generateExtraParameterMap(knnMethodContext.getCoarseQuantizer()));
         }
 
         return extraParameterMap;
