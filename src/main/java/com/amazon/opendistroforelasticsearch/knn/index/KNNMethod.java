@@ -141,13 +141,16 @@ public class KNNMethod {
          * @param methodComponentContext to be validated
          */
         public void validate(KNNMethodContext.MethodComponentContext methodComponentContext) {
-            for (Map.Entry<String, Object> parameter : methodComponentContext.getParameters().entrySet()) {
-                if (!parameters.containsKey(parameter.getKey())) {
-                    throw new ValidationException();
-                }
+            Map<String, Object> providedParameters = methodComponentContext.getParameters();
+            if (providedParameters != null) {
+                for (Map.Entry<String, Object> parameter : providedParameters.entrySet()) {
+                    if (!parameters.containsKey(parameter.getKey())) {
+                        throw new ValidationException();
+                    }
 
-                if (!parameters.get(parameter.getKey()).checkType(parameter.getValue())) {
-                    throw new ValidationException();
+                    if (!parameters.get(parameter.getKey()).checkType(parameter.getValue())) {
+                        throw new ValidationException();
+                    }
                 }
             }
         }
