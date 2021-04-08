@@ -18,7 +18,7 @@ package com.amazon.opendistroforelasticsearch.knn.index.faiss.v165;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndex;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQueryResult;
 import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
-import com.amazon.opendistroforelasticsearch.knn.index.util.FAISSLibVersion;
+import com.amazon.opendistroforelasticsearch.knn.index.util.FaissLibVersion;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -27,10 +27,10 @@ import java.util.Map;
 import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter.GRAPH_INDEX_REQUESTS;
 
 public class KNNFaissIndex extends KNNIndex  {
-    public static FAISSLibVersion VERSION = FAISSLibVersion.VFAISS_165;
+    public static FaissLibVersion VERSION = FaissLibVersion.VFAISS_165;
     static {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            System.loadLibrary(FAISSLibVersion.VFAISS_165.indexLibraryVersion());
+            System.loadLibrary(FaissLibVersion.VFAISS_165.indexLibraryVersion());
             return null;
         });
         initLibrary();

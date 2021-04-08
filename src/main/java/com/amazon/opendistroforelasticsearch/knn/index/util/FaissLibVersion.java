@@ -15,7 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.util;
 
-public enum FAISSLibVersion {
+public enum FaissLibVersion {
 
     /**
      * Latest available faiss version
@@ -27,11 +27,11 @@ public enum FAISSLibVersion {
         }
     };
 
-    public static final FAISSLibVersion LATEST = VFAISS_165;
+    public static final FaissLibVersion LATEST = VFAISS_165;
 
     private String buildVersion;
 
-    FAISSLibVersion(String buildVersion) {
+    FaissLibVersion(String buildVersion) {
         this.buildVersion = buildVersion;
     }
 

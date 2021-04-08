@@ -64,8 +64,8 @@ public enum KNNEngine {
                     SpaceType.INNER_PRODUCT, rawScore ->
                             SpaceType.INNER_PRODUCT.scoreTranslation(-1*rawScore)
             ),
-            FAISSLibVersion.LATEST.getBuildVersion(),
-            FAISSLibVersion.LATEST.indexLibraryVersion()) {
+            FaissLibVersion.LATEST.getBuildVersion(),
+            FaissLibVersion.LATEST.indexLibraryVersion()) {
         @Override
         public String generateMethod(KNNMethodContext knnMethodContext) {
             String methodName = knnMethodContext.getMethodComponent().getName();
