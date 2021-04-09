@@ -44,6 +44,8 @@ public class KNNConstants {
     public static final String METHOD_PARAMETER_NCENTROIDS = "ncentroids";
     public static final String METHOD_PARAMETER_NPROBES = "nprobes";
     public static final String METHOD_PARAMETER_CODE_SIZE = "code_size";
+    public static final String TRAINING_DATASET_SIZE_LIMIT = "training_dataset_size_limit";
+    public static final String MINIMUM_DATAPOINTS = "minimum_datapoints";
 
     public static final String ENCODER_PQ = "pq";
     public static final String ENCODER_FLAT = "flat";

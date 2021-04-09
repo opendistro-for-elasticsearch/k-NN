@@ -122,7 +122,7 @@ void SetExtraParameters(JNIEnv *env, jobject parameterMap, faiss::Index * index)
  */
 JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_saveIndex
         (JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobject parameterMap,
-         jstring spaceType, jstring indexDescription)
+         jstring spaceType, jstring indexDescription, jint trainingDatasetSizeLimit, jint minimumDatapoints)
 {
     vector<int64_t> idVector;
     vector<float>   dataset;
@@ -171,8 +171,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_fais
 
         //---- Create IndexWriter from faiss index_factory
         // If data is less than a certain amount, just create a flat index
-        //TODO: Make this configurable
-        if (idVector.size() < 1000) {
+        if (idVector.size() < (int) minimumDatapoints) {
             indexWriter.reset(faiss::index_factory(dim, "Flat", metric));
         } else {
             std::string description = knn_jni::GetStringJenv(env, indexDescription);
@@ -185,15 +184,13 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_fais
 
         //---- Do Index
         if(!indexWriter->is_trained) {
-            //TODO: Make this configurable
-            int dataLimit = 5000;
-            if (idVector.size() <= dataLimit) {
+            if (idVector.size() <= (int) trainingDatasetSizeLimit) {
                 TrainIndex(indexWriter.get(), idVector.size(), dataset.data());
             } else {
                 vector<float>::const_iterator first = dataset.begin();
-                vector<float>::const_iterator last = dataset.begin() + dataLimit*dim;
+                vector<float>::const_iterator last = dataset.begin() + ((int) trainingDatasetSizeLimit)*dim;
                 vector<float> subDataVector(first, last);
-                TrainIndex(indexWriter.get(), dataLimit, subDataVector.data());
+                TrainIndex(indexWriter.get(), (int) trainingDatasetSizeLimit, subDataVector.data());
             }
         }
 

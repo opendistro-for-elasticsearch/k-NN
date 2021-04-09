@@ -28,9 +28,11 @@ import java.util.Map;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COARSE_QUANTIZER;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.ENCODER;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_ENGINE;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.MINIMUM_DATAPOINTS;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.NAME;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.PARAMETERS;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.SPACE_TYPE;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.TRAINING_DATASET_SIZE_LIMIT;
 
 /**
  * KNNMethodContext will contain the information necessary to produce a library index from an Elasticsearch mapping.
@@ -46,6 +48,12 @@ import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.SPAC
  */
 public class KNNMethodContext implements ToXContentFragment {
 
+    public static final Integer DEFAULT_TRAINING_DATASET_SIZE_LIMIT = 10000;
+    public static final Integer DEFAULT_MINIMUM_DATAPOINTS = 100;
+
+    public static final Integer MIN_TRAINING_DATASET_SIZE_LIMIT = 100;
+    public static final Integer MIN_MINIMUM_DATAPOINTS = 0;
+
     /**
      * Constructor
      *
@@ -54,14 +62,20 @@ public class KNNMethodContext implements ToXContentFragment {
      * @param methodComponent MethodComponent describing the main index
      * @param coarseQuantizerContext Coarse quantizer context
      * @param encoder MethodComponent describing encoder
+     * @param trainingDatasetSizeLimit Gets the maximum number of the points to be included in training phase
+     * @param minimumDatapoints The minimum number of datapoints needed to build specialized index. If there are not enough datapoints, the
+     *                          created segment will use the default representation
      */
     public KNNMethodContext(KNNEngine knnEngine, SpaceType spaceType, MethodComponentContext methodComponent,
-                            KNNMethodContext coarseQuantizerContext, MethodComponentContext encoder) {
+                            KNNMethodContext coarseQuantizerContext, MethodComponentContext encoder,
+                            Integer trainingDatasetSizeLimit, Integer minimumDatapoints) {
         this.knnEngine = knnEngine;
         this.spaceType = spaceType;
         this.methodComponent = methodComponent;
         this.coarseQuantizerContext = coarseQuantizerContext;
         this.encoder = encoder;
+        this.trainingDatasetSizeLimit = trainingDatasetSizeLimit;
+        this.minimumDatapoints = minimumDatapoints;
     }
 
     private KNNEngine knnEngine;
@@ -69,6 +83,9 @@ public class KNNMethodContext implements ToXContentFragment {
     private MethodComponentContext methodComponent;
     private KNNMethodContext coarseQuantizerContext;
     private MethodComponentContext encoder;
+
+    private Integer trainingDatasetSizeLimit;
+    private Integer minimumDatapoints;
 
     /**
      * Gets the main method component
@@ -113,6 +130,25 @@ public class KNNMethodContext implements ToXContentFragment {
      */
     public MethodComponentContext getEncoder() {
         return encoder;
+    }
+
+    /**
+     * Gets the maximum number of the points to be included in training phase
+     *
+     * @return trainingDatasetSizeLimit
+     */
+    public Integer getTrainingDatasetSizeLimit() {
+        return trainingDatasetSizeLimit;
+    }
+
+    /**
+     * Gets the minimum number of datapoints needed to build specialized index. If there are not enough datapoints, the
+     * created segment will use the default representation
+     *
+     * @return minimumDatapoints
+     */
+    public Integer getMinimumDatapoints() {
+        return minimumDatapoints;
     }
 
     /**
@@ -178,6 +214,9 @@ public class KNNMethodContext implements ToXContentFragment {
             Object coarseQuantizerValue = null;
             MethodComponentContext encoder = null;
 
+            Integer trainingDatasetSizeLimit = DEFAULT_TRAINING_DATASET_SIZE_LIMIT;
+            Integer minimumDatapoints = DEFAULT_MINIMUM_DATAPOINTS;
+
             String key;
             Object value;
             for (Map.Entry<String, Object> methodEntry : methodMap.entrySet()) {
@@ -232,6 +271,26 @@ public class KNNMethodContext implements ToXContentFragment {
                     coarseQuantizerValue = value;
                 } else if (ENCODER.equals(key)) {
                     encoder = MethodComponentContext.parse(value);
+                } else if (TRAINING_DATASET_SIZE_LIMIT.equals(key)) {
+                    if (value == null) {
+                        throw new MapperParsingException(TRAINING_DATASET_SIZE_LIMIT + " cannot be null");
+                    } else if (!(value instanceof Integer)) {
+                        throw new MapperParsingException(TRAINING_DATASET_SIZE_LIMIT + "has to be a Integer");
+                    } else if ((Integer) value < MIN_TRAINING_DATASET_SIZE_LIMIT) {
+                        throw new MapperParsingException(TRAINING_DATASET_SIZE_LIMIT + "has to be equal to or greater than 100");
+                    } else {
+                        trainingDatasetSizeLimit = (Integer) value;
+                    }
+                } else if (MINIMUM_DATAPOINTS.equals(key)) {
+                    if (value == null) {
+                        throw new MapperParsingException(MINIMUM_DATAPOINTS + " cannot be null");
+                    } else if (!(value instanceof Integer)) {
+                        throw new MapperParsingException(MINIMUM_DATAPOINTS + "has to be a Integer");
+                    } else if ((Integer) value < MIN_MINIMUM_DATAPOINTS) {
+                        throw new MapperParsingException(MINIMUM_DATAPOINTS + "has to be equal to or greater than 0");
+                    } else {
+                        minimumDatapoints = (Integer) value;
+                    }
                 } else {
                     throw new MapperParsingException("Invalid parameter: " + key);
                 }
@@ -244,7 +303,8 @@ public class KNNMethodContext implements ToXContentFragment {
                 coarseQuantizer = parse(coarseQuantizerValue, engine, spaceType);
             }
 
-            return new KNNMethodContext(engine, spaceType, method, coarseQuantizer, encoder);
+            return new KNNMethodContext(engine, spaceType, method, coarseQuantizer, encoder, trainingDatasetSizeLimit,
+                    minimumDatapoints);
         }
 
         throw new MapperParsingException("Unable to parse mapping into KNNMethodContext. Object not of type \"Map\"");
@@ -254,6 +314,8 @@ public class KNNMethodContext implements ToXContentFragment {
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.field(KNN_ENGINE, knnEngine.getName());
         builder.field(SPACE_TYPE, spaceType.getValue());
+        builder.field(TRAINING_DATASET_SIZE_LIMIT, trainingDatasetSizeLimit);
+        builder.field(MINIMUM_DATAPOINTS, minimumDatapoints);
         builder = methodComponent.toXContent(builder, params);
 
         if (coarseQuantizerContext != null) {

@@ -15,6 +15,7 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index.codec.KNN80Codec;
 
+import com.amazon.opendistroforelasticsearch.knn.index.KNNMethodContext;
 import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNNCodecUtil;
 import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFaissIndex;
@@ -92,6 +93,12 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             Map<String, String> fieldAttributes = field.attributes();
             String engineName = fieldAttributes.getOrDefault(KNNConstants.KNN_ENGINE, KNNEngine.DEFAULT.getName());
             String spaceType = fieldAttributes.getOrDefault(KNNConstants.SPACE_TYPE, SpaceType.L2.getValue());
+            int trainingDatasetSizeLimit = Integer.parseInt(fieldAttributes.getOrDefault(
+                    KNNConstants.TRAINING_DATASET_SIZE_LIMIT,
+                    KNNMethodContext.DEFAULT_TRAINING_DATASET_SIZE_LIMIT.toString()));
+            int minimumDatapoints = Integer.parseInt(fieldAttributes.getOrDefault(
+                    KNNConstants.MINIMUM_DATAPOINTS, KNNMethodContext.DEFAULT_MINIMUM_DATAPOINTS.toString()));
+
             String[] algoParams = getKNNIndexParams(fieldAttributes);
             KNNEngine knnEngine = KNNEngine.getEngine(engineName);
 
@@ -145,7 +152,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
                             }
 
                             KNNFaissIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, extraParameterMap, spaceType,
-                                    method);
+                                    method, trainingDatasetSizeLimit, minimumDatapoints);
                         } else {
                             throw new IllegalStateException("Invalid engine");
                         }

@@ -60,6 +60,7 @@ import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_HNSW;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_EF_CONSTRUCTION;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_M;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.MINIMUM_DATAPOINTS;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.SPACE_TYPE;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
@@ -125,7 +126,8 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
          */
         private final Parameter<KNNMethodContext> knnMethodContext = new Parameter<>(KNN_METHOD, false,
                 () -> new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.L2,
-                        new KNNMethodContext.MethodComponentContext(METHOD_HNSW, Collections.emptyMap()), null, null),
+                        new KNNMethodContext.MethodComponentContext(METHOD_HNSW, Collections.emptyMap()), null, null,
+                        KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT +1, KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1),
                 (n, c, o) -> KNNMethodContext.parse(o, null, null), m -> toType(m).knnMethod)
                 .setSerializer(((b, n, v) ->{
                     b.startObject(n);
@@ -340,6 +342,8 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         this.fieldType.putAttribute(KNN_ENGINE, knnEngine);
         this.fieldType.putAttribute(SPACE_TYPE, spaceType);
+        this.fieldType.putAttribute(MINIMUM_DATAPOINTS, knnMethod.getTrainingDatasetSizeLimit().toString());
+        this.fieldType.putAttribute(MINIMUM_DATAPOINTS, knnMethod.getMinimumDatapoints().toString());
         this.fieldType.putAttribute(KNN_METHOD, knnMethod.generateMethod());
 
         if (KNNEngine.FAISS.getName().equals(knnEngine)) {
