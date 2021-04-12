@@ -391,7 +391,7 @@ public enum KNNEngine {
                         "",
                         ImmutableSet.of(SpaceType.L2, SpaceType.INNER_PRODUCT),
                         Collections.emptyMap(),
-                        Collections.emptyMap(),
+                        getFaissEncoders(),
                         false
                 )
         );
