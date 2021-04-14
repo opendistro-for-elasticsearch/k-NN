@@ -39,6 +39,7 @@ import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METH
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_IVF;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_CODE_SIZE;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_EF_CONSTRUCTION;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_EF_SEARCH;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_M;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_NCENTROIDS;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_NPROBES;
@@ -371,7 +372,9 @@ public enum KNNEngine {
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                METHOD_PARAMETER_M, new KNNMethod.Parameter.IntegerParameter(16, true)
+                                METHOD_PARAMETER_M, new KNNMethod.Parameter.IntegerParameter(16, true),
+                                METHOD_PARAMETER_EF_CONSTRUCTION, new KNNMethod.Parameter.IntegerParameter(512, false),
+                                METHOD_PARAMETER_EF_SEARCH, new KNNMethod.Parameter.IntegerParameter(512, false)
                         ),
                         getFaissEncoders(),
                         false

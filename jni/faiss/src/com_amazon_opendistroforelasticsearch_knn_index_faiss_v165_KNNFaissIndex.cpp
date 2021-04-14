@@ -110,6 +110,25 @@ void SetExtraParameters(JNIEnv *env, jobject parameterMap, faiss::Index * index)
             }
             env->DeleteLocalRef(value);
         }
+
+        if (auto * indexHnsw = dynamic_cast<faiss::IndexHNSW*>(index)) {
+            if (key == "ef_construction") {
+                if (env->IsInstanceOf(value, integerClass)) {
+                    indexHnsw->hnsw.efConstruction = env->CallIntMethod(value, intValue);
+                    knn_jni::HasExceptionInStack(env, "Could not call \"intValue\" method on Integer");
+                } else {
+                    throw std::runtime_error("Cannot call IntMethod on non-integer class");
+                }
+            } else if (key == "ef_search") {
+                if (env->IsInstanceOf(value, integerClass)) {
+                    indexHnsw->hnsw.efSearch = env->CallIntMethod(value, intValue);
+                    knn_jni::HasExceptionInStack(env, "Could not call \"intValue\" method on Integer");
+                } else {
+                    throw std::runtime_error("Cannot call IntMethod on non-integer class");
+                }
+            }
+            env->DeleteLocalRef(value);
+        }
         env->DeleteLocalRef(entry);
     }
     env->DeleteLocalRef(parameterEntrySet);
