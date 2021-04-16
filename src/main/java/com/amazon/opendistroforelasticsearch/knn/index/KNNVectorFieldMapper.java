@@ -98,11 +98,12 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
     public static class Builder extends ParametrizedFieldMapper.Builder {
         protected Boolean ignoreMalformed;
 
-        private final Parameter<Boolean> stored = Parameter.boolParam("store", false,
+        protected final Parameter<Boolean> stored = Parameter.boolParam("store", false,
                 m -> toType(m).stored, false);
-        private final Parameter<Boolean> hasDocValues = Parameter.boolParam("doc_values", false,
+        protected final Parameter<Boolean> hasDocValues = Parameter.boolParam("doc_values", false,
                 m -> toType(m).hasDocValues,  true);
-        private final Parameter<Integer> dimension = new Parameter<>(KNNConstants.DIMENSION, false, () -> -1,
+        protected final Parameter<Integer> dimension = new Parameter<>(KNNConstants.DIMENSION, false,
+                () -> -1,
                 (n, c, o) -> {
                     if (o == null) {
                         throw new IllegalArgumentException("Dimension cannot be null");
@@ -124,10 +125,8 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
          * knnMethodContext parameter allows a user to define their k-NN library index configuration. Defaults to an L2
          * hnsw default engine index without any parameters set
          */
-        private final Parameter<KNNMethodContext> knnMethodContext = new Parameter<>(KNN_METHOD, false,
-                () -> new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.L2,
-                        new KNNMethodContext.MethodComponentContext(METHOD_HNSW, Collections.emptyMap()), null, null,
-                        KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT +1, KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1),
+        protected final Parameter<KNNMethodContext> knnMethodContext = new Parameter<>(KNN_METHOD, false,
+                () -> KNNMethodContext.DEFAULT,
                 (n, c, o) -> KNNMethodContext.parse(o, null, null), m -> toType(m).knnMethod)
                 .setSerializer(((b, n, v) ->{
                     b.startObject(n);
@@ -136,11 +135,11 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                 }), m -> m.getMethodComponent().getName())
                 .setValidator(KNNMethodContext::validate);
 
-        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        protected final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
-        private String spaceType;
-        private String m;
-        private String efConstruction;
+        protected String spaceType;
+        protected String m;
+        protected String efConstruction;
 
         public Builder(String name) {
             super(name);
@@ -184,7 +183,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                     this.m = getM(context.indexSettings());
                 } else if (this.m == null) {
                     KNNMethod knnMethod = KNNEngine.NMSLIB.getMethod(METHOD_HNSW);
-                    KNNMethod.MethodComponent encoderComponent = knnMethod.getMainMethodComponent();
+                    KNNMethod.MethodComponent encoderComponent = knnMethod.getMethodComponent();
                     Map<String, Object> parameters = knnMethodContext.getValue().getMethodComponent().getParameters();
 
                     if (parameters != null && parameters.containsKey(METHOD_PARAMETER_M)) {
@@ -199,7 +198,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                     this.efConstruction = getEfConstruction(context.indexSettings());
                 } else if (this.efConstruction == null) {
                     KNNMethod knnMethod = KNNEngine.NMSLIB.getMethod(METHOD_HNSW);
-                    KNNMethod.MethodComponent encoderComponent = knnMethod.getMainMethodComponent();
+                    KNNMethod.MethodComponent encoderComponent = knnMethod.getMethodComponent();
                     Map<String, Object> parameters = knnMethodContext.getValue().getMethodComponent().getParameters();
 
                     if (parameters != null && parameters.containsKey(METHOD_PARAMETER_EF_CONSTRUCTION)) {

@@ -73,6 +73,8 @@ public enum SpaceType {
         }
     };
 
+    public static SpaceType DEFAULT = L2;
+
     private final String value;
 
     SpaceType(String value) {

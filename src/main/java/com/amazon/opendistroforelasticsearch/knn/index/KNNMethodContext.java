@@ -23,11 +23,13 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.mapper.MapperParsingException;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COARSE_QUANTIZER;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.ENCODER;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_ENGINE;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_HNSW;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.MINIMUM_DATAPOINTS;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.NAME;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.PARAMETERS;
@@ -53,6 +55,10 @@ public class KNNMethodContext implements ToXContentFragment {
 
     public static final Integer MIN_TRAINING_DATASET_SIZE_LIMIT = 100;
     public static final Integer MIN_MINIMUM_DATAPOINTS = 0;
+
+    public static final KNNMethodContext DEFAULT = new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.DEFAULT,
+                        new KNNMethodContext.MethodComponentContext(METHOD_HNSW, Collections.emptyMap()), null, null,
+    KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT +1, KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
 
     /**
      * Constructor
@@ -249,9 +255,7 @@ public class KNNMethodContext implements ToXContentFragment {
                         }
                     }
                 } else if (NAME.equals(key)) {
-                    if (value == null) {
-                        throw new MapperParsingException(NAME + " cannot be null");
-                    } else if (!(value instanceof String)) {
+                    if (!(value instanceof String)) {
                         throw new MapperParsingException(NAME + "has to be a string");
                     } else {
                         name = (String) value;
@@ -272,9 +276,7 @@ public class KNNMethodContext implements ToXContentFragment {
                 } else if (ENCODER.equals(key)) {
                     encoder = MethodComponentContext.parse(value);
                 } else if (TRAINING_DATASET_SIZE_LIMIT.equals(key)) {
-                    if (value == null) {
-                        throw new MapperParsingException(TRAINING_DATASET_SIZE_LIMIT + " cannot be null");
-                    } else if (!(value instanceof Integer)) {
+                    if (!(value instanceof Integer)) {
                         throw new MapperParsingException(TRAINING_DATASET_SIZE_LIMIT + "has to be a Integer");
                     } else if ((Integer) value < MIN_TRAINING_DATASET_SIZE_LIMIT) {
                         throw new MapperParsingException(TRAINING_DATASET_SIZE_LIMIT + "has to be equal to or greater than 100");
@@ -282,9 +284,7 @@ public class KNNMethodContext implements ToXContentFragment {
                         trainingDatasetSizeLimit = (Integer) value;
                     }
                 } else if (MINIMUM_DATAPOINTS.equals(key)) {
-                    if (value == null) {
-                        throw new MapperParsingException(MINIMUM_DATAPOINTS + " cannot be null");
-                    } else if (!(value instanceof Integer)) {
+                    if (!(value instanceof Integer)) {
                         throw new MapperParsingException(MINIMUM_DATAPOINTS + "has to be a Integer");
                     } else if ((Integer) value < MIN_MINIMUM_DATAPOINTS) {
                         throw new MapperParsingException(MINIMUM_DATAPOINTS + "has to be equal to or greater than 0");
@@ -294,6 +294,10 @@ public class KNNMethodContext implements ToXContentFragment {
                 } else {
                     throw new MapperParsingException("Invalid parameter: " + key);
                 }
+            }
+
+            if (name.isEmpty()) {
+                throw new MapperParsingException(NAME + " needs to be set");
             }
 
             MethodComponentContext method = new MethodComponentContext(name, parameters);
@@ -366,17 +370,13 @@ public class KNNMethodContext implements ToXContentFragment {
                     key = methodEntry.getKey();
                     value = methodEntry.getValue();
                     if (NAME.equals(key)) {
-                        if (value == null) {
-                            throw new MapperParsingException("Component name needs to be set");
-                        } else if (!(value instanceof String)) {
+                        if (!(value instanceof String)) {
                             throw new MapperParsingException("Component name should be a string");
                         } else {
                             name = (String) value;
                         }
                     } else if (PARAMETERS.equals(key)) {
-                        if (value == null) {
-                            parameters = null;
-                        } else if (!(value instanceof Map)) {
+                        if (!(value instanceof Map)) {
                             throw new MapperParsingException("Unable to parse parameters for main method component");
                         } else {
                             @SuppressWarnings("unchecked")

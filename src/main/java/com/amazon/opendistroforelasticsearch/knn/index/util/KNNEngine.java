@@ -76,12 +76,12 @@ public enum KNNEngine {
                 throw new IllegalArgumentException("Invalid method for faiss engine: " + methodName);
             }
 
-            StringBuilder methodStringBuilder = new StringBuilder(knnMethod.getMainMethodComponent().getName());
+            StringBuilder methodStringBuilder = new StringBuilder(knnMethod.getMethodComponent().getName());
 
             // Attach all of the parameters for the main method component
             Map<String, Object> parameters = knnMethodContext.getMethodComponent().getParameters();
             String prefix = "";
-            for (Map.Entry<String, KNNMethod.Parameter<?>> parameter : knnMethod.getMainMethodComponent()
+            for (Map.Entry<String, KNNMethod.Parameter<?>> parameter : knnMethod.getMethodComponent()
                     .getParameters().entrySet().stream().filter(m -> m.getValue().isInMethodString())
                     .collect(Collectors.toSet())) {
                 methodStringBuilder.append(prefix);
@@ -264,7 +264,7 @@ public enum KNNEngine {
             throw new ValidationException();
         }
 
-        knnMethod.getMainMethodComponent().validate(knnMethodContext.getMethodComponent());
+        knnMethod.getMethodComponent().validate(knnMethodContext.getMethodComponent());
 
         KNNMethodContext coarseQuantizerContext = knnMethodContext.getCoarseQuantizer();
         if (coarseQuantizerContext != null && !knnMethod.isCoarseQuantizerAvailable()) {
@@ -292,7 +292,7 @@ public enum KNNEngine {
             throw new IllegalArgumentException("Invalid method: " + knnMethodContext.getMethodComponent().getName());
         }
 
-        return this.methods.get(methodName).getMainMethodComponent().getName();
+        return this.methods.get(methodName).getMethodComponent().getName();
     }
 
     /**
@@ -313,7 +313,7 @@ public enum KNNEngine {
         Map<String, Object> extraParameterMap = new HashMap<>();
         Map<String, Object> parameters = knnMethodContext.getMethodComponent().getParameters();
 
-        for (Map.Entry<String, KNNMethod.Parameter<?>> parameter : knnMethod.getMainMethodComponent()
+        for (Map.Entry<String, KNNMethod.Parameter<?>> parameter : knnMethod.getMethodComponent()
                 .getParameters().entrySet().stream().filter(m -> !m.getValue().isInMethodString())
                 .collect(Collectors.toSet())) {
             if (parameters != null && parameters.containsKey(parameter.getKey())) {
@@ -349,8 +349,10 @@ public enum KNNEngine {
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                METHOD_PARAMETER_M, new KNNMethod.Parameter.IntegerParameter(16, false),
-                                METHOD_PARAMETER_EF_CONSTRUCTION, new KNNMethod.Parameter.IntegerParameter(512, false)
+                                METHOD_PARAMETER_M, new KNNMethod.Parameter.IntegerParameter(16, false,
+                                        v -> v > 0),
+                                METHOD_PARAMETER_EF_CONSTRUCTION, new KNNMethod.Parameter.IntegerParameter(512, false,
+                                        v -> v > 0)
                         ),
                         getNmslibEncoders(),
                         false
@@ -372,9 +374,12 @@ public enum KNNEngine {
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                METHOD_PARAMETER_M, new KNNMethod.Parameter.IntegerParameter(16, true),
-                                METHOD_PARAMETER_EF_CONSTRUCTION, new KNNMethod.Parameter.IntegerParameter(512, false),
-                                METHOD_PARAMETER_EF_SEARCH, new KNNMethod.Parameter.IntegerParameter(512, false)
+                                METHOD_PARAMETER_M, new KNNMethod.Parameter.IntegerParameter(16, true,
+                                        v -> v > 0),
+                                METHOD_PARAMETER_EF_CONSTRUCTION, new KNNMethod.Parameter.IntegerParameter(512, false,
+                                        v -> v > 0),
+                                METHOD_PARAMETER_EF_SEARCH, new KNNMethod.Parameter.IntegerParameter(512, false,
+                                        v -> v > 0)
                         ),
                         getFaissEncoders(),
                         false
@@ -385,8 +390,10 @@ public enum KNNEngine {
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                METHOD_PARAMETER_NCENTROIDS, new KNNMethod.Parameter.IntegerParameter(16, true),
-                                METHOD_PARAMETER_NPROBES, new KNNMethod.Parameter.IntegerParameter(1, false)
+                                METHOD_PARAMETER_NCENTROIDS, new KNNMethod.Parameter.IntegerParameter(16, true,
+                                        v -> v > 0),
+                                METHOD_PARAMETER_NPROBES, new KNNMethod.Parameter.IntegerParameter(1, false,
+                                        v -> v > 0)
                         ),
                         getFaissEncoders(),
                         true
@@ -417,8 +424,10 @@ public enum KNNEngine {
     public static Map<String, KNNMethod.MethodComponent> getFaissEncoders() {
         return ImmutableMap.of(
                 ENCODER_PQ, new KNNMethod.MethodComponent(
-                        "PQ",  ImmutableMap.of(METHOD_PARAMETER_CODE_SIZE, new KNNMethod.Parameter.IntegerParameter(16, true))
-                )
+                        "PQ",  ImmutableMap.of(METHOD_PARAMETER_CODE_SIZE, new KNNMethod.Parameter.IntegerParameter(16, true,
+                        v -> v > 0))
+                ),
+                ENCODER_FLAT, new KNNMethod.MethodComponent("Flat", Collections.emptyMap())
         );
     }
 }

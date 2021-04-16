@@ -19,6 +19,7 @@ import org.elasticsearch.common.ValidationException;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * KNNMethod is used to define the structure of a method supported by a particular k-NN library. It is used to validate
@@ -37,13 +38,13 @@ public class KNNMethod {
      */
     public KNNMethod(String name, Set<SpaceType> spaces, Map<String, Parameter<?>> parameters,
                      Map<String, MethodComponent> encoders, boolean isCoarseQuantizerAvailable) {
-        this.mainMethodComponent = new MethodComponent(name, parameters);
+        this.methodComponent = new MethodComponent(name, parameters);
         this.spaces = spaces;
         this.encoders = encoders;
         this.isCoarseQuantizerAvailable = isCoarseQuantizerAvailable;
     }
 
-    private MethodComponent mainMethodComponent;
+    private MethodComponent methodComponent;
     private Set<SpaceType> spaces;
     private Map<String, MethodComponent> encoders;
     private boolean isCoarseQuantizerAvailable;
@@ -53,8 +54,8 @@ public class KNNMethod {
      *
      * @return mainMethodComponent
      */
-    public MethodComponent getMainMethodComponent() {
-        return mainMethodComponent;
+    public MethodComponent getMethodComponent() {
+        return methodComponent;
     }
 
     /**
@@ -148,7 +149,7 @@ public class KNNMethod {
                         throw new ValidationException();
                     }
 
-                    if (!parameters.get(parameter.getKey()).checkType(parameter.getValue())) {
+                    if (!parameters.get(parameter.getKey()).validate(parameter.getValue())) {
                         throw new ValidationException();
                     }
                 }
@@ -168,13 +169,15 @@ public class KNNMethod {
          * @param defaultValue of the parameter
          * @param inMethodString whether the parameter is included in method string
          */
-        public Parameter(T defaultValue, boolean inMethodString) {
+        public Parameter(T defaultValue, boolean inMethodString, Function<T, Boolean> validator) {
             this.defaultValue = defaultValue;
             this.inMethodString = inMethodString;
+            this.validator = validator;
         }
 
         private T defaultValue;
         private boolean inMethodString;
+        protected Function<T, Boolean> validator;
 
         /**
          * Get default value for parameter
@@ -195,24 +198,28 @@ public class KNNMethod {
         }
 
         /**
-         * Check if the value passed in matches the parameter type
+         * Check if the value passed in is valid
          *
          * @param value to be checked
-         * @return true if the type is correct; false otherwise
+         * @return true if the value is valid; false otherwise
          */
-        public abstract boolean checkType(Object value);
+        public abstract boolean validate(Object value);
 
         /**
          * Integer method parameter
          */
         public static class IntegerParameter extends Parameter<Integer> {
-            public IntegerParameter(Integer defaultValue, boolean inMethodString) {
-                super(defaultValue, inMethodString);
+            public IntegerParameter(Integer defaultValue, boolean inMethodString, Function<Integer, Boolean> validator)
+            {
+                super(defaultValue, inMethodString, validator);
             }
 
             @Override
-            public boolean checkType(Object value) {
-                return value == null || value instanceof Integer;
+            public boolean validate(Object value) {
+                if (!(value instanceof Integer)) {
+                    return false;
+                }
+                return validator.apply((Integer) value);
             }
         }
     }
