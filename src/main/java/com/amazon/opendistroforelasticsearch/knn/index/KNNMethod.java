@@ -20,6 +20,7 @@ import org.elasticsearch.common.ValidationException;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * KNNMethod is used to define the structure of a method supported by a particular k-NN library. It is used to validate
@@ -101,6 +102,40 @@ public class KNNMethod {
     }
 
     /**
+     * Validate that the configured KNNMethodContext is valid for this method
+     *
+     * @param knnMethodContext to be validated
+     */
+    public void validate(KNNMethodContext knnMethodContext) {
+        if (!hasSpace(knnMethodContext.getSpaceType())) {
+            throw new ValidationException();
+        }
+
+        // validate the main method and its parameters
+        methodComponent.validate(knnMethodContext.getMethodComponent());
+
+        // validate the encoder and its parameters
+        KNNMethodContext.MethodComponentContext encoderContext = knnMethodContext.getEncoder();
+        if (encoderContext != null) {
+            try {
+                getEncoder(encoderContext.getName()).validate(encoderContext);
+            } catch (IllegalArgumentException iae) {
+                throw new ValidationException();
+            }
+        }
+    }
+
+    /**
+     * Generate extra parameters that do not go in the method string
+     *
+     * @param knnMethodContext from where parameters are retrieved
+     * @return map of extra parameters
+     */
+    public Map<String, Object> generateExtraParameterMap(KNNMethodContext knnMethodContext) {
+        return methodComponent.generateExtraParameterMap(knnMethodContext.getMethodComponent().getParameters());
+    }
+
+    /**
      * MethodComponent defines the structure of an individual component that can make up an index
      */
     public static class MethodComponent {
@@ -137,6 +172,16 @@ public class KNNMethod {
         }
 
         /**
+         * Generate extra parameters for this component that are not contained in method string
+         *
+         * @return map of extra parameters
+         */
+        public Map<String, Object> generateExtraParameterMap(Map<String, Object> inParameters) {
+            return inParameters.entrySet().stream().filter(v -> !parameters.get(v.getKey()).isInMethodString()).collect(
+                    Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
+
+        /**
          * Validate that the methodComponentContext is a valid configuration for this methodComponent
          *
          * @param methodComponentContext to be validated
@@ -149,9 +194,7 @@ public class KNNMethod {
                         throw new ValidationException();
                     }
 
-                    if (!parameters.get(parameter.getKey()).validate(parameter.getValue())) {
-                        throw new ValidationException();
-                    }
+                    parameters.get(parameter.getKey()).validate(parameter.getValue());
                 }
             }
         }
@@ -201,9 +244,8 @@ public class KNNMethod {
          * Check if the value passed in is valid
          *
          * @param value to be checked
-         * @return true if the value is valid; false otherwise
          */
-        public abstract boolean validate(Object value);
+        public abstract void validate(Object value);
 
         /**
          * Integer method parameter
@@ -215,11 +257,10 @@ public class KNNMethod {
             }
 
             @Override
-            public boolean validate(Object value) {
-                if (!(value instanceof Integer)) {
-                    return false;
+            public void validate(Object value) {
+                if (!(value instanceof Integer) || !validator.apply((Integer) value)) {
+                    throw new ValidationException();
                 }
-                return validator.apply((Integer) value);
             }
         }
     }

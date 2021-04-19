@@ -24,7 +24,6 @@ import com.google.common.collect.ImmutableSet;
 import org.elasticsearch.common.ValidationException;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -44,7 +43,7 @@ import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METH
 /**
  * KNNLibrary is an interface that helps the plugin communicate with k-NN libraries
  */
-interface KNNLibrary {
+public interface KNNLibrary {
 
     /**
      * Gets the library's latest build version
@@ -134,8 +133,11 @@ interface KNNLibrary {
         /**
          * Constructor for NativeLibrary
          *
-         * @param methods set of methods the native library supports
+         * @param methods map of methods the native library supports
          * @param scoreTranslation Map of translation of space type to scores returned by the library
+         * @param latestLibraryBuildVersion String representation of latest build version of the library
+         * @param latestLibraryVersion String representation of latest version of the library
+         * @param extension String representing the extension that library files should use
          */
         public NativeLibrary(Map<String, KNNMethod> methods, Map<SpaceType, Function<Float, Float>> scoreTranslation,
                              String latestLibraryBuildVersion, String latestLibraryVersion, String extension)
@@ -192,12 +194,14 @@ interface KNNLibrary {
             }
 
             KNNMethod knnMethod = methods.get(methodName);
+            knnMethod.validate(knnMethodContext);
 
-            if (!knnMethod.hasSpace(knnMethodContext.getSpaceType())) {
+            KNNMethodContext coarseQuantizerContext = knnMethodContext.getCoarseQuantizer();
+            if (coarseQuantizerContext != null && !knnMethod.isCoarseQuantizerAvailable()) {
                 throw new ValidationException();
+            } else if (coarseQuantizerContext != null) {
+                validateMethod(coarseQuantizerContext);
             }
-
-            knnMethod.getMethodComponent().validate(knnMethodContext.getMethodComponent());
         }
 
         @Override
@@ -213,7 +217,21 @@ interface KNNLibrary {
 
         @Override
         public Map<String, Object> generateExtraParameterMap(KNNMethodContext knnMethodContext) {
-            throw new UnsupportedOperationException();
+            String methodName = knnMethodContext.getMethodComponent().getName();
+            if (!this.methods.containsKey(methodName)) {
+                throw new IllegalArgumentException("Invalid method: " + knnMethodContext.getMethodComponent().getName());
+            }
+
+            KNNMethod knnMethod = this.methods.get(methodName);
+            Map<String, Object> extraParameterMap = knnMethod.generateExtraParameterMap(knnMethodContext);
+
+            if (knnMethodContext.getCoarseQuantizer() != null && !knnMethod.isCoarseQuantizerAvailable()) {
+                throw new IllegalArgumentException("Cannot pass coarse quantizer for method: " + methodName);
+            } else if (knnMethodContext.getCoarseQuantizer() != null) {
+                extraParameterMap.put(COARSE_QUANTIZER, generateExtraParameterMap(knnMethodContext.getCoarseQuantizer()));
+            }
+
+            return extraParameterMap;
         }
     }
 
@@ -346,26 +364,6 @@ interface KNNLibrary {
         }
 
         @Override
-        public void validateMethod(KNNMethodContext knnMethodContext) {
-            super.validateMethod(knnMethodContext);
-
-            // Extra validation for coarse quantizer and encoder
-            KNNMethod knnMethod = methods.get(knnMethodContext.getMethodComponent().getName());
-
-            KNNMethodContext coarseQuantizerContext = knnMethodContext.getCoarseQuantizer();
-            if (coarseQuantizerContext != null && !knnMethod.isCoarseQuantizerAvailable()) {
-                throw new ValidationException();
-            } else if (coarseQuantizerContext != null) {
-                validateMethod(coarseQuantizerContext);
-            }
-
-            KNNMethodContext.MethodComponentContext encoderContext = knnMethodContext.getEncoder();
-            if (encoderContext != null) {
-                knnMethod.getEncoder(encoderContext.getName()).validate(encoderContext);
-            }
-        }
-
-        @Override
         public String generateMethod(KNNMethodContext knnMethodContext) {
             String methodName = knnMethodContext.getMethodComponent().getName();
             KNNMethod knnMethod = methods.get(methodName);
@@ -428,37 +426,6 @@ interface KNNLibrary {
             }
 
             return methodStringBuilder.toString();
-        }
-
-        @Override
-        public Map<String, Object> generateExtraParameterMap(KNNMethodContext knnMethodContext) {
-            String methodName = knnMethodContext.getMethodComponent().getName();
-            if (!this.methods.containsKey(methodName)) {
-                throw new IllegalArgumentException("Invalid method: " + knnMethodContext.getMethodComponent().getName());
-            }
-
-            KNNMethod knnMethod = this.methods.get(methodName);
-
-            Map<String, Object> extraParameterMap = new HashMap<>();
-            Map<String, Object> parameters = knnMethodContext.getMethodComponent().getParameters();
-
-            for (Map.Entry<String, KNNMethod.Parameter<?>> parameter : knnMethod.getMethodComponent()
-                    .getParameters().entrySet().stream().filter(m -> !m.getValue().isInMethodString())
-                    .collect(Collectors.toSet())) {
-                if (parameters != null && parameters.containsKey(parameter.getKey())) {
-                    extraParameterMap.put(parameter.getKey(), parameters.get(parameter.getKey()));
-                } else {
-                    extraParameterMap.put(parameter.getKey(), parameter.getValue().getDefaultValue());
-                }
-            }
-
-            if (knnMethodContext.getCoarseQuantizer() != null && !knnMethod.isCoarseQuantizerAvailable()) {
-                throw new IllegalArgumentException("Cannot pass coarse quantizer for method: " + methodName);
-            } else if (knnMethodContext.getCoarseQuantizer() != null) {
-                extraParameterMap.put(COARSE_QUANTIZER, generateExtraParameterMap(knnMethodContext.getCoarseQuantizer()));
-            }
-
-            return extraParameterMap;
         }
     }
 }
