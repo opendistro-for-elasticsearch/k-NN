@@ -56,6 +56,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_METHOD;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.NAME;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache.GRAPH_COUNT;
 import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.StatNames.INDICES_IN_CACHE;
 
@@ -252,7 +254,24 @@ public class KNNRestTestCase extends ODFERestTestCase {
                 .startObject(fieldName)
                 .field("type", "knn_vector")
                 .field("dimension", dimensions.toString())
+                .startObject(KNN_METHOD)
                 .field(KNNConstants.KNN_ENGINE, engine.getName())
+                .endObject()
+                .endObject()
+                .endObject()
+                .endObject());
+    }
+
+    protected String createKnnIndexMapping(String fieldName, Integer dimensions, KNNEngine engine, String method) throws IOException {
+        return Strings.toString(XContentFactory.jsonBuilder().startObject()
+                .startObject("properties")
+                .startObject(fieldName)
+                .field("type", "knn_vector")
+                .field("dimension", dimensions.toString())
+                .startObject(KNN_METHOD)
+                .field(KNNConstants.KNN_ENGINE, engine.getName())
+                .field(NAME, method)
+                .endObject()
                 .endObject()
                 .endObject()
                 .endObject());

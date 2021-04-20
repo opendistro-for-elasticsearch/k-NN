@@ -24,6 +24,7 @@ import org.elasticsearch.common.settings.Settings;
 import java.util.Collections;
 import java.util.Map;
 
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_HNSW;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNCircuitBreaker.CB_TIME_INTERVAL;
 
 /**
@@ -54,11 +55,13 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
         String indexName1 = INDEX_NAME + "1";
         String indexName2 = INDEX_NAME + "2";
 
-        createKnnIndex(indexName1, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.NMSLIB));
-        createKnnIndex(indexName2, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.NMSLIB));
+        createKnnIndex(indexName1, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.NMSLIB,
+                METHOD_HNSW));
+        createKnnIndex(indexName2, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.NMSLIB,
+                METHOD_HNSW));
 
         Float[] vector = {1.3f, 2.2f};
-        int docsInIndex = 5; // through testing, 7 is minimum number of docs to trip circuit breaker at 1kb
+        int docsInIndex = 5; // through testing, 5 is minimum number of docs to trip circuit breaker at 1kb
 
         for (int i = 0; i < docsInIndex; i++) {
             addKnnDoc(indexName1, Integer.toString(i), FIELD_NAME, vector);
@@ -88,7 +91,7 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
         assertFalse(isCbTripped());
 
         // Set circuit breaker limit to 1 KB
-        updateClusterSettings("knn.memory.circuit_breaker.limit", "2kb");
+        updateClusterSettings("knn.memory.circuit_breaker.limit", "1kb");
 
         // Create index with 1 primary and numNodes-1 replicas so that the data will be on every node in the cluster
         int numNodes = Integer.parseInt(System.getProperty("cluster.number_of_nodes"));
@@ -101,11 +104,13 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
         String indexName1 = INDEX_NAME + "1";
         String indexName2 = INDEX_NAME + "2";
 
-        createKnnIndex(indexName1, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.FAISS));
-        createKnnIndex(indexName2, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.FAISS));
+        createKnnIndex(indexName1, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.FAISS,
+                METHOD_HNSW));
+        createKnnIndex(indexName2, settings, createKnnIndexMapping(FIELD_NAME, 2, KNNEngine.FAISS,
+                METHOD_HNSW));
 
         Float[] vector = {1.3f, 2.2f};
-        int docsInIndex = 5; // through testing, 7 is minimum number of docs to trip circuit breaker at 2kb
+        int docsInIndex = 10; // through testing, 10 is minimum number of docs to trip circuit breaker at 1kb
 
         for (int i = 0; i < docsInIndex; i++) {
             addKnnDoc(indexName1, Integer.toString(i), FIELD_NAME, vector);
@@ -133,11 +138,12 @@ public class KNNCircuitBreakerIT extends KNNRestTestCase {
         Response response = getKnnStats(Collections.emptyList(),
                 Collections.singletonList("circuit_breaker_triggered"));
         String responseBody = EntityUtils.toString(response.getEntity());
+        logger.info("Cache: " + responseBody);
         Map<String, Object> clusterStats = parseClusterStatsResponse(responseBody);
         return Boolean.parseBoolean(clusterStats.get("circuit_breaker_triggered").toString());
     }
 
-    public void testCbLibHnswTripped() throws Exception {
+    public void testCbNmslibTripped() throws Exception {
         tripNmslibCb();
     }
     public void testCbFaissTripped() throws Exception {
