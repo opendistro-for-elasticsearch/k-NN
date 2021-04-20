@@ -16,9 +16,7 @@
 package com.amazon.opendistroforelasticsearch.knn.plugin.script;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
-import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
-import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import org.elasticsearch.index.mapper.BinaryFieldMapper;
 import org.elasticsearch.index.mapper.NumberFieldMapper;
 
@@ -38,7 +36,7 @@ public class KNNScoringSpaceTests extends KNNTestCase {
         float[] arrayFloat = new float[]{1.0f, 2.0f, 3.0f};
         List<Double> arrayListQueryObject = new ArrayList<>(Arrays.asList(1.0, 2.0, 3.0));
         KNNVectorFieldMapper.KNNVectorFieldType fieldType = new KNNVectorFieldMapper.KNNVectorFieldType("test",
-                Collections.emptyMap(), 3, KNNEngine.DEFAULT.getKnnEngineName());
+                Collections.emptyMap(), 3);
         KNNScoringSpace.L2 l2 = new KNNScoringSpace.L2(arrayListQueryObject, fieldType);
         assertEquals(1F, l2.scoringMethod.apply(arrayFloat, arrayFloat), 0.1F);
 
@@ -54,7 +52,7 @@ public class KNNScoringSpaceTests extends KNNTestCase {
         float[] arrayFloat2 = new float[]{2.0f, 4.0f, 6.0f};
 
         KNNVectorFieldMapper.KNNVectorFieldType fieldType = new KNNVectorFieldMapper.KNNVectorFieldType("test",
-                Collections.emptyMap(), 3, KNNEngine.DEFAULT.getKnnEngineName());
+                Collections.emptyMap(), 3);
         KNNScoringSpace.CosineSimilarity cosineSimilarity =
                 new KNNScoringSpace.CosineSimilarity(arrayListQueryObject, fieldType);
 
@@ -72,7 +70,7 @@ public class KNNScoringSpaceTests extends KNNTestCase {
         float[] arrayFloat2 = new float[]{1.0f, 1.0f, 1.0f};
 
         KNNVectorFieldMapper.KNNVectorFieldType fieldType = new KNNVectorFieldMapper.KNNVectorFieldType("test",
-                Collections.emptyMap(), 3, KNNEngine.DEFAULT.getKnnEngineName());
+                Collections.emptyMap(), 3);
         KNNScoringSpace.InnerProd innerProd =
                 new KNNScoringSpace.InnerProd(arrayListQueryObject, fieldType);
 

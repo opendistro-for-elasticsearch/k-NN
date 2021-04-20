@@ -17,7 +17,12 @@ package com.amazon.opendistroforelasticsearch.knn;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache;
 import com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.test.ESTestCase;
+
+import java.util.Map;
 
 /**
  * Base class for integration tests for KNN plugin. Contains several methods for testing KNN ES functionality.
@@ -38,5 +43,10 @@ public class KNNTestCase extends ESTestCase {
         // Clean up the cache
         KNNIndexCache.getInstance().evictAllGraphsFromCache();
         KNNIndexCache.getInstance().close();
+    }
+
+    public Map<String, Object> xContentBuilderToMap(XContentBuilder xContentBuilder) {
+        return XContentHelper.convertToMap(BytesReference.bytes(xContentBuilder), true,
+                xContentBuilder.contentType()).v2();
     }
 }

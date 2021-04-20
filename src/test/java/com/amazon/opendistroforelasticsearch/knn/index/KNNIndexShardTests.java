@@ -21,7 +21,9 @@ import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.shard.IndexShard;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache.GRAPH_COUNT;
@@ -104,7 +106,7 @@ public class KNNIndexShardTests extends KNNSingleNodeTestCase {
         IndexShard indexShard;
         KNNIndexShard knnIndexShard;
         Engine.Searcher searcher;
-        List<String> hnswPaths;
+        Map<String, SpaceType> hnswPaths;
 
         indexShard = indexService.iterator().next();
         knnIndexShard = new KNNIndexShard(indexShard);
@@ -119,7 +121,8 @@ public class KNNIndexShardTests extends KNNSingleNodeTestCase {
         searcher = indexShard.acquireSearcher("test-hnsw-paths-2");
         hnswPaths = knnIndexShard.getAllEnginePaths(searcher.getIndexReader());
         assertEquals(1, hnswPaths.size());
-        assertTrue(hnswPaths.get(0).contains("hnsw") || hnswPaths.get(0).contains("hnswc"));
+        List<String> paths = new ArrayList<>(hnswPaths.keySet());
+        assertTrue(paths.get(0).contains("hnsw") || paths.get(0).contains("hnswc"));
         searcher.close();
     }
 }

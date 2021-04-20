@@ -235,7 +235,7 @@ public class KNNIndexCacheTests extends ESSingleNodeTestCase {
 
         KNNIndexShard knnIndexShard = new KNNIndexShard(indexService.iterator().next());
         Engine.Searcher searcher = knnIndexShard.getIndexShard().acquireSearcher("test-cache");
-        List<String> segmentPaths = knnIndexShard.getAllEnginePaths(searcher.getIndexReader());
+        Map<String, SpaceType> segmentPaths = knnIndexShard.getAllEnginePaths(searcher.getIndexReader());
         List<KNNIndex> knnIndices = KNNIndexCache.getInstance().getIndices(segmentPaths, testIndexName);
         assertEquals(2, knnIndices.size());
         assertEquals(2, KNNIndexCache.getInstance().getIndicesCacheStats().get(testIndexName).get(GRAPH_COUNT));

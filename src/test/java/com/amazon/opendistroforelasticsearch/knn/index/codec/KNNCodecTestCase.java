@@ -16,16 +16,19 @@
 package com.amazon.opendistroforelasticsearch.knn.index.codec;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
+import com.amazon.opendistroforelasticsearch.knn.common.KNNConstants;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNIndexCache;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNQuery;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNSettings;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNVectorFieldMapper;
+import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
 import com.amazon.opendistroforelasticsearch.knn.index.VectorField;
 import com.amazon.opendistroforelasticsearch.knn.index.codec.KNN87Codec.KNN87Codec;
 import com.amazon.opendistroforelasticsearch.knn.index.util.KNNEngine;
 import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.FieldType;
 import org.apache.lucene.index.FilterLeafReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -46,6 +49,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_ENGINE;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_HNSW;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.SPACE_TYPE;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -54,6 +60,16 @@ import static org.mockito.Mockito.when;
  * Test used for testing Codecs
  */
 public class  KNNCodecTestCase extends KNNTestCase {
+    private static FieldType sampleFieldType;
+    static {
+        sampleFieldType = new FieldType(KNNVectorFieldMapper.Defaults.FIELD_TYPE);
+        sampleFieldType.putAttribute(KNNConstants.KNN_METHOD, METHOD_HNSW);
+        sampleFieldType.putAttribute(KNN_ENGINE, KNNEngine.NMSLIB.getName());
+        sampleFieldType.putAttribute(SPACE_TYPE, SpaceType.L2.getValue());
+        sampleFieldType.putAttribute(KNNConstants.HNSW_ALGO_M, "32");
+        sampleFieldType.putAttribute(KNNConstants.HNSW_ALGO_EF_CONSTRUCTION, "512");
+        sampleFieldType.freeze();
+    }
 
     protected void setUpMockClusterService() {
         ClusterService clusterService = mock(ClusterService.class, RETURNS_DEEP_STUBS);
@@ -79,7 +95,8 @@ public class  KNNCodecTestCase extends KNNTestCase {
         iwc.setMergeScheduler(new SerialMergeScheduler());
         iwc.setCodec(codec);
         float[] array = {1.0f, 2.0f, 3.0f};
-        VectorField vectorField = new VectorField("test_vector", array, KNNVectorFieldMapper.Defaults.FIELD_TYPE);
+
+        VectorField vectorField = new VectorField("test_vector", array, sampleFieldType);
         RandomIndexWriter writer = new RandomIndexWriter(random(), dir, iwc);
         Document doc = new Document();
         doc.add(vectorField);
@@ -119,7 +136,7 @@ public class  KNNCodecTestCase extends KNNTestCase {
          * Add doc with field "test_vector"
          */
         float[] array = {1.0f, 3.0f, 4.0f};
-        VectorField vectorField = new VectorField("test_vector", array, KNNVectorFieldMapper.Defaults.FIELD_TYPE);
+        VectorField vectorField = new VectorField("test_vector", array, sampleFieldType);
         RandomIndexWriter writer = new RandomIndexWriter(random(), dir, iwc);
         Document doc = new Document();
         doc.add(vectorField);
@@ -134,7 +151,7 @@ public class  KNNCodecTestCase extends KNNTestCase {
         iwc1.setCodec(new KNN87Codec());
         writer = new RandomIndexWriter(random(), dir, iwc1);
         float[] array1 = {6.0f, 14.0f};
-        VectorField vectorField1 = new VectorField("my_vector", array1, KNNVectorFieldMapper.Defaults.FIELD_TYPE);
+        VectorField vectorField1 = new VectorField("my_vector", array1, sampleFieldType);
         Document doc1 = new Document();
         doc1.add(vectorField1);
         writer.addDocument(doc1);

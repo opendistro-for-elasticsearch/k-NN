@@ -3,6 +3,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 
 import com.amazon.opendistroforelasticsearch.knn.index.faiss.v165.KNNFaissIndex;
+import com.google.common.collect.ImmutableMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.Directory;
@@ -13,8 +14,12 @@ import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNMethodContext.MIN_MINIMUM_DATAPOINTS;
+import static com.amazon.opendistroforelasticsearch.knn.index.KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT;
 
 public class KNNJNIFaissTests extends KNNTestCase {
     private static final Logger logger = LogManager.getLogger(KNNJNIFaissTests.class);
@@ -33,11 +38,12 @@ public class KNNJNIFaissTests extends KNNTestCase {
         String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
                 String.format("%s.faiss", segmentName)).toString();
 
-        String[] algoParams = {};
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceType.L2.getValue());
+                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, Collections.emptyMap(),
+                                SpaceType.L2.getValue(), "HNSW32",
+                                MIN_TRAINING_DATASET_SIZE_LIMIT + 1, MIN_MINIMUM_DATAPOINTS + 1);
                         return null;
                     }
                 }
@@ -61,11 +67,12 @@ public class KNNJNIFaissTests extends KNNTestCase {
         String indexPath = Paths.get(((FSDirectory) (FilterDirectory.unwrap(dir))).getDirectory().toString(),
                 String.format("%s.hnsw", segmentName)).toString();
 
-        String[] algoParams = {};
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceType.L2.getValue());
+                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, Collections.emptyMap(),
+                                SpaceType.L2.getValue(), "HNSW32",
+                                MIN_TRAINING_DATASET_SIZE_LIMIT + 1, MIN_MINIMUM_DATAPOINTS + 1);
                         return null;
                     }
                 }
@@ -74,13 +81,12 @@ public class KNNJNIFaissTests extends KNNTestCase {
         assertTrue(Arrays.asList(dir.listAll()).contains("_dummy1.hnsw"));
 
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
-        String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNFaissIndex knnIndex = KNNFaissIndex.loadIndex(indexPath, algoQueryParams, SpaceType.L2);
+        final KNNFaissIndex knnIndex = KNNFaissIndex.loadIndex(indexPath, SpaceType.L2);
         final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
-                Collectors.toMap(result -> result.getId(), result -> result.getScore()));
+                Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));
         logger.info(scores);
 
         assertEquals(results.length, 3);
@@ -110,7 +116,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
                 AccessController.doPrivileged(
                         new PrivilegedAction<Void>() {
                             public Void run() {
-                                KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, new String[] {}, SpaceType.L2);
+                                KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, SpaceType.L2);
                                 return null;
                             }
                         }
@@ -132,11 +138,12 @@ public class KNNJNIFaissTests extends KNNTestCase {
 
 
          //Passing valid algo params should not fail the graph construction.
-        String[] algoIndexParams = {"HNSW40","efConstruction=200", "efSearch=100"};
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, SpaceType.L2.getValue());
+                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, ImmutableMap.of("efConstruction", 200),
+                                SpaceType.L2.getValue(), "HNSW40",
+                                MIN_TRAINING_DATASET_SIZE_LIMIT + 1, MIN_MINIMUM_DATAPOINTS + 1);
                         return null;
                     }
                 }
@@ -146,13 +153,12 @@ public class KNNJNIFaissTests extends KNNTestCase {
         assertTrue(Arrays.asList(dir.listAll()).contains("_dummy1.hnsw"));
 
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
-        String[] algoQueryParams = {"efSearch=200"};
 
-        final KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, algoQueryParams, SpaceType.L2);
+        final KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, SpaceType.L2);
         final KNNQueryResult[] results = index.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
-                Collectors.toMap(result -> result.getId(), result -> result.getScore()));
+                Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));
         logger.info(scores);
 
         assertEquals(results.length, 3);

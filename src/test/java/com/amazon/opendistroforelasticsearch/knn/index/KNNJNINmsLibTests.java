@@ -31,6 +31,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_HNSW;
+
 public class KNNJNINmsLibTests extends KNNTestCase {
     private static final Logger logger = LogManager.getLogger(KNNJNINmsLibTests.class);
 
@@ -52,7 +54,8 @@ public class KNNJNINmsLibTests extends KNNTestCase {
                 AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceType.L2.getValue());
+                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceType.L2.getValue(),
+                                METHOD_HNSW);
                         return null;
                     }
                 }
@@ -80,7 +83,8 @@ public class KNNJNINmsLibTests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceType.L2.getValue());
+                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceType.L2.getValue(),
+                                METHOD_HNSW);
                         return null;
                     }
                 }
@@ -95,7 +99,7 @@ public class KNNJNINmsLibTests extends KNNTestCase {
         final KNNQueryResult[] results = knnNmsLibIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
-                Collectors.toMap(result -> result.getId(), result -> result.getScore()));
+                Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));
         logger.info(scores);
 
         assertEquals(results.length, 3);
@@ -129,7 +133,8 @@ public class KNNJNINmsLibTests extends KNNTestCase {
         AccessController.doPrivileged(
             new PrivilegedAction<Void>() {
                 public Void run() {
-                    KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceType.COSINESIMIL.getValue());
+                    KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceType.COSINESIMIL.getValue(),
+                            METHOD_HNSW);
                     return null;
                 }
             }
@@ -144,7 +149,7 @@ public class KNNJNINmsLibTests extends KNNTestCase {
         final KNNQueryResult[] results = knnNmsLibIndex.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
-            Collectors.toMap(result -> result.getId(), result -> result.getScore()));
+            Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));
         logger.info(scores);
 
         assertEquals(results.length, 3);
@@ -200,7 +205,8 @@ public class KNNJNINmsLibTests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, SpaceType.L2.getValue());
+                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, SpaceType.L2.getValue(),
+                                METHOD_HNSW);
                         return null;
                     }
                 }
@@ -216,7 +222,7 @@ public class KNNJNINmsLibTests extends KNNTestCase {
         final KNNQueryResult[] results = index.queryIndex(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
-                Collectors.toMap(result -> result.getId(), result -> result.getScore()));
+                Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));
         logger.info(scores);
 
         assertEquals(results.length, 3);

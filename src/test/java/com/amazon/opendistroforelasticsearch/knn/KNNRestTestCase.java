@@ -252,7 +252,7 @@ public class KNNRestTestCase extends ODFERestTestCase {
                 .startObject(fieldName)
                 .field("type", "knn_vector")
                 .field("dimension", dimensions.toString())
-                .field(KNNConstants.KNNEngine, engine.getKnnEngineName())
+                .field(KNNConstants.KNN_ENGINE, engine.getName())
                 .endObject()
                 .endObject()
                 .endObject());
