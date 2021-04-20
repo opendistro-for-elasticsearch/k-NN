@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import org.elasticsearch.common.ValidationException;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -177,6 +178,9 @@ public class KNNMethod {
          * @return map of extra parameters
          */
         public Map<String, Object> generateExtraParameterMap(Map<String, Object> inParameters) {
+            if (inParameters == null) {
+                return Collections.emptyMap();
+            }
             return inParameters.entrySet().stream().filter(v -> !parameters.get(v.getKey()).isInMethodString()).collect(
                     Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
