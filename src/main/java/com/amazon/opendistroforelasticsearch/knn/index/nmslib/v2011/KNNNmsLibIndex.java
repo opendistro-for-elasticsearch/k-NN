@@ -23,7 +23,7 @@ import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter.GRAPH_INDEX_REQUESTS;
+import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter.GRAPH_QUERY_REQUESTS;
 
 /**
  * JNI layer to communicate with the nmslib
@@ -63,7 +63,7 @@ public class KNNNmsLibIndex extends KNNIndex {
      * Wrappers around Jni functions
      */
     protected KNNQueryResult[] queryIndexJniWrapper(long indexPointer, float[] query, int k) {
-        GRAPH_INDEX_REQUESTS.increment();
+        GRAPH_QUERY_REQUESTS.increment();
         return AccessController.doPrivileged(
                 (PrivilegedAction<KNNQueryResult[]>) () -> queryIndex(indexPointer, query, k)
         );
