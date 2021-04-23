@@ -59,7 +59,7 @@ public class KNNJNITests extends KNNTestCase {
             String[] algoParams = {};
             AccessController.doPrivileged(
                     (PrivilegedAction<Void>) () -> {
-                        KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceType.L2.getValue(),
+                        KNNNmsLibIndex.save(docs, vectors, indexPath, algoParams, SpaceType.L2.getValue(),
                                 METHOD_HNSW);
                         return null;
                     }
@@ -75,7 +75,7 @@ public class KNNJNITests extends KNNTestCase {
 
             AccessController.doPrivileged(
                     (PrivilegedAction<Void>) () -> {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, Collections.emptyMap(),
+                        KNNFaissIndex.save(docs, vectors, indexPath, Collections.emptyMap(),
                                 SpaceType.L2.getValue(), "Flat",
                                 MIN_TRAINING_DATASET_SIZE_LIMIT + 1, MIN_MINIMUM_DATAPOINTS + 1);
                         return null;
@@ -100,7 +100,7 @@ public class KNNJNITests extends KNNTestCase {
             String[] algoParams = {};
             AccessController.doPrivileged(
                     (PrivilegedAction<Void>) () -> {
-                        KNNNmsLibIndex.saveIndex(docs, vectors, indexNmsLibPath, algoParams, SpaceType.L2.getValue(),
+                        KNNNmsLibIndex.save(docs, vectors, indexNmsLibPath, algoParams, SpaceType.L2.getValue(),
                                 METHOD_HNSW);
                         return null;
                     }
@@ -109,7 +109,7 @@ public class KNNJNITests extends KNNTestCase {
         {
             AccessController.doPrivileged(
                     (PrivilegedAction<Void>) () -> {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexFaissPath, Collections.emptyMap(),
+                        KNNFaissIndex.save(docs, vectors, indexFaissPath, Collections.emptyMap(),
                                 SpaceType.L2.getValue(), "Flat",
                                 MIN_TRAINING_DATASET_SIZE_LIMIT + 1, MIN_MINIMUM_DATAPOINTS + 1);
                         return null;
@@ -123,8 +123,8 @@ public class KNNJNITests extends KNNTestCase {
         String[] algoQueryParams = {"efSearch=20"};
 
         {
-            final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.loadIndex(indexNmsLibPath, algoQueryParams, SpaceType.L2);
-            final KNNQueryResult[] results = knnNmsLibIndex.queryIndex(queryVector, 30);
+            final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.load(indexNmsLibPath, algoQueryParams, SpaceType.L2);
+            final KNNQueryResult[] results = knnNmsLibIndex.query(queryVector, 30);
             Map<Integer, Float> scores = Arrays.stream(results).collect(
                     Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));
             assertEquals(results.length, 3);
@@ -133,8 +133,8 @@ public class KNNJNITests extends KNNTestCase {
             assertEquals(366.0, scores.get(2), 0.001);
         }
         {
-            final KNNFaissIndex knnFaissLibIndex = KNNFaissIndex.loadIndex(indexFaissPath, SpaceType.L2);
-            final KNNQueryResult[] results = knnFaissLibIndex.queryIndex(queryVector, 30);
+            final KNNFaissIndex knnFaissLibIndex = KNNFaissIndex.load(indexFaissPath, SpaceType.L2);
+            final KNNQueryResult[] results = knnFaissLibIndex.query(queryVector, 30);
             Map<Integer, Float> scores = Arrays.stream(results).collect(
                     Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));
             logger.info(scores);
@@ -165,10 +165,10 @@ public class KNNJNITests extends KNNTestCase {
                         KNNEngine.FAISS.getExtension())).toString();
         {
             String[] algoParams = {};
-            KNNNmsLibIndex.saveIndex(docs, vectors, indexNmsLibPath, algoParams, SpaceType.L2.getValue(), METHOD_HNSW);
+            KNNNmsLibIndex.save(docs, vectors, indexNmsLibPath, algoParams, SpaceType.L2.getValue(), METHOD_HNSW);
         }
         {
-            KNNFaissIndex.saveIndex(docs, vectors, indexFaissPath, Collections.emptyMap(),
+            KNNFaissIndex.save(docs, vectors, indexFaissPath, Collections.emptyMap(),
                     SpaceType.L2.getValue(), "Flat",
                     MIN_TRAINING_DATASET_SIZE_LIMIT + 1, MIN_MINIMUM_DATAPOINTS + 1);
         }
@@ -180,9 +180,9 @@ public class KNNJNITests extends KNNTestCase {
 
         {
             //Load Index With Wrong Engine, need throw Exception
-            expectThrows(Exception.class, () -> KNNFaissIndex.loadIndex(indexNmsLibPath, SpaceType.L2));
-            final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.loadIndex(indexNmsLibPath, algoQueryParams, SpaceType.L2);
-            final KNNQueryResult[] results = knnNmsLibIndex.queryIndex(queryVector, 30);
+            expectThrows(Exception.class, () -> KNNFaissIndex.load(indexNmsLibPath, SpaceType.L2));
+            final KNNNmsLibIndex knnNmsLibIndex = KNNNmsLibIndex.load(indexNmsLibPath, algoQueryParams, SpaceType.L2);
+            final KNNQueryResult[] results = knnNmsLibIndex.query(queryVector, 30);
             Map<Integer, Float> scores = Arrays.stream(results).collect(
                     Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));
             logger.info(scores);
@@ -193,9 +193,9 @@ public class KNNJNITests extends KNNTestCase {
         }
         {
             //Load Index With Wrong Engine, need throw Exception
-            expectThrows(Exception.class, () -> KNNNmsLibIndex.loadIndex(indexFaissPath, algoQueryParams, SpaceType.L2));
-            final KNNFaissIndex knnFaissLibIndex = KNNFaissIndex.loadIndex(indexFaissPath, SpaceType.L2);
-            final KNNQueryResult[] results = knnFaissLibIndex.queryIndex(queryVector, 30);
+            expectThrows(Exception.class, () -> KNNNmsLibIndex.load(indexFaissPath, algoQueryParams, SpaceType.L2));
+            final KNNFaissIndex knnFaissLibIndex = KNNFaissIndex.load(indexFaissPath, SpaceType.L2);
+            final KNNQueryResult[] results = knnFaissLibIndex.query(queryVector, 30);
             Map<Integer, Float> scores = Arrays.stream(results).collect(
                     Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));
             logger.info(scores);
@@ -225,7 +225,7 @@ public class KNNJNITests extends KNNTestCase {
         String[] algoIndexParams = {"M=32","efConstruction=200"};
         AccessController.doPrivileged(
                 (PrivilegedAction<Void>) () -> {
-                    KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoIndexParams, SpaceType.L2.getValue(),
+                    KNNNmsLibIndex.save(docs, vectors, indexPath, algoIndexParams, SpaceType.L2.getValue(),
                             METHOD_HNSW);
                     return null;
                 }
@@ -237,8 +237,8 @@ public class KNNJNITests extends KNNTestCase {
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
         String[] algoQueryParams = {"efSearch=200"};
 
-        final KNNIndex index = KNNNmsLibIndex.loadIndex(indexPath, algoQueryParams, SpaceType.L2);
-        final KNNQueryResult[] results = index.queryIndex(queryVector, 30);
+        final KNNIndex index = KNNNmsLibIndex.load(indexPath, algoQueryParams, SpaceType.L2);
+        final KNNQueryResult[] results = index.query(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
                 Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));
@@ -274,7 +274,7 @@ public class KNNJNITests extends KNNTestCase {
         String[] algoParams = {};
         AccessController.doPrivileged(
                 (PrivilegedAction<Void>) () -> {
-                    KNNNmsLibIndex.saveIndex(docs, vectors, indexPath, algoParams, SpaceType.INNER_PRODUCT.getValue(),
+                    KNNNmsLibIndex.save(docs, vectors, indexPath, algoParams, SpaceType.INNER_PRODUCT.getValue(),
                             METHOD_HNSW);
                     return null;
                 }
@@ -285,8 +285,8 @@ public class KNNJNITests extends KNNTestCase {
         float[] queryVector = {2.0f, -2.0f};
         String[] algoQueryParams = {"efSearch=20"};
 
-        final KNNIndex knnIndex = KNNNmsLibIndex.loadIndex(indexPath, algoQueryParams, SpaceType.INNER_PRODUCT);
-        final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
+        final KNNIndex knnIndex = KNNNmsLibIndex.load(indexPath, algoQueryParams, SpaceType.INNER_PRODUCT);
+        final KNNQueryResult[] results = knnIndex.query(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
                 Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));

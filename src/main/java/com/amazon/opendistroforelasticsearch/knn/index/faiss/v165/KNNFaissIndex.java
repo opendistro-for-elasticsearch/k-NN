@@ -43,7 +43,7 @@ public class KNNFaissIndex extends KNNIndex  {
      * @param spaceType space type of the index
      * @return knn index that can be queried for k nearest neighbours
      */
-    public static KNNFaissIndex loadIndex(String indexPath,final SpaceType spaceType) {
+    public static KNNFaissIndex load(String indexPath,final SpaceType spaceType) {
         long fileSize = computeFileSize(indexPath);
         long indexPointer = init(indexPath);
         return new KNNFaissIndex(indexPointer, fileSize, spaceType);
@@ -56,10 +56,10 @@ public class KNNFaissIndex extends KNNIndex  {
     /*
      * Wrappers around Jni functions
      */
-    protected KNNQueryResult[] queryIndexJniWrapper(long indexPointer, float[] query, int k) {
+    protected KNNQueryResult[] queryJniWrapper(long indexPointer, float[] query, int k) {
         GRAPH_QUERY_REQUESTS.increment();
         return AccessController.doPrivileged(
-                (PrivilegedAction<KNNQueryResult[]>) () -> queryIndex(indexPointer, query, k)
+                (PrivilegedAction<KNNQueryResult[]>) () -> query(indexPointer, query, k)
         );
     }
 
@@ -70,12 +70,12 @@ public class KNNFaissIndex extends KNNIndex  {
 
     // JNI FUNCTIONS
     // Builds index and writes to disk (no index pointer escapes).
-    public static native void saveIndex(int[] ids, float[][] data, String indexPath, Map<String, Object> algoParams,
+    public static native void save(int[] ids, float[][] data, String indexPath, Map<String, Object> algoParams,
                                         String spaceType, String method, int trainingDatasetSizeLimit,
                                         int minimumDatapoints);
 
     // Queries index (thread safe with other readers, blocked by write lock)
-    private static native KNNQueryResult[] queryIndex(long indexPointer, float[] query, int k);
+    private static native KNNQueryResult[] query(long indexPointer, float[] query, int k);
 
 
     // Loads index and returns pointer to index

@@ -9,18 +9,18 @@ extern "C" {
 #endif
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex
- * Method:    saveIndex
+ * Method:    save
  * Signature: ([I[[FLjava/lang/String;[Ljava/lang/String;Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_saveIndex
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_save
   (JNIEnv *, jclass, jintArray, jobjectArray, jstring, jobjectArray, jstring, jstring);
 
 /*
  * Class:     com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex
- * Method:    queryIndex
+ * Method:    query
  * Signature: (J[FI)[Lcom/amazon/opendistroforelasticsearch/knn/index/KNNQueryResult;
  */
-JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_queryIndex
+JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_query
   (JNIEnv *, jclass, jlong, jfloatArray, jint);
 
 /*

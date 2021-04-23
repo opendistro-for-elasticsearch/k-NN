@@ -45,7 +45,7 @@ public abstract class KNNIndex implements AutoCloseable {
      * @param k top k nearest
      * @return array of @KNNQueryResult
      */
-    public KNNQueryResult[] queryIndex(final float[] query, final int k) throws RuntimeException {
+    public KNNQueryResult[] query(final float[] query, final int k) throws RuntimeException {
         Lock readLock = readWriteLock.readLock();
         readLock.lock();
         try {
@@ -53,7 +53,7 @@ public abstract class KNNIndex implements AutoCloseable {
                 throw new IOException("Index is already closed");
             }
             final long indexPointer = this.indexPointer;
-            return queryIndexJniWrapper(indexPointer, query, k);
+            return queryJniWrapper(indexPointer, query, k);
 
         } catch (Exception ex) {
             throw new RuntimeException("Unable to query the index: " + ex);
@@ -115,6 +115,6 @@ public abstract class KNNIndex implements AutoCloseable {
     /*
      * Wrappers around Jni functions
      */
-    protected abstract KNNQueryResult[] queryIndexJniWrapper(long indexPointer, float[] query, int k);
+    protected abstract KNNQueryResult[] queryJniWrapper(long indexPointer, float[] query, int k);
     protected abstract void gcJniWrapper(long indexPointer);
 }

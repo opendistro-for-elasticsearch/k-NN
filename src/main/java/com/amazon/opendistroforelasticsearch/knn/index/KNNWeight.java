@@ -109,7 +109,7 @@ public class KNNWeight extends Weight {
             if ((fieldAttributes.containsValue(KNNEngine.NMSLIB.getName()) && index instanceof KNNNmsLibIndex)
                     || (fieldAttributes.containsValue(KNNEngine.FAISS.getName())
                     && index instanceof KNNFaissIndex)) {
-                results = index.queryIndex(
+                results = index.query(
                         knnQuery.getQueryVector(),
                         knnQuery.getK()
                 );

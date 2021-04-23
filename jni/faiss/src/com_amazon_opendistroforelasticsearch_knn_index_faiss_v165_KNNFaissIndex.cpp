@@ -139,7 +139,7 @@ void SetExtraParameters(JNIEnv *env, jobject parameterMap, faiss::Index * index)
  * Method: saveIndex
  *
  */
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_saveIndex
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_save
         (JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobject parameterMap,
          jstring spaceType, jstring indexDescription, jint trainingDatasetSizeLimit, jint minimumDatapoints)
 {
@@ -232,7 +232,7 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_fais
 }
 
 
-JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_queryIndex
+JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_query
         (JNIEnv* env, jclass cls, jlong indexPointer, jfloatArray queryVector, jint k)
 {
 	faiss::Index *indexReader = nullptr;
@@ -300,8 +300,8 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_fai
  * When autoclose class do close, then delete the pointer
  * Method GC pointer
  */
-	JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_gc
-(JNIEnv* env, jclass cls,  jlong indexPointer)
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_gc
+        (JNIEnv* env, jclass cls,  jlong indexPointer)
 {
 	try {
 		faiss::Index *indexWrapper = reinterpret_cast<faiss::Index*>(indexPointer);
@@ -318,7 +318,8 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_fai
  * Method: Global Init
  *
  */
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_initLibrary(JNIEnv *, jclass)
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_faiss_v165_KNNFaissIndex_initLibrary
+        (JNIEnv *, jclass)
 {
 	//set thread 1 cause ES has Search thread
 	//TODO make it different at search and write

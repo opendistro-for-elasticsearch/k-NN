@@ -137,7 +137,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
             AccessController.doPrivileged(
                     (PrivilegedAction<Void>) () -> {
                         if(KNNEngine.NMSLIB.getName().equals(knnEngine.getName())) {
-                            KNNNmsLibIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType,
+                            KNNNmsLibIndex.save(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType,
                                     method);
                         } else if (KNNEngine.FAISS.getName().equals(knnEngine.getName())) {
                             String extraParametersString = fieldAttributes.getOrDefault(KNNConstants.EXTRA_PARAMETERS, null);
@@ -151,7 +151,7 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
 
                             }
 
-                            KNNFaissIndex.saveIndex(pair.docs, pair.vectors, tempIndexPath, extraParameterMap, spaceType,
+                            KNNFaissIndex.save(pair.docs, pair.vectors, tempIndexPath, extraParameterMap, spaceType,
                                     method, trainingDatasetSizeLimit, minimumDatapoints);
                         } else {
                             throw new IllegalStateException("Invalid engine");

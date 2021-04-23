@@ -1,3 +1,18 @@
+/*
+ *   Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License").
+ *   You may not use this file except in compliance with the License.
+ *   A copy of the License is located at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   or in the "license" file accompanying this file. This file is distributed
+ *   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *   express or implied. See the License for the specific language governing
+ *   permissions and limitations under the License.
+ */
+
 package com.amazon.opendistroforelasticsearch.knn.index;
 
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
@@ -41,7 +56,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, Collections.emptyMap(),
+                        KNNFaissIndex.save(docs, vectors, indexPath, Collections.emptyMap(),
                                 SpaceType.L2.getValue(), "HNSW32",
                                 MIN_TRAINING_DATASET_SIZE_LIMIT + 1, MIN_MINIMUM_DATAPOINTS + 1);
                         return null;
@@ -70,7 +85,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, Collections.emptyMap(),
+                        KNNFaissIndex.save(docs, vectors, indexPath, Collections.emptyMap(),
                                 SpaceType.L2.getValue(), "HNSW32",
                                 MIN_TRAINING_DATASET_SIZE_LIMIT + 1, MIN_MINIMUM_DATAPOINTS + 1);
                         return null;
@@ -82,8 +97,8 @@ public class KNNJNIFaissTests extends KNNTestCase {
 
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
 
-        final KNNFaissIndex knnIndex = KNNFaissIndex.loadIndex(indexPath, SpaceType.L2);
-        final KNNQueryResult[] results = knnIndex.queryIndex(queryVector, 30);
+        final KNNFaissIndex knnIndex = KNNFaissIndex.load(indexPath, SpaceType.L2);
+        final KNNQueryResult[] results = knnIndex.query(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
                 Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));
@@ -116,7 +131,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
                 AccessController.doPrivileged(
                         new PrivilegedAction<Void>() {
                             public Void run() {
-                                KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, SpaceType.L2);
+                                KNNFaissIndex index = KNNFaissIndex.load(indexPath, SpaceType.L2);
                                 return null;
                             }
                         }
@@ -141,7 +156,7 @@ public class KNNJNIFaissTests extends KNNTestCase {
         AccessController.doPrivileged(
                 new PrivilegedAction<Void>() {
                     public Void run() {
-                        KNNFaissIndex.saveIndex(docs, vectors, indexPath, ImmutableMap.of("efConstruction", 200),
+                        KNNFaissIndex.save(docs, vectors, indexPath, ImmutableMap.of("efConstruction", 200),
                                 SpaceType.L2.getValue(), "HNSW40",
                                 MIN_TRAINING_DATASET_SIZE_LIMIT + 1, MIN_MINIMUM_DATAPOINTS + 1);
                         return null;
@@ -154,8 +169,8 @@ public class KNNJNIFaissTests extends KNNTestCase {
 
         float[] queryVector = {1.0f, 1.0f, 1.0f, 1.0f};
 
-        final KNNFaissIndex index = KNNFaissIndex.loadIndex(indexPath, SpaceType.L2);
-        final KNNQueryResult[] results = index.queryIndex(queryVector, 30);
+        final KNNFaissIndex index = KNNFaissIndex.load(indexPath, SpaceType.L2);
+        final KNNQueryResult[] results = index.query(queryVector, 30);
 
         Map<Integer, Float> scores = Arrays.stream(results).collect(
                 Collectors.toMap(KNNQueryResult::getId, KNNQueryResult::getScore));

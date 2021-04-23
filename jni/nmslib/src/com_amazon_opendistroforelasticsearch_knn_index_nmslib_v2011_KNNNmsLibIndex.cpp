@@ -61,7 +61,7 @@ struct IndexWrapper {
 };
 
 
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_saveIndex
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_save
 (JNIEnv* env, jclass cls, jintArray ids, jobjectArray vectors, jstring indexPath, jobjectArray algoParams,
  jstring spaceType, jstring method)
 {
@@ -114,7 +114,8 @@ JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmsl
     }
 }
 
-JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_queryIndex(JNIEnv* env, jclass cls, jlong indexPointer, jfloatArray queryVector, jint k)
+JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_query
+(JNIEnv* env, jclass cls, jlong indexPointer, jfloatArray queryVector, jint k)
 {
     try {
         auto *indexWrapper = reinterpret_cast<IndexWrapper*>(indexPointer);
@@ -149,7 +150,8 @@ JNIEXPORT jobjectArray JNICALL Java_com_amazon_opendistroforelasticsearch_knn_in
     return nullptr;
 }
 
-JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_init(JNIEnv* env, jclass cls,  jstring indexPath, jobjectArray algoParams, jstring spaceType)
+JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_init
+(JNIEnv* env, jclass cls,  jstring indexPath, jobjectArray algoParams, jstring spaceType)
 {
     IndexWrapper *indexWrapper = nullptr;
     try {
@@ -177,13 +179,15 @@ JNIEXPORT jlong JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nms
     return NULL;
 }
 
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_gc(JNIEnv* env, jclass cls,  jlong indexPointer)
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_gc
+(JNIEnv* env, jclass cls,  jlong indexPointer)
 {
     auto *indexWrapper = reinterpret_cast<IndexWrapper*>(indexPointer);
     delete indexWrapper;
 }
 
-JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_initLibrary(JNIEnv *, jclass)
+JNIEXPORT void JNICALL Java_com_amazon_opendistroforelasticsearch_knn_index_nmslib_v2011_KNNNmsLibIndex_initLibrary
+(JNIEnv *, jclass)
 {
     initLibrary();
 }
