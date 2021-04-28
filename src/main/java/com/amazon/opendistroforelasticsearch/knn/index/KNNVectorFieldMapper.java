@@ -61,6 +61,7 @@ import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METH
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_M;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.MINIMUM_DATAPOINTS;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.SPACE_TYPE;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.TRAINING_DATASET_SIZE_LIMIT;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_EF_CONSTRUCTION_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_ALGO_PARAM_M_SETTING;
 import static com.amazon.opendistroforelasticsearch.knn.index.KNNSettings.INDEX_KNN_DEFAULT_ALGO_PARAM_EF_CONSTRUCTION;
@@ -340,7 +341,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
 
         this.fieldType.putAttribute(KNN_ENGINE, knnEngine);
         this.fieldType.putAttribute(SPACE_TYPE, spaceType);
-        this.fieldType.putAttribute(MINIMUM_DATAPOINTS, knnMethod.getTrainingDatasetSizeLimit().toString());
+        this.fieldType.putAttribute(TRAINING_DATASET_SIZE_LIMIT, knnMethod.getTrainingDatasetSizeLimit().toString());
         this.fieldType.putAttribute(MINIMUM_DATAPOINTS, knnMethod.getMinimumDatapoints().toString());
         this.fieldType.putAttribute(KNN_METHOD, knnMethod.generateMethod());
 

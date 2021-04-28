@@ -15,7 +15,6 @@
 
 package com.amazon.opendistroforelasticsearch.knn.index;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -26,12 +25,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public abstract class KNNIndex implements AutoCloseable {
 
-    protected volatile boolean isClosed = false;
-    protected final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private volatile boolean isClosed = false;
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
-    protected final long indexPointer;
-    protected final long indexSize;
-    protected final SpaceType spaceType;
+    private final long indexPointer;
+    private final long indexSize;
+    private final SpaceType spaceType;
 
     protected KNNIndex(final long indexPointer, final long indexSize, final SpaceType spaceType) {
         this.indexPointer = indexPointer;
@@ -53,10 +52,9 @@ public abstract class KNNIndex implements AutoCloseable {
                 throw new IOException("Index is already closed");
             }
             final long indexPointer = this.indexPointer;
-            return queryJniWrapper(indexPointer, query, k);
-
+            return queryJNIWrapper(indexPointer, query, k);
         } catch (Exception ex) {
-            throw new RuntimeException("Unable to query the index: " + ex);
+            throw new IllegalStateException("Unable to query the index: " + ex);
         } finally {
             readLock.unlock();
         }
@@ -81,40 +79,22 @@ public abstract class KNNIndex implements AutoCloseable {
     public void close() {
         Lock writeLock = readWriteLock.writeLock();
         writeLock.lock();
-        // Autocloseable documentation recommends making close idempotent. We don't expect to doubly close
-        // but this will help prevent a crash in that situation.
-        if (this.isClosed) {
-            return;
-        }
         try {
-            gcJniWrapper(this.indexPointer);
+            // Autocloseable documentation recommends making close idempotent. We don't expect to doubly close
+            // but this will help prevent a crash in that situation.
+            if (this.isClosed) {
+                return;
+            }
+            gcJNIWrapper(this.indexPointer);
         } finally {
             this.isClosed = true;
             writeLock.unlock();
         }
     }
 
-    /**
-     * determines the size of the engine index on disk
-     * @param indexPath absolute path of the index
-     *
-     */
-    protected static long computeFileSize(String indexPath) {
-        if (indexPath == null || indexPath.isEmpty()) {
-            return 0;
-        }
-        File file = new File(indexPath);
-        if (!file.exists() || !file.isFile()) {
-            return 0;
-        }
-
-        return file.length() / 1024 + 1;
-    }
-
-
     /*
      * Wrappers around Jni functions
      */
-    protected abstract KNNQueryResult[] queryJniWrapper(long indexPointer, float[] query, int k);
-    protected abstract void gcJniWrapper(long indexPointer);
+    protected abstract KNNQueryResult[] queryJNIWrapper(long indexPointer, float[] query, int k);
+    protected abstract void gcJNIWrapper(long indexPointer);
 }

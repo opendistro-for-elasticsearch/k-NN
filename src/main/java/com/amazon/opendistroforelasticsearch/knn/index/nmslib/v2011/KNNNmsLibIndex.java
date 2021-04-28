@@ -23,6 +23,7 @@ import com.amazon.opendistroforelasticsearch.knn.index.util.NmsLibVersion;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import static com.amazon.opendistroforelasticsearch.knn.index.IndexUtil.getFileSizeInKB;
 import static com.amazon.opendistroforelasticsearch.knn.plugin.stats.KNNCounter.GRAPH_QUERY_REQUESTS;
 
 /**
@@ -50,7 +51,7 @@ public class KNNNmsLibIndex extends KNNIndex {
      * @return knn index that can be queried for k nearest neighbours
      */
     public static KNNNmsLibIndex load(String indexPath, final String[] algoParams, final SpaceType spaceType) {
-        long fileSize = computeFileSize(indexPath);
+        long fileSize = getFileSizeInKB(indexPath);
         long indexPointer = init(indexPath, algoParams, spaceType.getValue());
         return new KNNNmsLibIndex(indexPointer, fileSize, spaceType);
     }
@@ -62,14 +63,14 @@ public class KNNNmsLibIndex extends KNNIndex {
     /*
      * Wrappers around Jni functions
      */
-    protected KNNQueryResult[] queryJniWrapper(long indexPointer, float[] query, int k) {
+    protected KNNQueryResult[] queryJNIWrapper(long indexPointer, float[] query, int k) {
         GRAPH_QUERY_REQUESTS.increment();
         return AccessController.doPrivileged(
                 (PrivilegedAction<KNNQueryResult[]>) () -> query(indexPointer, query, k)
         );
     }
 
-    protected void gcJniWrapper(long indexPointer) {
+    protected void gcJNIWrapper(long indexPointer) {
         gc(indexPointer);
     }
 

@@ -24,7 +24,7 @@ public class KNNConstants {
     public static final String DIMENSION = "dimension";
     public static final String KNN_ENGINE = "engine";
     public static final String KNN_METHOD= "method";
-    public static final String EXTRA_PARAMETERS = "extraParameters";
+    public static final String EXTRA_PARAMETERS = "extra_parameters";
     public static final String COARSE_QUANTIZER = "coarse_quantizer";
     public static final String ENCODER = "encoder";
     public static final String NAME = "name";

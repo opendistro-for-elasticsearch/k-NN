@@ -29,6 +29,11 @@ import java.util.stream.Collectors;
  */
 public class KNNMethod {
 
+    private MethodComponent methodComponent;
+    private Set<SpaceType> spaces;
+    private Map<String, MethodComponent> encoders;
+    private boolean isCoarseQuantizerAvailable;
+
     /**
      * KNNMethod Constructor
      *
@@ -45,11 +50,6 @@ public class KNNMethod {
         this.encoders = encoders;
         this.isCoarseQuantizerAvailable = isCoarseQuantizerAvailable;
     }
-
-    private MethodComponent methodComponent;
-    private Set<SpaceType> spaces;
-    private Map<String, MethodComponent> encoders;
-    private boolean isCoarseQuantizerAvailable;
 
     /**
      * getMainMethodComponent
@@ -141,6 +141,9 @@ public class KNNMethod {
      */
     public static class MethodComponent {
 
+        private String name;
+        private Map<String, Parameter<?>> parameters;
+
         /**
          * Constructor
          * @param name name of component
@@ -150,9 +153,6 @@ public class KNNMethod {
             this.name = name;
             this.parameters = parameters;
         }
-
-        protected String name;
-        private Map<String, Parameter<?>> parameters;
 
         /**
          * Get the name of the component
@@ -210,6 +210,11 @@ public class KNNMethod {
      * @param <T> Type parameter takes
      */
     public static abstract class Parameter<T> {
+
+        private T defaultValue;
+        private boolean inMethodString;
+        protected Function<T, Boolean> validator;
+
         /**
          * Constructor
          *
@@ -221,10 +226,6 @@ public class KNNMethod {
             this.inMethodString = inMethodString;
             this.validator = validator;
         }
-
-        private T defaultValue;
-        private boolean inMethodString;
-        protected Function<T, Boolean> validator;
 
         /**
          * Get default value for parameter
