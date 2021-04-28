@@ -39,7 +39,7 @@ public class KNNMethodTests extends KNNTestCase {
      */
     public void testGetMethodComponent() {
         String name = "test";
-        KNNMethod knnMethod = new KNNMethod(name, Collections.emptySet(), Collections.emptyMap(),
+        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), Collections.emptySet(),
                 Collections.emptyMap(), false);
         assertEquals(name, knnMethod.getMethodComponent().getName());
     }
@@ -50,7 +50,7 @@ public class KNNMethodTests extends KNNTestCase {
     public void testHasSpace() {
         String name = "test";
         Set<SpaceType> spaceTypeSet = ImmutableSet.of(SpaceType.L2, SpaceType.COSINESIMIL);
-        KNNMethod knnMethod = new KNNMethod(name, spaceTypeSet, Collections.emptyMap(),
+        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), spaceTypeSet,
                 Collections.emptyMap(), false);
         assertTrue(knnMethod.hasSpace(SpaceType.L2));
         assertTrue(knnMethod.hasSpace(SpaceType.COSINESIMIL));
@@ -64,10 +64,11 @@ public class KNNMethodTests extends KNNTestCase {
         String name = "test";
         String encoder = "test-encoder";
         Map<String, MethodComponent> encoders = ImmutableMap.of(
-                encoder, new MethodComponent(encoder, Collections.emptyMap())
+                encoder, new MethodComponent.Builder(encoder).build()
         );
 
-        KNNMethod knnMethod = new KNNMethod(name, Collections.emptySet(), Collections.emptyMap(), encoders, false);
+        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), Collections.emptySet(), encoders,
+                false);
         assertEquals(encoder, knnMethod.getEncoder(encoder).getName());
     }
 
@@ -78,10 +79,11 @@ public class KNNMethodTests extends KNNTestCase {
         String name = "test";
         String encoder = "test-encoder";
         Map<String, MethodComponent> encoders = ImmutableMap.of(
-                encoder, new MethodComponent(encoder, Collections.emptyMap())
+                encoder, new MethodComponent.Builder(encoder).build()
         );
 
-        KNNMethod knnMethod = new KNNMethod(name, Collections.emptySet(), Collections.emptyMap(), encoders, false);
+        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), Collections.emptySet(), encoders,
+                false);
         assertTrue(knnMethod.hasEncoder(encoder));
         assertFalse(knnMethod.hasEncoder("invalid"));
     }
@@ -91,10 +93,11 @@ public class KNNMethodTests extends KNNTestCase {
      */
     public void testIsCoarseQuantizerAvailable() {
         String name = "test";
-        KNNMethod knnMethod = new KNNMethod(name, Collections.emptySet(), Collections.emptyMap(), Collections.emptyMap(),
-                false);
+        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), Collections.emptySet(),
+                Collections.emptyMap(), false);
         assertFalse(knnMethod.isCoarseQuantizerAvailable());
-        knnMethod = new KNNMethod(name, Collections.emptySet(), Collections.emptyMap(), Collections.emptyMap(), true);
+        knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), Collections.emptySet(),
+                Collections.emptyMap(), true);
         assertTrue(knnMethod.isCoarseQuantizerAvailable());
     }
 
@@ -106,8 +109,8 @@ public class KNNMethodTests extends KNNTestCase {
         Set<SpaceType> spaceTypeSet = ImmutableSet.of(SpaceType.L2);
         String encoderName = "enc-1";
         Map<String, MethodComponent> encoders = ImmutableMap.of(encoderName,
-                new MethodComponent(encoderName, Collections.emptyMap()));
-        KNNMethod knnMethod = new KNNMethod(methodName, spaceTypeSet, Collections.emptyMap(), encoders,
+                new MethodComponent.Builder(encoderName).build());
+        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(methodName).build(), spaceTypeSet, encoders,
                 false);
 
         // Invalid space

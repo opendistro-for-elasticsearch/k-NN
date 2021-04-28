@@ -18,6 +18,7 @@ package com.amazon.opendistroforelasticsearch.knn.index.util;
 import com.amazon.opendistroforelasticsearch.knn.KNNTestCase;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNMethod;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNMethodContext;
+import com.amazon.opendistroforelasticsearch.knn.index.MethodComponent;
 import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
 import com.google.common.collect.ImmutableMap;
 import org.elasticsearch.common.ValidationException;
@@ -87,10 +88,12 @@ public class KNNLibraryTests extends KNNTestCase {
      */
     public void testNativeLibrary_getMethod() {
         String methodName1 = "test-method-1";
-        KNNMethod knnMethod1 = new KNNMethod(methodName1, Collections.emptySet(), Collections.emptyMap(),
+        KNNMethod knnMethod1 = new KNNMethod(new MethodComponent.Builder(methodName1).build(), Collections.emptySet(),
                 Collections.emptyMap(), false);
+
+
         String methodName2 = "test-method-2";
-        KNNMethod knnMethod2 = new KNNMethod(methodName2, Collections.emptySet(), Collections.emptyMap(),
+        KNNMethod knnMethod2 = new KNNMethod(new MethodComponent.Builder(methodName2).build(), Collections.emptySet(),
                 Collections.emptyMap(), false);
 
         Map<String, KNNMethod> knnMethodMap = ImmutableMap.of(
@@ -124,7 +127,7 @@ public class KNNLibraryTests extends KNNTestCase {
     public void testNativeLibrary_validateMethod() throws IOException {
         // Invalid - method not supported
         String methodName1 = "test-method-1";
-        KNNMethod knnMethod1 = new KNNMethod(methodName1, Collections.emptySet(), Collections.emptyMap(),
+        KNNMethod knnMethod1 = new KNNMethod(new MethodComponent.Builder(methodName1).build(), Collections.emptySet(),
                 Collections.emptyMap(), false);
 
         Map<String, KNNMethod> methodMap = ImmutableMap.of(methodName1, knnMethod1);
@@ -140,7 +143,8 @@ public class KNNLibraryTests extends KNNTestCase {
 
         // Invalid - method validation
         String methodName2 = "test-method-2";
-        KNNMethod knnMethod2 = new KNNMethod(methodName2, Collections.emptySet(), Collections.emptyMap(), Collections.emptyMap(), false) {
+        KNNMethod knnMethod2 = new KNNMethod(new MethodComponent.Builder(methodName2).build(), Collections.emptySet(),
+                Collections.emptyMap(), false) {
             @Override
             public void validate(KNNMethodContext knnMethodContext) {
                 throw new ValidationException();
@@ -159,7 +163,7 @@ public class KNNLibraryTests extends KNNTestCase {
 
         // Invalid - coarse quantizer
         String methodName3 = "test-method-3";
-        KNNMethod knnMethod3 = new KNNMethod(methodName3, Collections.emptySet(), Collections.emptyMap(),
+        KNNMethod knnMethod3 = new KNNMethod(new MethodComponent.Builder(methodName3).build(), Collections.emptySet(),
                 Collections.emptyMap(), true) {
             @Override
             public void validate(KNNMethodContext knnMethodContext) {}
@@ -197,7 +201,7 @@ public class KNNLibraryTests extends KNNTestCase {
     public void testNativeLibrary_generateMethod() throws IOException {
         String mappingMethodName = "TEST-METHOD-1";
         String methodName = "test-method-1";
-        KNNMethod knnMethod1 = new KNNMethod(methodName, Collections.emptySet(), Collections.emptyMap(),
+        KNNMethod knnMethod1 = new KNNMethod(new MethodComponent.Builder(methodName).build(), Collections.emptySet(),
                 Collections.emptyMap(), false);
 
         Map<String, KNNMethod> methodMap = ImmutableMap.of(mappingMethodName, knnMethod1);
@@ -218,7 +222,7 @@ public class KNNLibraryTests extends KNNTestCase {
     public void testNativeLibrary_generateExtraParameterMap() throws IOException {
         // Invalid method
         String methodName1 = "test-method-1";
-        KNNMethod knnMethod1 = new KNNMethod(methodName1, Collections.emptySet(), Collections.emptyMap(),
+        KNNMethod knnMethod1 = new KNNMethod(new MethodComponent.Builder(methodName1).build(), Collections.emptySet(),
                 Collections.emptyMap(), false);
 
         Map<String, KNNMethod> methodMap = ImmutableMap.of(methodName1, knnMethod1);
@@ -241,7 +245,7 @@ public class KNNLibraryTests extends KNNTestCase {
                 .field(key, value)
                 .endObject();
         Map<String, Object> inParams = xContentBuilderToMap(xContentBuilder);
-        KNNMethod knnMethod2 = new KNNMethod(methodName2, Collections.emptySet(), Collections.emptyMap(),
+        KNNMethod knnMethod2 = new KNNMethod(new MethodComponent.Builder(methodName2).build(), Collections.emptySet(),
                 Collections.emptyMap(), true) {
             @Override
             public Map<String, Object> generateExtraParameterMap(KNNMethodContext knnMethodContext) {

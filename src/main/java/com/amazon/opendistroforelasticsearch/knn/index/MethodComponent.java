@@ -18,6 +18,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 import org.elasticsearch.common.ValidationException;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -31,12 +32,12 @@ public class MethodComponent {
 
     /**
      * Constructor
-     * @param name name of component
-     * @param parameters parameters that the component can take
+     *
+     * @param builder to build method component
      */
-    public MethodComponent(String name, Map<String, Parameter<?>> parameters) {
-        this.name = name;
-        this.parameters = parameters;
+    private MethodComponent(Builder builder) {
+        this.name = builder.name;
+        this.parameters = builder.parameters;
     }
 
     /**
@@ -85,6 +86,46 @@ public class MethodComponent {
 
                 parameters.get(parameter.getKey()).validate(parameter.getValue());
             }
+        }
+    }
+
+    /**
+     * Builder class for MethodComponent
+     */
+    public static class Builder {
+
+        private String name;
+        private Map<String, Parameter<?>> parameters;
+
+        /**
+         * Constructor
+         *
+         * @param name of method component
+         */
+        public Builder(String name) {
+            this.name = name;
+            this.parameters = new HashMap<>();
+        }
+
+        /**
+         * Add parameter entry to parameters map
+         *
+         * @param parameterName name of the parameter
+         * @param parameter parameter to be added
+         * @return this builder
+         */
+        public Builder putParameter(String parameterName, Parameter<?> parameter) {
+            this.parameters.put(parameterName, parameter);
+            return this;
+        }
+
+        /**
+         * Build MethodComponent
+         *
+         * @return Method Component built from builder
+         */
+        public MethodComponent build() {
+            return new MethodComponent(this);
         }
     }
 }

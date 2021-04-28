@@ -34,15 +34,14 @@ public class KNNMethod {
     /**
      * KNNMethod Constructor
      *
-     * @param name name of the method that is compatible with underlying library
+     * @param methodComponent top level method component that is compatible with the underlying library
      * @param spaces set of valid space types that the method supports
-     * @param parameters Map of parameters that the method requires
      * @param encoders set of encoders that this method supports
      * @param isCoarseQuantizerAvailable whether this method can take a coarseQuantizer
      */
-    public KNNMethod(String name, Set<SpaceType> spaces, Map<String, Parameter<?>> parameters,
-                     Map<String, MethodComponent> encoders, boolean isCoarseQuantizerAvailable) {
-        this.methodComponent = new MethodComponent(name, parameters);
+    public KNNMethod(MethodComponent methodComponent, Set<SpaceType> spaces, Map<String, MethodComponent> encoders,
+                     boolean isCoarseQuantizerAvailable) {
+        this.methodComponent = methodComponent;
         this.spaces = spaces;
         this.encoders = encoders;
         this.isCoarseQuantizerAvailable = isCoarseQuantizerAvailable;

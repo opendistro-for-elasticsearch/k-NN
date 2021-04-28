@@ -246,7 +246,12 @@ public interface KNNLibrary {
 
         public final static Map<String, KNNMethod> METHODS = ImmutableMap.of(
                 METHOD_HNSW, new KNNMethod(
-                        "hnsw",
+                        new MethodComponent.Builder("hnsw")
+                                .putParameter(METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, false,
+                                        v -> v > 0))
+                                .putParameter(METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512,
+                                                false, v -> v > 0))
+                                .build(),
                         ImmutableSet.of(
                                 SpaceType.L2,
                                 SpaceType.L1,
@@ -254,12 +259,8 @@ public interface KNNLibrary {
                                 SpaceType.COSINESIMIL,
                                 SpaceType.INNER_PRODUCT
                         ),
-                        ImmutableMap.of(
-                                METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, false,
-                                        v -> v > 0),
-                                METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512, false,
-                                        v -> v > 0)
-                ), ENCODERS,false)
+                        ENCODERS,
+                        false)
         );
 
         public final static Map<SpaceType, Function<Float, Float>> SCORE_TRANSLATIONS = Collections.emptyMap();
@@ -292,48 +293,49 @@ public interface KNNLibrary {
     class Faiss extends NativeLibrary {
 
         public final static Map<String, MethodComponent> ENCODERS = ImmutableMap.of(
-                ENCODER_PQ, new MethodComponent(
-                        "PQ",  ImmutableMap.of(METHOD_PARAMETER_CODE_SIZE,
-                        new Parameter.IntegerParameter(16, true, v -> v > 0))
-                ),
-                ENCODER_FLAT, new MethodComponent("Flat", Collections.emptyMap())
+                ENCODER_PQ, new MethodComponent.Builder("PQ")
+                        .putParameter(METHOD_PARAMETER_CODE_SIZE, new Parameter.IntegerParameter(16, true,
+                                v -> v > 0))
+                        .build(),
+                ENCODER_FLAT, new MethodComponent.Builder("Flat")
+                        .build()
         );
 
         public final static Map<String, KNNMethod> METHODS = ImmutableMap.of(
                 METHOD_HNSW, new KNNMethod(
-                        "HNSW",
+                        new MethodComponent.Builder("HNSW")
+                                .putParameter(METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, true,
+                                                v -> v > 0))
+                                .putParameter(METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512,
+                                        false, v -> v > 0))
+                                .putParameter(METHOD_PARAMETER_EF_SEARCH, new Parameter.IntegerParameter(512,
+                                        false, v -> v > 0))
+                                .build(),
                         ImmutableSet.of(
                                 SpaceType.L2,
                                 SpaceType.INNER_PRODUCT
-                        ),
-                        ImmutableMap.of(
-                                METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, true,
-                                        v -> v > 0),
-                                METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512, false,
-                                        v -> v > 0),
-                                METHOD_PARAMETER_EF_SEARCH, new Parameter.IntegerParameter(512, false,
-                                        v -> v > 0)
                         ),
                         ENCODERS,
                         false
                 ), METHOD_IVF, new KNNMethod(
-                        "IVF",
+                        new MethodComponent.Builder("IVF")
+                                .putParameter(METHOD_PARAMETER_NCENTROIDS, new Parameter.IntegerParameter(16, true,
+                                        v -> v > 0))
+                                .putParameter(METHOD_PARAMETER_NPROBES, new Parameter.IntegerParameter(1, false,
+                                        v -> v > 0))
+                                .build(),
                         ImmutableSet.of(
                                 SpaceType.L2,
                                 SpaceType.INNER_PRODUCT
                         ),
-                        ImmutableMap.of(
-                                METHOD_PARAMETER_NCENTROIDS, new Parameter.IntegerParameter(16, true,
-                                        v -> v > 0),
-                                METHOD_PARAMETER_NPROBES, new Parameter.IntegerParameter(1, false,
-                                        v -> v > 0)
-                        ),
                         ENCODERS,
                         true
                 ), ENCODER_FLAT, new KNNMethod(
-                        "",
-                        ImmutableSet.of(SpaceType.L2, SpaceType.INNER_PRODUCT),
-                        Collections.emptyMap(),
+                        new MethodComponent.Builder("")
+                                .build(),
+                        ImmutableSet.of(
+                                SpaceType.L2,
+                                SpaceType.INNER_PRODUCT),
                         ENCODERS,
                         false
                 )
