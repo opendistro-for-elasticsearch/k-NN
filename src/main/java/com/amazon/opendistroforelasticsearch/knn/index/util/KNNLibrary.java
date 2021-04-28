@@ -198,9 +198,12 @@ public interface KNNLibrary {
             knnMethod.validate(knnMethodContext);
 
             KNNMethodContext coarseQuantizerContext = knnMethodContext.getCoarseQuantizer();
+
             if (coarseQuantizerContext != null && !knnMethod.isCoarseQuantizerAvailable()) {
                 throw new ValidationException();
-            } else if (coarseQuantizerContext != null) {
+            }
+
+            if (coarseQuantizerContext != null) {
                 validateMethod(coarseQuantizerContext);
             }
         }
@@ -228,7 +231,9 @@ public interface KNNLibrary {
 
             if (knnMethodContext.getCoarseQuantizer() != null && !knnMethod.isCoarseQuantizerAvailable()) {
                 throw new IllegalArgumentException("Cannot pass coarse quantizer for method: " + methodName);
-            } else if (knnMethodContext.getCoarseQuantizer() != null) {
+            }
+
+            if (knnMethodContext.getCoarseQuantizer() != null) {
                 extraParameterMap.put(COARSE_QUANTIZER, generateExtraParameterMap(knnMethodContext.getCoarseQuantizer()));
             }
 
@@ -389,7 +394,9 @@ public interface KNNLibrary {
             // Add coarse quantizer if necessary
             if (knnMethodContext.getCoarseQuantizer() != null && !knnMethod.isCoarseQuantizerAvailable()) {
                 throw new IllegalArgumentException("Cannot pass coarse quantizer for method: " + methodName);
-            } else if (knnMethodContext.getCoarseQuantizer() != null) {
+            }
+
+            if (knnMethodContext.getCoarseQuantizer() != null) {
                 methodStringBuilder.append("(");
                 methodStringBuilder.append(generateMethod(knnMethodContext.getCoarseQuantizer()));
                 methodStringBuilder.append(")");
@@ -403,7 +410,9 @@ public interface KNNLibrary {
             KNNMethodContext.MethodComponentContext encoderContext = knnMethodContext.getEncoder();
             if (encoderContext != null && !knnMethod.hasEncoder(encoderContext.getName())) {
                 throw new IllegalArgumentException("Invalid encoder: " + encoderContext.getName());
-            } else if (encoderContext != null) {
+            }
+
+            if (encoderContext != null) {
                 MethodComponent encoderComponent = knnMethod.getEncoder(encoderContext.getName());
                 methodStringBuilder.append(encoderComponent.getName());
                 parameters = encoderContext.getParameters();

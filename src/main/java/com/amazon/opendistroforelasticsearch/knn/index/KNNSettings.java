@@ -401,7 +401,8 @@ public class KNNSettings {
 
         @Override public void validate(String value) {
             if (value == null || !SpaceType.getValues().contains(value.toLowerCase())){
-                throw new InvalidParameterException(String.format("Unsupported space type: %s", value));
+                throw new InvalidParameterException(String.format("Unsupported space type: %s. Spaces supported by " +
+                        "the k-NN plugin are: %s.", value, SpaceType.getValues().toString()));
             }
         }
     }

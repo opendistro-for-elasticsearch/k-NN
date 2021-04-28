@@ -44,6 +44,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.KNN_ENGINE;
+
 /**
  * Calculate query weights and build query scorers.
  */
@@ -82,7 +84,7 @@ public class KNNWeight extends Weight {
                 return null;
             }
 
-            KNNEngine knnEngine = KNNEngine.getEngine(fieldInfo.getAttribute(KNNConstants.KNN_ENGINE));
+            KNNEngine knnEngine = KNNEngine.getEngine(fieldInfo.getAttribute(KNN_ENGINE));
             SpaceType spaceType = SpaceType.getSpace(fieldInfo.getAttribute(KNNConstants.SPACE_TYPE));
             logger.debug("[KNN] knnEngine for " + knnQuery.getField() + ": " + knnEngine.getName());
 
@@ -99,24 +101,20 @@ public class KNNWeight extends Weight {
                 return null;
             }
 
-            FieldInfo queryFieldInfo = reader.getFieldInfos().fieldInfo(knnQuery.getField());
-            Map<String, String> fieldAttributes = queryFieldInfo.attributes();
-
             Path indexPath = PathUtils.get(directory, engineFiles.get(0));
             final KNNQueryResult[] results;
             final KNNIndex index = knnIndexCache.getIndex(indexPath.toString(), knnQuery.getIndexName(), spaceType);
 
-            if ((fieldAttributes.containsValue(KNNEngine.NMSLIB.getName()) && index instanceof KNNNmsLibIndex)
-                    || (fieldAttributes.containsValue(KNNEngine.FAISS.getName())
-                    && index instanceof KNNFaissIndex)) {
-                results = index.query(
-                        knnQuery.getQueryVector(),
-                        knnQuery.getK()
-                );
-            } else {
+            if ((index instanceof KNNNmsLibIndex && knnEngine != KNNEngine.NMSLIB)
+                    || index instanceof KNNFaissIndex && knnEngine != KNNEngine.FAISS) {
                 throw new IllegalStateException("Unable to retrieve k-NN engine for index path: "
                         + indexPath.toString());
             }
+
+            results = index.query(
+                    knnQuery.getQueryVector(),
+                    knnQuery.getK()
+            );
 
             /*
              * Scores represent the distance of the documents with respect to given query vector.
@@ -127,8 +125,6 @@ public class KNNWeight extends Weight {
             if (results.length == 0) {
                 logger.debug("[KNN] Query yielded 0 results");
                 return null;
-            } else {
-                logger.debug("[KNN] Query yielded >0 results");
             }
 
             Map<Integer, Float> scores = Arrays.stream(results).collect(

@@ -78,14 +78,17 @@ public class MethodComponent {
      */
     public void validate(KNNMethodContext.MethodComponentContext methodComponentContext) {
         Map<String, Object> providedParameters = methodComponentContext.getParameters();
-        if (providedParameters != null) {
-            for (Map.Entry<String, Object> parameter : providedParameters.entrySet()) {
-                if (!parameters.containsKey(parameter.getKey())) {
-                    throw new ValidationException();
-                }
 
-                parameters.get(parameter.getKey()).validate(parameter.getValue());
+        if (providedParameters == null) {
+            return;
+        }
+
+        for (Map.Entry<String, Object> parameter : providedParameters.entrySet()) {
+            if (!parameters.containsKey(parameter.getKey())) {
+                throw new ValidationException();
             }
+
+            parameters.get(parameter.getKey()).validate(parameter.getValue());
         }
     }
 
@@ -103,7 +106,7 @@ public class MethodComponent {
          * @param name of method component
          * @return Builder instance
          */
-        public static MethodComponent.Builder builder(String name) {
+        public static Builder builder(String name) {
             return new MethodComponent.Builder(name);
         }
 

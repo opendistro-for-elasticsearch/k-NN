@@ -116,12 +116,14 @@ public class KNNMethod {
 
         // validate the encoder and its parameters
         KNNMethodContext.MethodComponentContext encoderContext = knnMethodContext.getEncoder();
-        if (encoderContext != null) {
-            try {
-                getEncoder(encoderContext.getName()).validate(encoderContext);
-            } catch (IllegalArgumentException iae) {
-                throw new ValidationException();
-            }
+        if (encoderContext == null) {
+            return;
+        }
+
+        try {
+            getEncoder(encoderContext.getName()).validate(encoderContext);
+        } catch (IllegalArgumentException iae) {
+            throw new ValidationException();
         }
     }
 

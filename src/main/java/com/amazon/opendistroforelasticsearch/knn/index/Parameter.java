@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import org.elasticsearch.common.ValidationException;
 
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Parameter that can be set for a method component
@@ -28,15 +28,16 @@ public abstract class Parameter<T> {
 
     private T defaultValue;
     private boolean inMethodString;
-    protected Function<T, Boolean> validator;
+    protected Predicate<T> validator;
 
     /**
      * Constructor
      *
      * @param defaultValue of the parameter
      * @param inMethodString whether the parameter is included in method string
+     * @param validator used to validate a parameter value passed
      */
-    public Parameter(T defaultValue, boolean inMethodString, Function<T, Boolean> validator) {
+    public Parameter(T defaultValue, boolean inMethodString, Predicate<T> validator) {
         this.defaultValue = defaultValue;
         this.inMethodString = inMethodString;
         this.validator = validator;
@@ -71,14 +72,14 @@ public abstract class Parameter<T> {
      * Integer method parameter
      */
     public static class IntegerParameter extends Parameter<Integer> {
-        public IntegerParameter(Integer defaultValue, boolean inMethodString, Function<Integer, Boolean> validator)
+        public IntegerParameter(Integer defaultValue, boolean inMethodString, Predicate<Integer> validator)
         {
             super(defaultValue, inMethodString, validator);
         }
 
         @Override
         public void validate(Object value) {
-            if (!(value instanceof Integer) || !validator.apply((Integer) value)) {
+            if (!(value instanceof Integer) || !validator.test((Integer) value)) {
                 throw new ValidationException();
             }
         }

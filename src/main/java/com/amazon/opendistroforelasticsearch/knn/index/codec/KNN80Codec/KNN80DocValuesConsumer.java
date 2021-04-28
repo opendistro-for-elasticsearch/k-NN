@@ -139,12 +139,19 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
                         if(KNNEngine.NMSLIB.getName().equals(knnEngine.getName())) {
                             KNNNmsLibIndex.save(pair.docs, pair.vectors, tempIndexPath, algoParams, spaceType,
                                     method);
-                        } else if (KNNEngine.FAISS.getName().equals(knnEngine.getName())) {
-                            String extraParametersString = fieldAttributes.getOrDefault(KNNConstants.EXTRA_PARAMETERS, null);
+                            return null;
+                        }
+                        if (KNNEngine.FAISS.getName().equals(knnEngine.getName())) {
+                            String extraParametersString = fieldAttributes.getOrDefault(KNNConstants.EXTRA_PARAMETERS,
+                                    null);
                             Map<String, Object> extraParameterMap = Collections.emptyMap();
                             if (extraParametersString != null) {
                                 try {
-                                    extraParameterMap = XContentFactory.xContent(XContentType.JSON).createParser(NamedXContentRegistry.EMPTY, DeprecationHandler.THROW_UNSUPPORTED_OPERATION, extraParametersString).map();
+                                    extraParameterMap = XContentFactory.xContent(XContentType.JSON)
+                                            .createParser(NamedXContentRegistry.EMPTY,
+                                                    DeprecationHandler.THROW_UNSUPPORTED_OPERATION,
+                                                    extraParametersString)
+                                            .map();
                                 } catch (IOException e) {
                                     throw new IllegalStateException(e);
                                 }
@@ -153,10 +160,9 @@ class KNN80DocValuesConsumer extends DocValuesConsumer implements Closeable {
 
                             KNNFaissIndex.save(pair.docs, pair.vectors, tempIndexPath, extraParameterMap, spaceType,
                                     method, trainingDatasetSizeLimit, minimumDatapoints);
-                        } else {
-                            throw new IllegalStateException("Invalid engine");
+                            return null;
                         }
-                        return null;
+                        throw new IllegalStateException("Invalid engine: "+knnEngine.getName());
                     }
             );
 

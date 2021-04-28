@@ -58,7 +58,8 @@ public enum KNNEngine implements KNNLibrary {
     public static KNNEngine getEngine(String name) {
         if(FAISS.getName().equalsIgnoreCase(name)) {
             return FAISS;
-        } else if (NMSLIB.getName().equalsIgnoreCase(name)){
+        }
+        if (NMSLIB.getName().equalsIgnoreCase(name)){
             return NMSLIB;
         }
         throw new IllegalArgumentException("[KNN] Invalid engine type: " + name);
