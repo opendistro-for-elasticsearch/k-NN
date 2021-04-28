@@ -63,8 +63,8 @@ public class KNNMethodTests extends KNNTestCase {
     public void testGetEncoder() {
         String name = "test";
         String encoder = "test-encoder";
-        Map<String, KNNMethod.MethodComponent> encoders = ImmutableMap.of(
-                encoder, new KNNMethod.MethodComponent(encoder, Collections.emptyMap())
+        Map<String, MethodComponent> encoders = ImmutableMap.of(
+                encoder, new MethodComponent(encoder, Collections.emptyMap())
         );
 
         KNNMethod knnMethod = new KNNMethod(name, Collections.emptySet(), Collections.emptyMap(), encoders, false);
@@ -77,8 +77,8 @@ public class KNNMethodTests extends KNNTestCase {
     public void testHasEncoder() {
         String name = "test";
         String encoder = "test-encoder";
-        Map<String, KNNMethod.MethodComponent> encoders = ImmutableMap.of(
-                encoder, new KNNMethod.MethodComponent(encoder, Collections.emptyMap())
+        Map<String, MethodComponent> encoders = ImmutableMap.of(
+                encoder, new MethodComponent(encoder, Collections.emptyMap())
         );
 
         KNNMethod knnMethod = new KNNMethod(name, Collections.emptySet(), Collections.emptyMap(), encoders, false);
@@ -105,8 +105,8 @@ public class KNNMethodTests extends KNNTestCase {
         String methodName = "test-method";
         Set<SpaceType> spaceTypeSet = ImmutableSet.of(SpaceType.L2);
         String encoderName = "enc-1";
-        Map<String, KNNMethod.MethodComponent> encoders = ImmutableMap.of(encoderName,
-                new KNNMethod.MethodComponent(encoderName, Collections.emptyMap()));
+        Map<String, MethodComponent> encoders = ImmutableMap.of(encoderName,
+                new MethodComponent(encoderName, Collections.emptyMap()));
         KNNMethod knnMethod = new KNNMethod(methodName, spaceTypeSet, Collections.emptyMap(), encoders,
                 false);
 
@@ -157,167 +157,5 @@ public class KNNMethodTests extends KNNTestCase {
         in = xContentBuilderToMap(xContentBuilder);
         KNNMethodContext knnMethodContext4 = KNNMethodContext.parse(in, null, null);
         knnMethod.validate(knnMethodContext4);
-    }
-
-    /**
-     * Test Method Component name getter
-     */
-    public void testMethodComponent_getName() {
-        String name = "test";
-        KNNMethod.MethodComponent methodComponent = new KNNMethod.MethodComponent(name, Collections.emptyMap());
-        assertEquals(name, methodComponent.getName());
-    }
-
-    /**
-     * Test Method Component parameter getter
-     */
-    public void testMethodComponent_getParameters() {
-        String name = "test";
-        String paramKey = "key";
-        Map<String, KNNMethod.Parameter<?>> parameterMap = ImmutableMap.of(
-                paramKey, new KNNMethod.Parameter.IntegerParameter(1, false, v -> v > 0)
-        );
-        KNNMethod.MethodComponent methodComponent = new KNNMethod.MethodComponent(name, parameterMap);
-        assertEquals(parameterMap, methodComponent.getParameters());
-    }
-
-    /**
-     * Test Method Component generate extra parameter map
-     */
-    public void testMethodComponent_generateExtraParameterMap() throws IOException {
-        String methodName = "test-name";
-        String key1 = "test-key-1";
-        String key2 = "test-key-2";
-        Map<String, KNNMethod.Parameter<?>> parameters = ImmutableMap.of(
-                key1, new KNNMethod.Parameter.IntegerParameter(1, false, v -> v > 0),
-                key2, new KNNMethod.Parameter.IntegerParameter(1, true, v -> v > 0));
-        KNNMethod.MethodComponent methodComponent = new KNNMethod.MethodComponent(methodName, parameters);
-
-        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(NAME, methodName)
-                .startObject(PARAMETERS)
-                .field(key1, 10)
-                .field(key2, 10)
-                .endObject()
-                .endObject();
-        Map<String, Object> in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext componentContext = KNNMethodContext.MethodComponentContext.parse(in);
-
-        Map<String, Object> extraParams = methodComponent.generateExtraParameterMap(componentContext.getParameters());
-        assertEquals(1, extraParams.size());
-        assertEquals(10, extraParams.get(key1));
-        assertNull(extraParams.get(key2));
-    }
-
-    /**
-     * Test Method Component parameter validation
-     */
-    public void testMethodComponent_validate() throws IOException {
-        // Invalid parameter key
-        String methodName = "test-method";
-        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(NAME, methodName)
-                .startObject(PARAMETERS)
-                .field("invalid", "invalid")
-                .endObject()
-                .endObject();
-        Map<String, Object> in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext componentContext1 = KNNMethodContext.MethodComponentContext.parse(in);
-
-        KNNMethod.MethodComponent methodComponent1 = new KNNMethod.MethodComponent(methodName, Collections.emptyMap());
-
-        expectThrows(ValidationException.class, () -> methodComponent1.validate(componentContext1));
-
-        // Invalid parameter type
-        xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(NAME, methodName)
-                .startObject(PARAMETERS)
-                .field("valid", "invalid")
-                .endObject()
-                .endObject();
-        in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext componentContext2 = KNNMethodContext.MethodComponentContext.parse(in);
-
-        KNNMethod.MethodComponent methodComponent2 = new KNNMethod.MethodComponent(methodName, ImmutableMap.of("valid",
-                new KNNMethod.Parameter.IntegerParameter(1, false, v -> v > 0)));
-
-        expectThrows(ValidationException.class, () -> methodComponent2.validate(componentContext2));
-
-        // valid configuration
-        xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(NAME, methodName)
-                .startObject(PARAMETERS)
-                .field("valid1", 16)
-                .field("valid2", 128)
-                .endObject()
-                .endObject();
-        in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext componentContext3 = KNNMethodContext.MethodComponentContext.parse(in);
-
-        KNNMethod.MethodComponent methodComponent3 = new KNNMethod.MethodComponent(methodName, ImmutableMap.of(
-                "valid1",
-                new KNNMethod.Parameter.IntegerParameter(1, false, v -> v > 0),
-                "valid2",
-                new KNNMethod.Parameter.IntegerParameter(1, false, v -> v > 0)));
-        methodComponent3.validate(componentContext3);
-
-        // valid configuration - empty parameters
-        xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(NAME, methodName)
-                .endObject();
-        in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext componentContext4 = KNNMethodContext.MethodComponentContext.parse(in);
-
-        KNNMethod.MethodComponent methodComponent4 = new KNNMethod.MethodComponent(methodName, ImmutableMap.of(
-                "valid1",
-                new KNNMethod.Parameter.IntegerParameter(1, false, v -> v > 0),
-                "valid2",
-                new KNNMethod.Parameter.IntegerParameter(1, false, v -> v > 0)));
-        methodComponent4.validate(componentContext4);
-    }
-
-
-    /**
-     * Test default default value getter
-     */
-    public void testParameter_getDefaultValue() {
-        String defaultValue = "test-default";
-        KNNMethod.Parameter<String> parameter = new KNNMethod.Parameter<String>(defaultValue, false, v -> true) {
-            @Override
-            public void validate(Object value) {}
-        };
-
-        assertEquals(defaultValue, parameter.getDefaultValue());
-    }
-
-
-    /**
-     * Test default is in method string
-     */
-    public void testParameter_isInMethodString() {
-        boolean inMethodString = false;
-        KNNMethod.Parameter<String> parameter = new KNNMethod.Parameter<String>("", inMethodString, v -> true) {
-            @Override
-            public void validate(Object value) {}
-        };
-
-        assertEquals(inMethodString, parameter.isInMethodString());
-    }
-
-    /**
-     * Test integer parameter validate
-     */
-    public void testIntegerParameter_validate() {
-        final KNNMethod.Parameter.IntegerParameter parameter = new KNNMethod.Parameter.IntegerParameter(1, false,
-                v -> v > 0);
-
-        // Invalid type
-        expectThrows(ValidationException.class, () -> parameter.validate("String"));
-
-        // Invalid value
-        expectThrows(ValidationException.class, () -> parameter.validate(-1));
-
-        // valid value
-        parameter.validate(12);
     }
 }

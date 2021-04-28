@@ -183,7 +183,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                     this.m = getM(context.indexSettings());
                 } else if (this.m == null) {
                     KNNMethod knnMethod = KNNEngine.NMSLIB.getMethod(METHOD_HNSW);
-                    KNNMethod.MethodComponent encoderComponent = knnMethod.getMethodComponent();
+                    MethodComponent encoderComponent = knnMethod.getMethodComponent();
                     Map<String, Object> parameters = knnMethodContext.getValue().getMethodComponent().getParameters();
 
                     if (parameters != null && parameters.containsKey(METHOD_PARAMETER_M)) {
@@ -198,7 +198,7 @@ public class KNNVectorFieldMapper extends ParametrizedFieldMapper {
                     this.efConstruction = getEfConstruction(context.indexSettings());
                 } else if (this.efConstruction == null) {
                     KNNMethod knnMethod = KNNEngine.NMSLIB.getMethod(METHOD_HNSW);
-                    KNNMethod.MethodComponent encoderComponent = knnMethod.getMethodComponent();
+                    MethodComponent encoderComponent = knnMethod.getMethodComponent();
                     Map<String, Object> parameters = knnMethodContext.getValue().getMethodComponent().getParameters();
 
                     if (parameters != null && parameters.containsKey(METHOD_PARAMETER_EF_CONSTRUCTION)) {

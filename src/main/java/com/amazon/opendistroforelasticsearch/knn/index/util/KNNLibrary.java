@@ -18,6 +18,8 @@ package com.amazon.opendistroforelasticsearch.knn.index.util;
 
 import com.amazon.opendistroforelasticsearch.knn.index.KNNMethod;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNMethodContext;
+import com.amazon.opendistroforelasticsearch.knn.index.MethodComponent;
+import com.amazon.opendistroforelasticsearch.knn.index.Parameter;
 import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -240,7 +242,7 @@ public interface KNNLibrary {
      */
     class Nmslib extends NativeLibrary {
 
-        public final static Map<String, KNNMethod.MethodComponent> ENCODERS = Collections.emptyMap();
+        public final static Map<String, MethodComponent> ENCODERS = Collections.emptyMap();
 
         public final static Map<String, KNNMethod> METHODS = ImmutableMap.of(
                 METHOD_HNSW, new KNNMethod(
@@ -253,9 +255,9 @@ public interface KNNLibrary {
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                METHOD_PARAMETER_M, new KNNMethod.Parameter.IntegerParameter(16, false,
+                                METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, false,
                                         v -> v > 0),
-                                METHOD_PARAMETER_EF_CONSTRUCTION, new KNNMethod.Parameter.IntegerParameter(512, false,
+                                METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512, false,
                                         v -> v > 0)
                 ), ENCODERS,false)
         );
@@ -289,12 +291,12 @@ public interface KNNLibrary {
      */
     class Faiss extends NativeLibrary {
 
-        public final static Map<String, KNNMethod.MethodComponent> ENCODERS = ImmutableMap.of(
-                ENCODER_PQ, new KNNMethod.MethodComponent(
+        public final static Map<String, MethodComponent> ENCODERS = ImmutableMap.of(
+                ENCODER_PQ, new MethodComponent(
                         "PQ",  ImmutableMap.of(METHOD_PARAMETER_CODE_SIZE,
-                        new KNNMethod.Parameter.IntegerParameter(16, true, v -> v > 0))
+                        new Parameter.IntegerParameter(16, true, v -> v > 0))
                 ),
-                ENCODER_FLAT, new KNNMethod.MethodComponent("Flat", Collections.emptyMap())
+                ENCODER_FLAT, new MethodComponent("Flat", Collections.emptyMap())
         );
 
         public final static Map<String, KNNMethod> METHODS = ImmutableMap.of(
@@ -305,11 +307,11 @@ public interface KNNLibrary {
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                METHOD_PARAMETER_M, new KNNMethod.Parameter.IntegerParameter(16, true,
+                                METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, true,
                                         v -> v > 0),
-                                METHOD_PARAMETER_EF_CONSTRUCTION, new KNNMethod.Parameter.IntegerParameter(512, false,
+                                METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512, false,
                                         v -> v > 0),
-                                METHOD_PARAMETER_EF_SEARCH, new KNNMethod.Parameter.IntegerParameter(512, false,
+                                METHOD_PARAMETER_EF_SEARCH, new Parameter.IntegerParameter(512, false,
                                         v -> v > 0)
                         ),
                         ENCODERS,
@@ -321,9 +323,9 @@ public interface KNNLibrary {
                                 SpaceType.INNER_PRODUCT
                         ),
                         ImmutableMap.of(
-                                METHOD_PARAMETER_NCENTROIDS, new KNNMethod.Parameter.IntegerParameter(16, true,
+                                METHOD_PARAMETER_NCENTROIDS, new Parameter.IntegerParameter(16, true,
                                         v -> v > 0),
-                                METHOD_PARAMETER_NPROBES, new KNNMethod.Parameter.IntegerParameter(1, false,
+                                METHOD_PARAMETER_NPROBES, new Parameter.IntegerParameter(1, false,
                                         v -> v > 0)
                         ),
                         ENCODERS,
@@ -377,7 +379,7 @@ public interface KNNLibrary {
             // Attach all of the parameters for the main method component
             Map<String, Object> parameters = knnMethodContext.getMethodComponent().getParameters();
             String prefix = "";
-            for (Map.Entry<String, KNNMethod.Parameter<?>> parameter : knnMethod.getMethodComponent()
+            for (Map.Entry<String, Parameter<?>> parameter : knnMethod.getMethodComponent()
                     .getParameters().entrySet().stream().filter(m -> m.getValue().isInMethodString())
                     .collect(Collectors.toSet())) {
                 methodStringBuilder.append(prefix);
@@ -407,11 +409,11 @@ public interface KNNLibrary {
             if (encoderContext != null && !knnMethod.hasEncoder(encoderContext.getName())) {
                 throw new IllegalArgumentException("Invalid encoder: " + encoderContext.getName());
             } else if (encoderContext != null) {
-                KNNMethod.MethodComponent encoderComponent = knnMethod.getEncoder(encoderContext.getName());
+                MethodComponent encoderComponent = knnMethod.getEncoder(encoderContext.getName());
                 methodStringBuilder.append(encoderComponent.getName());
                 parameters = encoderContext.getParameters();
                 prefix = "";
-                for (Map.Entry<String, KNNMethod.Parameter<?>> parameter : encoderComponent.getParameters().entrySet()
+                for (Map.Entry<String, Parameter<?>> parameter : encoderComponent.getParameters().entrySet()
                         .stream().filter(m -> m.getValue().isInMethodString()).collect(Collectors.toSet())) {
                     methodStringBuilder.append(prefix);
                     if (parameters != null && parameters.containsKey(parameter.getKey())) {
