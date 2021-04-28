@@ -209,109 +209,117 @@ public class KNNMethodContext implements ToXContentFragment {
      * @return KNNMethodContext
      */
     public static KNNMethodContext parse(Object in, KNNEngine parentEngine, SpaceType parentSpace) {
-        if (in instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> methodMap = (Map<String, Object>) in;
-
-            KNNEngine engine = parentEngine == null ? KNNEngine.DEFAULT : parentEngine;
-            SpaceType spaceType = parentSpace == null ? SpaceType.L2 : parentSpace;
-            String name = "";
-            Map<String, Object> parameters = null;
-            Object coarseQuantizerValue = null;
-            MethodComponentContext encoder = null;
-
-            Integer trainingDatasetSizeLimit = DEFAULT_TRAINING_DATASET_SIZE_LIMIT;
-            Integer minimumDatapoints = DEFAULT_MINIMUM_DATAPOINTS;
-
-            String key;
-            Object value;
-            for (Map.Entry<String, Object> methodEntry : methodMap.entrySet()) {
-                key = methodEntry.getKey();
-                value = methodEntry.getValue();
-                if (KNN_ENGINE.equals(key)) {
-                    if (parentEngine != null && !parentEngine.getName().equals(value)) {
-                        throw new MapperParsingException("Cannot set " + KNN_ENGINE + " different than parent "
-                                + KNN_ENGINE);
-                    } else if (value != null && !(value instanceof String)) {
-                        throw new MapperParsingException("\"" + KNN_ENGINE + "\" must be a string");
-                    } else if (value != null) {
-                        try {
-                            engine = KNNEngine.getEngine((String) value);
-                        } catch (IllegalArgumentException iae) {
-                            throw new MapperParsingException("Invalid " + KNN_ENGINE + ": " + value);
-                        }
-                    }
-                } else if (SPACE_TYPE.equals(key)) {
-                    if (parentSpace != null && !spaceType.getValue().equals(value)) {
-                        throw new MapperParsingException("Cannot set " + SPACE_TYPE + " different than parent "
-                                + SPACE_TYPE);
-                    } else if (value != null && !(value instanceof String)) {
-                        throw new MapperParsingException("\"" + SPACE_TYPE + "\" must be a string");
-                    } else {
-                        try {
-                            spaceType = SpaceType.getSpace((String) value);
-                        } catch (IllegalArgumentException iae) {
-                            throw new MapperParsingException("Invalid " + SPACE_TYPE + ": " + value);
-                        }
-                    }
-                } else if (NAME.equals(key)) {
-                    if (!(value instanceof String)) {
-                        throw new MapperParsingException(NAME + "has to be a string");
-                    } else {
-                        name = (String) value;
-                    }
-                } else if (PARAMETERS.equals(key)) {
-                    if (value == null) {
-                        parameters = null;
-                    } else if (!(value instanceof Map)) {
-                        throw new MapperParsingException("Unable to parse parameters for main method component");
-                    } else {
-                        @SuppressWarnings("unchecked")
-                        Map<String, Object> parameters1 = (Map<String, Object>) value;
-                        parameters = parameters1;
-                    }
-                } else if (COARSE_QUANTIZER.equals(key)) {
-                    // Cannot parse coarse quantizer until the end because the engine and space may not be set
-                    coarseQuantizerValue = value;
-                } else if (ENCODER.equals(key)) {
-                    encoder = MethodComponentContext.parse(value);
-                } else if (TRAINING_DATASET_SIZE_LIMIT.equals(key)) {
-                    if (!(value instanceof Integer)) {
-                        throw new MapperParsingException(TRAINING_DATASET_SIZE_LIMIT + "has to be a Integer");
-                    } else if ((Integer) value < MIN_TRAINING_DATASET_SIZE_LIMIT) {
-                        throw new MapperParsingException(TRAINING_DATASET_SIZE_LIMIT + "has to be equal to or greater than 100");
-                    } else {
-                        trainingDatasetSizeLimit = (Integer) value;
-                    }
-                } else if (MINIMUM_DATAPOINTS.equals(key)) {
-                    if (!(value instanceof Integer)) {
-                        throw new MapperParsingException(MINIMUM_DATAPOINTS + "has to be a Integer");
-                    } else if ((Integer) value < MIN_MINIMUM_DATAPOINTS) {
-                        throw new MapperParsingException(MINIMUM_DATAPOINTS + "has to be equal to or greater than 0");
-                    } else {
-                        minimumDatapoints = (Integer) value;
-                    }
-                } else {
-                    throw new MapperParsingException("Invalid parameter: " + key);
-                }
-            }
-
-            if (name.isEmpty()) {
-                throw new MapperParsingException(NAME + " needs to be set");
-            }
-
-            MethodComponentContext method = new MethodComponentContext(name, parameters);
-
-            KNNMethodContext coarseQuantizer = null;
-            if (coarseQuantizerValue != null) {
-                coarseQuantizer = parse(coarseQuantizerValue, engine, spaceType);
-            }
-
-            return new KNNMethodContext(engine, spaceType, method, coarseQuantizer, encoder, trainingDatasetSizeLimit,
-                    minimumDatapoints);
+        if (!(in instanceof Map)) {
+            throw new MapperParsingException("Unable to parse mapping into KNNMethodContext. Object not of type \"Map\"");
         }
 
-        throw new MapperParsingException("Unable to parse mapping into KNNMethodContext. Object not of type \"Map\"");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> methodMap = (Map<String, Object>) in;
+
+        KNNEngine engine = parentEngine == null ? KNNEngine.DEFAULT : parentEngine;
+        SpaceType spaceType = parentSpace == null ? SpaceType.L2 : parentSpace;
+        String name = "";
+        Map<String, Object> parameters = null;
+        Object coarseQuantizerValue = null;
+        MethodComponentContext encoder = null;
+
+        Integer trainingDatasetSizeLimit = DEFAULT_TRAINING_DATASET_SIZE_LIMIT;
+        Integer minimumDatapoints = DEFAULT_MINIMUM_DATAPOINTS;
+
+        String key;
+        Object value;
+        for (Map.Entry<String, Object> methodEntry : methodMap.entrySet()) {
+            key = methodEntry.getKey();
+            value = methodEntry.getValue();
+            if (KNN_ENGINE.equals(key)) {
+                if (parentEngine != null && !parentEngine.getName().equals(value)) {
+                    throw new MapperParsingException("Cannot set " + KNN_ENGINE + " different than parent "
+                            + KNN_ENGINE);
+                }
+
+                if (value != null && !(value instanceof String)) {
+                    throw new MapperParsingException("\"" + KNN_ENGINE + "\" must be a string");
+                }
+
+                if (value != null) {
+                    try {
+                        engine = KNNEngine.getEngine((String) value);
+                    } catch (IllegalArgumentException iae) {
+                        throw new MapperParsingException("Invalid " + KNN_ENGINE + ": " + value);
+                    }
+                }
+            } else if (SPACE_TYPE.equals(key)) {
+                if (parentSpace != null && !spaceType.getValue().equals(value)) {
+                    throw new MapperParsingException("Cannot set " + SPACE_TYPE + " different than parent "
+                            + SPACE_TYPE);
+                }
+
+                if (value != null && !(value instanceof String)) {
+                    throw new MapperParsingException("\"" + SPACE_TYPE + "\" must be a string");
+                }
+
+                try {
+                    spaceType = SpaceType.getSpace((String) value);
+                } catch (IllegalArgumentException iae) {
+                    throw new MapperParsingException("Invalid " + SPACE_TYPE + ": " + value);
+                }
+            } else if (NAME.equals(key)) {
+                if (!(value instanceof String)) {
+                    throw new MapperParsingException(NAME + "has to be a string");
+                }
+
+                name = (String) value;
+            } else if (PARAMETERS.equals(key)) {
+                if (value != null && !(value instanceof Map)) {
+                    throw new MapperParsingException("Unable to parse parameters for main method component");
+                }
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> parameters1 = (Map<String, Object>) value;
+                parameters = parameters1;
+            } else if (COARSE_QUANTIZER.equals(key)) {
+                // Cannot parse coarse quantizer until the end because the engine and space may not be set
+                coarseQuantizerValue = value;
+            } else if (ENCODER.equals(key)) {
+                encoder = MethodComponentContext.parse(value);
+            } else if (TRAINING_DATASET_SIZE_LIMIT.equals(key)) {
+                if (!(value instanceof Integer)) {
+                    throw new MapperParsingException(TRAINING_DATASET_SIZE_LIMIT + "has to be a Integer");
+                }
+
+                if ((Integer) value < MIN_TRAINING_DATASET_SIZE_LIMIT) {
+                    throw new MapperParsingException(TRAINING_DATASET_SIZE_LIMIT + "has to be equal to or greater than 100");
+                }
+
+                trainingDatasetSizeLimit = (Integer) value;
+            } else if (MINIMUM_DATAPOINTS.equals(key)) {
+                if (!(value instanceof Integer)) {
+                    throw new MapperParsingException(MINIMUM_DATAPOINTS + "has to be a Integer");
+                }
+
+                if ((Integer) value < MIN_MINIMUM_DATAPOINTS) {
+                    throw new MapperParsingException(MINIMUM_DATAPOINTS + "has to be equal to or greater than 0");
+                }
+
+                minimumDatapoints = (Integer) value;
+            } else {
+                throw new MapperParsingException("Invalid parameter: " + key);
+            }
+        }
+
+        if (name.isEmpty()) {
+            throw new MapperParsingException(NAME + " needs to be set");
+        }
+
+        MethodComponentContext method = new MethodComponentContext(name, parameters);
+
+        KNNMethodContext coarseQuantizer = null;
+        if (coarseQuantizerValue != null) {
+            coarseQuantizer = parse(coarseQuantizerValue, engine, spaceType);
+        }
+
+        return new KNNMethodContext(engine, spaceType, method, coarseQuantizer, encoder, trainingDatasetSizeLimit,
+                minimumDatapoints);
     }
 
     @Override
@@ -358,44 +366,44 @@ public class KNNMethodContext implements ToXContentFragment {
          * @return MethodComponentContext
          */
         public static MethodComponentContext parse(Object in) {
-            if (in instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> methodMap = (Map<String, Object>) in;
-                String name = "";
-                Map<String, Object> parameters = null;
-
-                String key;
-                Object value;
-                for (Map.Entry<String, Object> methodEntry : methodMap.entrySet()) {
-                    key = methodEntry.getKey();
-                    value = methodEntry.getValue();
-                    if (NAME.equals(key)) {
-                        if (!(value instanceof String)) {
-                            throw new MapperParsingException("Component name should be a string");
-                        } else {
-                            name = (String) value;
-                        }
-                    } else if (PARAMETERS.equals(key)) {
-                        if (!(value instanceof Map)) {
-                            throw new MapperParsingException("Unable to parse parameters for main method component");
-                        } else {
-                            @SuppressWarnings("unchecked")
-                            Map<String, Object> parameters1 = (Map<String, Object>) value;
-                            parameters = parameters1;
-                        }
-                    } else {
-                        throw new MapperParsingException("Invalid parameter for MethodComponentContext: " + key);
-                    }
-                }
-
-                if (name.isEmpty()) {
-                    throw new MapperParsingException(NAME + " needs to be set");
-                }
-
-                return new MethodComponentContext(name, parameters);
+            if (!(in instanceof Map)) {
+                throw new MapperParsingException("Unable to parse MethodComponent");
             }
 
-            throw new MapperParsingException("Unable to parse MethodComponent");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> methodMap = (Map<String, Object>) in;
+            String name = "";
+            Map<String, Object> parameters = null;
+
+            String key;
+            Object value;
+            for (Map.Entry<String, Object> methodEntry : methodMap.entrySet()) {
+                key = methodEntry.getKey();
+                value = methodEntry.getValue();
+                if (NAME.equals(key)) {
+                    if (!(value instanceof String)) {
+                        throw new MapperParsingException("Component name should be a string");
+                    }
+
+                    name = (String) value;
+                } else if (PARAMETERS.equals(key)) {
+                    if (!(value instanceof Map)) {
+                        throw new MapperParsingException("Unable to parse parameters for main method component");
+                    }
+
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> parameters1 = (Map<String, Object>) value;
+                    parameters = parameters1;
+                } else {
+                    throw new MapperParsingException("Invalid parameter for MethodComponentContext: " + key);
+                }
+            }
+
+            if (name.isEmpty()) {
+                throw new MapperParsingException(NAME + " needs to be set");
+            }
+
+            return new MethodComponentContext(name, parameters);
         }
 
         @Override
