@@ -23,7 +23,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,8 +38,9 @@ public class KNNMethodTests extends KNNTestCase {
      */
     public void testGetMethodComponent() {
         String name = "test";
-        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), Collections.emptySet(),
-                Collections.emptyMap(), false);
+        KNNMethod knnMethod = KNNMethod.Builder.builder(MethodComponent.Builder.builder(name).build())
+                .setIsCoarseQuantizerAvailable(false)
+                .build();
         assertEquals(name, knnMethod.getMethodComponent().getName());
     }
 
@@ -49,9 +49,10 @@ public class KNNMethodTests extends KNNTestCase {
      */
     public void testHasSpace() {
         String name = "test";
-        Set<SpaceType> spaceTypeSet = ImmutableSet.of(SpaceType.L2, SpaceType.COSINESIMIL);
-        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), spaceTypeSet,
-                Collections.emptyMap(), false);
+        KNNMethod knnMethod = KNNMethod.Builder.builder(MethodComponent.Builder.builder(name).build())
+                .setIsCoarseQuantizerAvailable(false)
+                .addSpaces(SpaceType.L2, SpaceType.COSINESIMIL)
+                .build();
         assertTrue(knnMethod.hasSpace(SpaceType.L2));
         assertTrue(knnMethod.hasSpace(SpaceType.COSINESIMIL));
         assertFalse(knnMethod.hasSpace(SpaceType.INNER_PRODUCT));
@@ -64,11 +65,14 @@ public class KNNMethodTests extends KNNTestCase {
         String name = "test";
         String encoder = "test-encoder";
         Map<String, MethodComponent> encoders = ImmutableMap.of(
-                encoder, new MethodComponent.Builder(encoder).build()
+                encoder, MethodComponent.Builder.builder(encoder).build()
         );
 
-        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), Collections.emptySet(), encoders,
-                false);
+        KNNMethod knnMethod = KNNMethod.Builder.builder(MethodComponent.Builder.builder(name).build())
+                .putEncoders(encoders)
+                .setIsCoarseQuantizerAvailable(false)
+                .build();
+
         assertEquals(encoder, knnMethod.getEncoder(encoder).getName());
     }
 
@@ -79,11 +83,13 @@ public class KNNMethodTests extends KNNTestCase {
         String name = "test";
         String encoder = "test-encoder";
         Map<String, MethodComponent> encoders = ImmutableMap.of(
-                encoder, new MethodComponent.Builder(encoder).build()
+                encoder, MethodComponent.Builder.builder(encoder).build()
         );
 
-        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), Collections.emptySet(), encoders,
-                false);
+        KNNMethod knnMethod = KNNMethod.Builder.builder(MethodComponent.Builder.builder(name).build())
+                .putEncoders(encoders)
+                .setIsCoarseQuantizerAvailable(false)
+                .build();
         assertTrue(knnMethod.hasEncoder(encoder));
         assertFalse(knnMethod.hasEncoder("invalid"));
     }
@@ -93,11 +99,13 @@ public class KNNMethodTests extends KNNTestCase {
      */
     public void testIsCoarseQuantizerAvailable() {
         String name = "test";
-        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), Collections.emptySet(),
-                Collections.emptyMap(), false);
+        KNNMethod knnMethod = KNNMethod.Builder.builder(MethodComponent.Builder.builder(name).build())
+                .setIsCoarseQuantizerAvailable(false)
+                .build();
         assertFalse(knnMethod.isCoarseQuantizerAvailable());
-        knnMethod = new KNNMethod(new MethodComponent.Builder(name).build(), Collections.emptySet(),
-                Collections.emptyMap(), true);
+        knnMethod = KNNMethod.Builder.builder(MethodComponent.Builder.builder(name).build())
+                .setIsCoarseQuantizerAvailable(true)
+                .build();
         assertTrue(knnMethod.isCoarseQuantizerAvailable());
     }
 
@@ -109,9 +117,12 @@ public class KNNMethodTests extends KNNTestCase {
         Set<SpaceType> spaceTypeSet = ImmutableSet.of(SpaceType.L2);
         String encoderName = "enc-1";
         Map<String, MethodComponent> encoders = ImmutableMap.of(encoderName,
-                new MethodComponent.Builder(encoderName).build());
-        KNNMethod knnMethod = new KNNMethod(new MethodComponent.Builder(methodName).build(), spaceTypeSet, encoders,
-                false);
+                MethodComponent.Builder.builder(encoderName).build());
+        KNNMethod knnMethod = KNNMethod.Builder.builder(MethodComponent.Builder.builder(methodName).build())
+                .addSpaces(SpaceType.L2)
+                .putEncoders(encoders)
+                .setIsCoarseQuantizerAvailable(false)
+                .build();
 
         // Invalid space
         XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject()
@@ -160,5 +171,31 @@ public class KNNMethodTests extends KNNTestCase {
         in = xContentBuilderToMap(xContentBuilder);
         KNNMethodContext knnMethodContext4 = KNNMethodContext.parse(in, null, null);
         knnMethod.validate(knnMethodContext4);
+    }
+
+    public void testBuilder() {
+        String name = "test";
+        KNNMethod.Builder builder = KNNMethod.Builder.builder(MethodComponent.Builder.builder(name).build());
+        KNNMethod knnMethod = builder.build();
+
+        assertEquals(name, knnMethod.getMethodComponent().getName());
+
+        builder.addSpaces(SpaceType.L2);
+        knnMethod = builder.build();
+
+        assertTrue(knnMethod.hasSpace(SpaceType.L2));
+
+        String encoder = "test-encoder";
+        Map<String, MethodComponent> encoders = ImmutableMap.of(
+                encoder, MethodComponent.Builder.builder(encoder).build()
+        );
+        builder.putEncoders(encoders);
+        knnMethod = builder.build();
+
+        assertEquals(encoder, knnMethod.getEncoder(encoder).getName());
+
+        builder.setIsCoarseQuantizerAvailable(true);
+        knnMethod = builder.build();
+        assertTrue(knnMethod.isCoarseQuantizerAvailable());
     }
 }

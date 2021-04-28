@@ -17,6 +17,9 @@ package com.amazon.opendistroforelasticsearch.knn.index;
 
 import org.elasticsearch.common.ValidationException;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,7 +42,7 @@ public class KNNMethod {
      * @param encoders set of encoders that this method supports
      * @param isCoarseQuantizerAvailable whether this method can take a coarseQuantizer
      */
-    public KNNMethod(MethodComponent methodComponent, Set<SpaceType> spaces, Map<String, MethodComponent> encoders,
+    protected KNNMethod(MethodComponent methodComponent, Set<SpaceType> spaces, Map<String, MethodComponent> encoders,
                      boolean isCoarseQuantizerAvailable) {
         this.methodComponent = methodComponent;
         this.spaces = spaces;
@@ -130,5 +133,58 @@ public class KNNMethod {
      */
     public Map<String, Object> generateExtraParameterMap(KNNMethodContext knnMethodContext) {
         return methodComponent.generateExtraParameterMap(knnMethodContext.getMethodComponent().getParameters());
+    }
+
+    /**
+     * Builder for KNNMethod
+     */
+    public static class Builder {
+
+        private MethodComponent methodComponent;
+        private Set<SpaceType> spaces;
+        private Map<String, MethodComponent> encoders;
+        private boolean isCoarseQuantizerAvailable;
+
+        /**
+         * Method to get a Builder instance
+         *
+         * @param methodComponent top level method component for the method
+         * @return Builder instance
+         */
+        public static Builder builder(MethodComponent methodComponent) {
+            return new Builder(methodComponent);
+        }
+
+        private Builder(MethodComponent methodComponent) {
+            this.methodComponent = methodComponent;
+            this.spaces = new HashSet<>();
+            this.encoders = new HashMap<>();
+            this.isCoarseQuantizerAvailable = false;
+        }
+
+
+        public Builder addSpaces(SpaceType ...spaceTypes) {
+            spaces.addAll(Arrays.asList(spaceTypes));
+            return this;
+        }
+
+        public Builder putEncoders(Map<String, MethodComponent> encoders) {
+            this.encoders.putAll(encoders);
+            return this;
+        }
+
+        public Builder setIsCoarseQuantizerAvailable(boolean isCoarseQuantizerAvailable) {
+            this.isCoarseQuantizerAvailable = isCoarseQuantizerAvailable;
+            return this;
+        }
+
+        /**
+         * Build KNNMethod from builder
+         *
+         * @return KNNMethod initialized from builder
+         */
+        public KNNMethod build() {
+            return new KNNMethod(methodComponent, spaces, encoders, isCoarseQuantizerAvailable);
+        }
     }
 }

@@ -88,13 +88,14 @@ public class KNNLibraryTests extends KNNTestCase {
      */
     public void testNativeLibrary_getMethod() {
         String methodName1 = "test-method-1";
-        KNNMethod knnMethod1 = new KNNMethod(new MethodComponent.Builder(methodName1).build(), Collections.emptySet(),
-                Collections.emptyMap(), false);
-
+        KNNMethod knnMethod1 = KNNMethod.Builder.builder(MethodComponent.Builder.builder(methodName1).build())
+                .setIsCoarseQuantizerAvailable(false)
+                .build();
 
         String methodName2 = "test-method-2";
-        KNNMethod knnMethod2 = new KNNMethod(new MethodComponent.Builder(methodName2).build(), Collections.emptySet(),
-                Collections.emptyMap(), false);
+        KNNMethod knnMethod2 = KNNMethod.Builder.builder(MethodComponent.Builder.builder(methodName2).build())
+                .setIsCoarseQuantizerAvailable(false)
+                .build();
 
         Map<String, KNNMethod> knnMethodMap = ImmutableMap.of(
                 methodName1, knnMethod1, methodName2, knnMethod2
@@ -127,8 +128,9 @@ public class KNNLibraryTests extends KNNTestCase {
     public void testNativeLibrary_validateMethod() throws IOException {
         // Invalid - method not supported
         String methodName1 = "test-method-1";
-        KNNMethod knnMethod1 = new KNNMethod(new MethodComponent.Builder(methodName1).build(), Collections.emptySet(),
-                Collections.emptyMap(), false);
+        KNNMethod knnMethod1 = KNNMethod.Builder.builder(MethodComponent.Builder.builder(methodName1).build())
+                .setIsCoarseQuantizerAvailable(false)
+                .build();
 
         Map<String, KNNMethod> methodMap = ImmutableMap.of(methodName1, knnMethod1);
         TestNativeLibrary testNativeLibrary1 = new TestNativeLibrary(methodMap, Collections.emptyMap(),
@@ -143,7 +145,7 @@ public class KNNLibraryTests extends KNNTestCase {
 
         // Invalid - method validation
         String methodName2 = "test-method-2";
-        KNNMethod knnMethod2 = new KNNMethod(new MethodComponent.Builder(methodName2).build(), Collections.emptySet(),
+        KNNMethod knnMethod2 = new KNNMethod(MethodComponent.Builder.builder(methodName2).build(), Collections.emptySet(),
                 Collections.emptyMap(), false) {
             @Override
             public void validate(KNNMethodContext knnMethodContext) {
@@ -163,7 +165,7 @@ public class KNNLibraryTests extends KNNTestCase {
 
         // Invalid - coarse quantizer
         String methodName3 = "test-method-3";
-        KNNMethod knnMethod3 = new KNNMethod(new MethodComponent.Builder(methodName3).build(), Collections.emptySet(),
+        KNNMethod knnMethod3 = new KNNMethod(MethodComponent.Builder.builder(methodName3).build(), Collections.emptySet(),
                 Collections.emptyMap(), true) {
             @Override
             public void validate(KNNMethodContext knnMethodContext) {}
@@ -201,8 +203,9 @@ public class KNNLibraryTests extends KNNTestCase {
     public void testNativeLibrary_generateMethod() throws IOException {
         String mappingMethodName = "TEST-METHOD-1";
         String methodName = "test-method-1";
-        KNNMethod knnMethod1 = new KNNMethod(new MethodComponent.Builder(methodName).build(), Collections.emptySet(),
-                Collections.emptyMap(), false);
+        KNNMethod knnMethod1 = KNNMethod.Builder.builder(MethodComponent.Builder.builder(methodName).build())
+                .setIsCoarseQuantizerAvailable(false)
+                .build();
 
         Map<String, KNNMethod> methodMap = ImmutableMap.of(mappingMethodName, knnMethod1);
         TestNativeLibrary testNativeLibrary = new TestNativeLibrary(methodMap, Collections.emptyMap(),
@@ -222,8 +225,9 @@ public class KNNLibraryTests extends KNNTestCase {
     public void testNativeLibrary_generateExtraParameterMap() throws IOException {
         // Invalid method
         String methodName1 = "test-method-1";
-        KNNMethod knnMethod1 = new KNNMethod(new MethodComponent.Builder(methodName1).build(), Collections.emptySet(),
-                Collections.emptyMap(), false);
+        KNNMethod knnMethod1 = KNNMethod.Builder.builder(MethodComponent.Builder.builder(methodName1).build())
+                .setIsCoarseQuantizerAvailable(false)
+                .build();
 
         Map<String, KNNMethod> methodMap = ImmutableMap.of(methodName1, knnMethod1);
         TestNativeLibrary testNativeLibrary1 = new TestNativeLibrary(methodMap, Collections.emptyMap(),
@@ -245,8 +249,8 @@ public class KNNLibraryTests extends KNNTestCase {
                 .field(key, value)
                 .endObject();
         Map<String, Object> inParams = xContentBuilderToMap(xContentBuilder);
-        KNNMethod knnMethod2 = new KNNMethod(new MethodComponent.Builder(methodName2).build(), Collections.emptySet(),
-                Collections.emptyMap(), true) {
+        KNNMethod knnMethod2 = new KNNMethod(MethodComponent.Builder.builder(methodName2).build(),
+                Collections.emptySet(), Collections.emptyMap(), true) {
             @Override
             public Map<String, Object> generateExtraParameterMap(KNNMethodContext knnMethodContext) {
                 return inParams;

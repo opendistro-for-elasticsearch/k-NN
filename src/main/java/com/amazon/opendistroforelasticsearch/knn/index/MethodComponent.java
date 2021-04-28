@@ -98,11 +98,16 @@ public class MethodComponent {
         private Map<String, Parameter<?>> parameters;
 
         /**
-         * Constructor
+         * Method to get a Builder instance
          *
          * @param name of method component
+         * @return Builder instance
          */
-        public Builder(String name) {
+        public static MethodComponent.Builder builder(String name) {
+            return new MethodComponent.Builder(name);
+        }
+
+        private Builder(String name) {
             this.name = name;
             this.parameters = new HashMap<>();
         }

@@ -22,7 +22,6 @@ import com.amazon.opendistroforelasticsearch.knn.index.MethodComponent;
 import com.amazon.opendistroforelasticsearch.knn.index.Parameter;
 import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import org.elasticsearch.common.ValidationException;
 
 import java.util.Collections;
@@ -245,32 +244,27 @@ public interface KNNLibrary {
         public final static Map<String, MethodComponent> ENCODERS = Collections.emptyMap();
 
         public final static Map<String, KNNMethod> METHODS = ImmutableMap.of(
-                METHOD_HNSW, new KNNMethod(
-                        new MethodComponent.Builder("hnsw")
+                METHOD_HNSW,
+                KNNMethod.Builder.builder(
+                        MethodComponent.Builder.builder("hnsw")
                                 .putParameter(METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, false,
                                         v -> v > 0))
                                 .putParameter(METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512,
-                                                false, v -> v > 0))
-                                .build(),
-                        ImmutableSet.of(
-                                SpaceType.L2,
-                                SpaceType.L1,
-                                SpaceType.LINF,
-                                SpaceType.COSINESIMIL,
-                                SpaceType.INNER_PRODUCT
-                        ),
-                        ENCODERS,
-                        false)
+                                        false, v -> v > 0))
+                                .build())
+                        .addSpaces(SpaceType.L2, SpaceType.L1, SpaceType.LINF, SpaceType.COSINESIMIL,
+                                SpaceType.INNER_PRODUCT)
+                        .putEncoders(ENCODERS)
+                        .setIsCoarseQuantizerAvailable(false)
+                        .build()
         );
 
         public final static Map<SpaceType, Function<Float, Float>> SCORE_TRANSLATIONS = Collections.emptyMap();
 
-        public final static String LATEST_LIBRARY_BUILD_VERSION = NmsLibVersion.LATEST.getBuildVersion();
-        public final static String LATEST_LIBRARY_VERSION = NmsLibVersion.LATEST.indexLibraryVersion();
         public final static String EXTENSION = ".hnsw";
 
-        public final static Nmslib INSTANCE = new Nmslib(METHODS, SCORE_TRANSLATIONS, LATEST_LIBRARY_BUILD_VERSION,
-                LATEST_LIBRARY_VERSION, EXTENSION);
+        public final static Nmslib INSTANCE = new Nmslib(METHODS, SCORE_TRANSLATIONS,
+                NmsLibVersion.LATEST.getBuildVersion(), NmsLibVersion.LATEST.indexLibraryVersion(), EXTENSION);
 
         /**
          * Constructor for Nmslib
@@ -293,52 +287,53 @@ public interface KNNLibrary {
     class Faiss extends NativeLibrary {
 
         public final static Map<String, MethodComponent> ENCODERS = ImmutableMap.of(
-                ENCODER_PQ, new MethodComponent.Builder("PQ")
+                ENCODER_PQ,
+                MethodComponent.Builder.builder("PQ")
                         .putParameter(METHOD_PARAMETER_CODE_SIZE, new Parameter.IntegerParameter(16, true,
                                 v -> v > 0))
                         .build(),
-                ENCODER_FLAT, new MethodComponent.Builder("Flat")
+                ENCODER_FLAT,
+                MethodComponent.Builder.builder("Flat")
                         .build()
         );
 
         public final static Map<String, KNNMethod> METHODS = ImmutableMap.of(
-                METHOD_HNSW, new KNNMethod(
-                        new MethodComponent.Builder("HNSW")
+                METHOD_HNSW,
+                KNNMethod.Builder.builder(
+                        MethodComponent.Builder.builder("HNSW")
                                 .putParameter(METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, true,
-                                                v -> v > 0))
+                                        v -> v > 0))
                                 .putParameter(METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512,
                                         false, v -> v > 0))
                                 .putParameter(METHOD_PARAMETER_EF_SEARCH, new Parameter.IntegerParameter(512,
                                         false, v -> v > 0))
-                                .build(),
-                        ImmutableSet.of(
-                                SpaceType.L2,
-                                SpaceType.INNER_PRODUCT
-                        ),
-                        ENCODERS,
-                        false
-                ), METHOD_IVF, new KNNMethod(
-                        new MethodComponent.Builder("IVF")
+                                .build()
+                )
+                        .addSpaces(SpaceType.L2, SpaceType.INNER_PRODUCT)
+                        .putEncoders(ENCODERS)
+                        .setIsCoarseQuantizerAvailable(false)
+                        .build(),
+                METHOD_IVF,
+                KNNMethod.Builder.builder(
+                        MethodComponent.Builder.builder("IVF")
                                 .putParameter(METHOD_PARAMETER_NCENTROIDS, new Parameter.IntegerParameter(16, true,
                                         v -> v > 0))
                                 .putParameter(METHOD_PARAMETER_NPROBES, new Parameter.IntegerParameter(1, false,
                                         v -> v > 0))
-                                .build(),
-                        ImmutableSet.of(
-                                SpaceType.L2,
-                                SpaceType.INNER_PRODUCT
-                        ),
-                        ENCODERS,
-                        true
-                ), ENCODER_FLAT, new KNNMethod(
-                        new MethodComponent.Builder("")
-                                .build(),
-                        ImmutableSet.of(
-                                SpaceType.L2,
-                                SpaceType.INNER_PRODUCT),
-                        ENCODERS,
-                        false
+                                .build()
                 )
+                        .addSpaces(SpaceType.L2, SpaceType.INNER_PRODUCT)
+                        .putEncoders(ENCODERS)
+                        .setIsCoarseQuantizerAvailable(true)
+                        .build(),
+                ENCODER_FLAT,
+                KNNMethod.Builder.builder(
+                        MethodComponent.Builder.builder("").build()
+                )
+                        .addSpaces(SpaceType.L2, SpaceType.INNER_PRODUCT)
+                        .putEncoders(ENCODERS)
+                        .setIsCoarseQuantizerAvailable(false)
+                        .build()
         );
 
         public final static Map<SpaceType, Function<Float, Float>> SCORE_TRANSLATIONS = ImmutableMap.of(
@@ -346,12 +341,10 @@ public interface KNNLibrary {
                         SpaceType.INNER_PRODUCT.scoreTranslation(-1*rawScore)
         );
 
-        public final static String LATEST_LIBRARY_BUILD_VERSION = FaissLibVersion.LATEST.getBuildVersion();
-        public final static String LATEST_LIBRARY_VERSION = FaissLibVersion.LATEST.indexLibraryVersion();
         public final static String EXTENSION = ".faiss";
 
-        public final static Faiss INSTANCE = new Faiss(METHODS, SCORE_TRANSLATIONS, LATEST_LIBRARY_BUILD_VERSION,
-                LATEST_LIBRARY_VERSION, EXTENSION);
+        public final static Faiss INSTANCE = new Faiss(METHODS, SCORE_TRANSLATIONS,
+                FaissLibVersion.LATEST.getBuildVersion(), FaissLibVersion.LATEST.indexLibraryVersion(), EXTENSION);
 
         /**
          * Constructor for Faiss

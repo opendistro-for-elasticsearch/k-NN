@@ -32,7 +32,7 @@ public class MethodComponentTests extends KNNTestCase {
      */
     public void testGetName() {
         String name = "test";
-        MethodComponent methodComponent = new MethodComponent.Builder(name).build();
+        MethodComponent methodComponent = MethodComponent.Builder.builder(name).build();
         assertEquals(name, methodComponent.getName());
     }
 
@@ -42,7 +42,7 @@ public class MethodComponentTests extends KNNTestCase {
     public void testGetParameters() {
         String name = "test";
         String paramKey = "key";
-        MethodComponent methodComponent = new MethodComponent.Builder(name)
+        MethodComponent methodComponent = MethodComponent.Builder.builder(name)
                 .putParameter(paramKey, new Parameter.IntegerParameter(1, false, v -> v > 0))
                 .build();
         assertEquals(1, methodComponent.getParameters().size());
@@ -56,7 +56,7 @@ public class MethodComponentTests extends KNNTestCase {
         String methodName = "test-name";
         String key1 = "test-key-1";
         String key2 = "test-key-2";
-        MethodComponent methodComponent = new MethodComponent.Builder(methodName)
+        MethodComponent methodComponent = MethodComponent.Builder.builder(methodName)
                 .putParameter(key1, new Parameter.IntegerParameter(1, false, v -> v > 0))
                 .putParameter(key2, new Parameter.IntegerParameter(1, true, v -> v > 0))
                 .build();
@@ -92,7 +92,7 @@ public class MethodComponentTests extends KNNTestCase {
         Map<String, Object> in = xContentBuilderToMap(xContentBuilder);
         KNNMethodContext.MethodComponentContext componentContext1 = KNNMethodContext.MethodComponentContext.parse(in);
 
-        MethodComponent methodComponent1 = new MethodComponent.Builder(methodName).build();
+        MethodComponent methodComponent1 = MethodComponent.Builder.builder(methodName).build();
 
         expectThrows(ValidationException.class, () -> methodComponent1.validate(componentContext1));
 
@@ -106,7 +106,7 @@ public class MethodComponentTests extends KNNTestCase {
         in = xContentBuilderToMap(xContentBuilder);
         KNNMethodContext.MethodComponentContext componentContext2 = KNNMethodContext.MethodComponentContext.parse(in);
 
-        MethodComponent methodComponent2 = new MethodComponent.Builder(methodName)
+        MethodComponent methodComponent2 = MethodComponent.Builder.builder(methodName)
                 .putParameter("valid", new Parameter.IntegerParameter(1, false, v -> v > 0))
                 .build();
 
@@ -123,7 +123,7 @@ public class MethodComponentTests extends KNNTestCase {
         in = xContentBuilderToMap(xContentBuilder);
         KNNMethodContext.MethodComponentContext componentContext3 = KNNMethodContext.MethodComponentContext.parse(in);
 
-        MethodComponent methodComponent3 = new MethodComponent.Builder(methodName)
+        MethodComponent methodComponent3 = MethodComponent.Builder.builder(methodName)
                 .putParameter("valid1", new Parameter.IntegerParameter(1, false, v -> v > 0))
                 .putParameter("valid2", new Parameter.IntegerParameter(1, false, v -> v > 0))
                 .build();
@@ -136,10 +136,24 @@ public class MethodComponentTests extends KNNTestCase {
         in = xContentBuilderToMap(xContentBuilder);
         KNNMethodContext.MethodComponentContext componentContext4 = KNNMethodContext.MethodComponentContext.parse(in);
 
-        MethodComponent methodComponent4 = new MethodComponent.Builder(methodName)
+        MethodComponent methodComponent4 = MethodComponent.Builder.builder(methodName)
                 .putParameter("valid1", new Parameter.IntegerParameter(1, false, v -> v > 0))
                 .putParameter("valid2", new Parameter.IntegerParameter(1, false, v -> v > 0))
                 .build();
         methodComponent4.validate(componentContext4);
+    }
+
+    public void testBuilder() {
+        String name = "test";
+        MethodComponent.Builder builder = MethodComponent.Builder.builder(name);
+        MethodComponent methodComponent = builder.build();
+
+        assertEquals(0, methodComponent.getParameters().size());
+        assertEquals(name, methodComponent.getName());
+
+        builder.putParameter("test", new Parameter.IntegerParameter(1, false, v -> v > 0));
+        methodComponent = builder.build();
+
+        assertEquals(1, methodComponent.getParameters().size());
     }
 }
