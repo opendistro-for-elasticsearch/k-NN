@@ -259,9 +259,9 @@ public interface KNNLibrary {
                 METHOD_HNSW,
                 KNNMethod.Builder.builder(
                         MethodComponent.Builder.builder(HNSW_LIB_NAME)
-                                .putParameter(METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, false,
+                                .addParameter(METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, false,
                                         v -> v > 0))
-                                .putParameter(METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512,
+                                .addParameter(METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512,
                                         false, v -> v > 0))
                                 .build())
                         .addSpaces(SpaceType.L2, SpaceType.L1, SpaceType.LINF, SpaceType.COSINESIMIL,
@@ -312,7 +312,7 @@ public interface KNNLibrary {
         public final static Map<String, MethodComponent> ENCODERS = ImmutableMap.of(
                 ENCODER_PQ,
                 MethodComponent.Builder.builder(PQ_LIB_NAME)
-                        .putParameter(METHOD_PARAMETER_CODE_SIZE, new Parameter.IntegerParameter(16, true,
+                        .addParameter(METHOD_PARAMETER_CODE_SIZE, new Parameter.IntegerParameter(16, true,
                                 v -> v > 0))
                         .build(),
                 ENCODER_FLAT,
@@ -324,11 +324,11 @@ public interface KNNLibrary {
                 METHOD_HNSW,
                 KNNMethod.Builder.builder(
                         MethodComponent.Builder.builder(HNSW_LIB_NAME)
-                                .putParameter(METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, true,
+                                .addParameter(METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, true,
                                         v -> v > 0))
-                                .putParameter(METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512,
+                                .addParameter(METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512,
                                         false, v -> v > 0))
-                                .putParameter(METHOD_PARAMETER_EF_SEARCH, new Parameter.IntegerParameter(512,
+                                .addParameter(METHOD_PARAMETER_EF_SEARCH, new Parameter.IntegerParameter(512,
                                         false, v -> v > 0))
                                 .build()
                 )
@@ -339,9 +339,9 @@ public interface KNNLibrary {
                 METHOD_IVF,
                 KNNMethod.Builder.builder(
                         MethodComponent.Builder.builder(IVF_LIB_NAME)
-                                .putParameter(METHOD_PARAMETER_NCENTROIDS, new Parameter.IntegerParameter(16, true,
+                                .addParameter(METHOD_PARAMETER_NCENTROIDS, new Parameter.IntegerParameter(16, true,
                                         v -> v > 0))
-                                .putParameter(METHOD_PARAMETER_NPROBES, new Parameter.IntegerParameter(1, false,
+                                .addParameter(METHOD_PARAMETER_NPROBES, new Parameter.IntegerParameter(1, false,
                                         v -> v > 0))
                                 .build()
                 )

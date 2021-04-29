@@ -122,7 +122,7 @@ public class MethodComponent {
          * @param parameter parameter to be added
          * @return this builder
          */
-        public Builder putParameter(String parameterName, Parameter<?> parameter) {
+        public Builder addParameter(String parameterName, Parameter<?> parameter) {
             this.parameters.put(parameterName, parameter);
             return this;
         }
