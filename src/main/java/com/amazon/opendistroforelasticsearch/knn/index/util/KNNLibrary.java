@@ -19,6 +19,7 @@ package com.amazon.opendistroforelasticsearch.knn.index.util;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNMethod;
 import com.amazon.opendistroforelasticsearch.knn.index.KNNMethodContext;
 import com.amazon.opendistroforelasticsearch.knn.index.MethodComponent;
+import com.amazon.opendistroforelasticsearch.knn.index.MethodComponentContext;
 import com.amazon.opendistroforelasticsearch.knn.index.Parameter;
 import com.amazon.opendistroforelasticsearch.knn.index.SpaceType;
 import com.google.common.collect.ImmutableMap;
@@ -407,7 +408,7 @@ public interface KNNLibrary {
             }
 
             // Add encoding parameters
-            KNNMethodContext.MethodComponentContext encoderContext = knnMethodContext.getEncoder();
+            MethodComponentContext encoderContext = knnMethodContext.getEncoder();
             if (encoderContext != null && !knnMethod.hasEncoder(encoderContext.getName())) {
                 throw new IllegalArgumentException("Invalid encoder: " + encoderContext.getName());
             }

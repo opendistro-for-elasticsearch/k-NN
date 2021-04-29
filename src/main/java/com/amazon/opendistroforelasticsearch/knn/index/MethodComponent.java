@@ -76,7 +76,7 @@ public class MethodComponent {
      *
      * @param methodComponentContext to be validated
      */
-    public void validate(KNNMethodContext.MethodComponentContext methodComponentContext) {
+    public void validate(MethodComponentContext methodComponentContext) {
         Map<String, Object> providedParameters = methodComponentContext.getParameters();
 
         if (providedParameters == null) {

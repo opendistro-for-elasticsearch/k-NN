@@ -69,7 +69,7 @@ public class MethodComponentTests extends KNNTestCase {
                 .endObject()
                 .endObject();
         Map<String, Object> in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext componentContext = KNNMethodContext.MethodComponentContext.parse(in);
+        MethodComponentContext componentContext = MethodComponentContext.parse(in);
 
         Map<String, Object> extraParams = methodComponent.generateExtraParameterMap(componentContext.getParameters());
         assertEquals(1, extraParams.size());
@@ -90,7 +90,7 @@ public class MethodComponentTests extends KNNTestCase {
                 .endObject()
                 .endObject();
         Map<String, Object> in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext componentContext1 = KNNMethodContext.MethodComponentContext.parse(in);
+        MethodComponentContext componentContext1 = MethodComponentContext.parse(in);
 
         MethodComponent methodComponent1 = MethodComponent.Builder.builder(methodName).build();
 
@@ -104,7 +104,7 @@ public class MethodComponentTests extends KNNTestCase {
                 .endObject()
                 .endObject();
         in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext componentContext2 = KNNMethodContext.MethodComponentContext.parse(in);
+        MethodComponentContext componentContext2 = MethodComponentContext.parse(in);
 
         MethodComponent methodComponent2 = MethodComponent.Builder.builder(methodName)
                 .putParameter("valid", new Parameter.IntegerParameter(1, false, v -> v > 0))
@@ -121,7 +121,7 @@ public class MethodComponentTests extends KNNTestCase {
                 .endObject()
                 .endObject();
         in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext componentContext3 = KNNMethodContext.MethodComponentContext.parse(in);
+        MethodComponentContext componentContext3 = MethodComponentContext.parse(in);
 
         MethodComponent methodComponent3 = MethodComponent.Builder.builder(methodName)
                 .putParameter("valid1", new Parameter.IntegerParameter(1, false, v -> v > 0))
@@ -134,7 +134,7 @@ public class MethodComponentTests extends KNNTestCase {
                 .field(NAME, methodName)
                 .endObject();
         in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext componentContext4 = KNNMethodContext.MethodComponentContext.parse(in);
+        MethodComponentContext componentContext4 = MethodComponentContext.parse(in);
 
         MethodComponent methodComponent4 = MethodComponent.Builder.builder(methodName)
                 .putParameter("valid1", new Parameter.IntegerParameter(1, false, v -> v > 0))

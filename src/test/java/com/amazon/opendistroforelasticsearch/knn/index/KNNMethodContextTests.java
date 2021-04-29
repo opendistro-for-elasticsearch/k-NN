@@ -53,7 +53,7 @@ public class KNNMethodContextTests extends KNNTestCase {
      * Test method component getter
      */
     public void testGetMethodComponent() {
-        KNNMethodContext.MethodComponentContext methodComponent = new KNNMethodContext.MethodComponentContext(
+        MethodComponentContext methodComponent = new MethodComponentContext(
                 "test-method", Collections.emptyMap());
         KNNMethodContext knnMethodContext = new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.DEFAULT, methodComponent,
                 null, null, KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
@@ -65,7 +65,7 @@ public class KNNMethodContextTests extends KNNTestCase {
      * Test engine getter
      */
     public void testGetEngine() {
-        KNNMethodContext.MethodComponentContext methodComponent = new KNNMethodContext.MethodComponentContext(
+        MethodComponentContext methodComponent = new MethodComponentContext(
                 "test-method", Collections.emptyMap());
         KNNMethodContext knnMethodContext = new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.DEFAULT, methodComponent,
                 null, null, KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
@@ -77,7 +77,7 @@ public class KNNMethodContextTests extends KNNTestCase {
      * Test spaceType getter
      */
     public void testGetSpaceType() {
-        KNNMethodContext.MethodComponentContext methodComponent = new KNNMethodContext.MethodComponentContext(
+        MethodComponentContext methodComponent = new MethodComponentContext(
                 "test-method", Collections.emptyMap());
         KNNMethodContext knnMethodContext = new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.L1, methodComponent,
                 null, null, KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
@@ -89,13 +89,12 @@ public class KNNMethodContextTests extends KNNTestCase {
      * Test coarse quantizer getter
      */
     public void testGetCoarseQuantizer() {
-        KNNMethodContext.MethodComponentContext quantizerMethod = new KNNMethodContext.MethodComponentContext(
-                "quantizer-method", Collections.emptyMap());
+        MethodComponentContext quantizerMethod = new MethodComponentContext("quantizer-method", Collections.emptyMap());
         KNNMethodContext quantizerContext = new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.L1, quantizerMethod,
                 null, null, KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
                 KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
 
-        KNNMethodContext.MethodComponentContext methodComponent = new KNNMethodContext.MethodComponentContext(
+        MethodComponentContext methodComponent = new MethodComponentContext(
                 "test-method", Collections.emptyMap());
         KNNMethodContext knnMethodContext = new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.L1, methodComponent,
                 quantizerContext, null, KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
@@ -108,11 +107,9 @@ public class KNNMethodContextTests extends KNNTestCase {
      * Test encoder getter
      */
     public void testGetEncoder() {
-        KNNMethodContext.MethodComponentContext encoder = new KNNMethodContext.MethodComponentContext(
-                "encoder-method", Collections.emptyMap());
+        MethodComponentContext encoder = new MethodComponentContext("encoder-method", Collections.emptyMap());
 
-        KNNMethodContext.MethodComponentContext methodComponent = new KNNMethodContext.MethodComponentContext(
-                "test-method", Collections.emptyMap());
+        MethodComponentContext methodComponent = new MethodComponentContext("test-method", Collections.emptyMap());
         KNNMethodContext knnMethodContext = new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.L1, methodComponent,
                 null, encoder, KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
                 KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
@@ -124,8 +121,7 @@ public class KNNMethodContextTests extends KNNTestCase {
      * Test training dataset size limit getter
      */
     public void testGetTrainingDatasetSizeLimit() {
-        KNNMethodContext.MethodComponentContext methodComponent = new KNNMethodContext.MethodComponentContext(
-                "test-method", Collections.emptyMap());
+        MethodComponentContext methodComponent = new MethodComponentContext("test-method", Collections.emptyMap());
         KNNMethodContext knnMethodContext = new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.L1, methodComponent,
                 null, null, KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
                 KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
@@ -138,8 +134,7 @@ public class KNNMethodContextTests extends KNNTestCase {
      * Test minimum data points getter
      */
     public void testGetMinimumDatapoints() {
-        KNNMethodContext.MethodComponentContext methodComponent = new KNNMethodContext.MethodComponentContext(
-                "test-method", Collections.emptyMap());
+        MethodComponentContext methodComponent = new MethodComponentContext("test-method", Collections.emptyMap());
         KNNMethodContext knnMethodContext = new KNNMethodContext(KNNEngine.DEFAULT, SpaceType.L1, methodComponent,
                 null, null, KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
                 KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
@@ -156,31 +151,28 @@ public class KNNMethodContextTests extends KNNTestCase {
         KNNMethodContext.DEFAULT.validate();
 
         // Check a valid nmslib method
-        KNNMethodContext.MethodComponentContext hnswMethod = new KNNMethodContext.MethodComponentContext(METHOD_HNSW,
-                Collections.emptyMap());
+        MethodComponentContext hnswMethod = new MethodComponentContext(METHOD_HNSW, Collections.emptyMap());
         KNNMethodContext knnMethodContext = new KNNMethodContext(KNNEngine.NMSLIB, SpaceType.L2, hnswMethod, null,
                 null,KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
                 KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
         knnMethodContext.validate();
 
         // Check invalid parameter nmslib
-        hnswMethod = new KNNMethodContext.MethodComponentContext(METHOD_HNSW, ImmutableMap.of("invalid", 111));
+        hnswMethod = new MethodComponentContext(METHOD_HNSW, ImmutableMap.of("invalid", 111));
         KNNMethodContext knnMethodContext1 = new KNNMethodContext(KNNEngine.NMSLIB, SpaceType.L2, hnswMethod, null,
                 null,KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
                 KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
         expectThrows(ValidationException.class, knnMethodContext1::validate);
 
         // Check invalid method nmslib
-        KNNMethodContext.MethodComponentContext invalidMethod = new KNNMethodContext.MethodComponentContext("invalid",
-                Collections.emptyMap());
+        MethodComponentContext invalidMethod = new MethodComponentContext("invalid", Collections.emptyMap());
         KNNMethodContext knnMethodContext2 = new KNNMethodContext(KNNEngine.NMSLIB, SpaceType.L2, invalidMethod, null,
                 null,KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
                 KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
         expectThrows(ValidationException.class, knnMethodContext2::validate);
 
         // Check valid method faiss
-        KNNMethodContext.MethodComponentContext ivfMethod = new KNNMethodContext.MethodComponentContext(METHOD_IVF,
-                Collections.emptyMap());
+        MethodComponentContext ivfMethod = new MethodComponentContext(METHOD_IVF, Collections.emptyMap());
         knnMethodContext = new KNNMethodContext(KNNEngine.FAISS, SpaceType.L2, ivfMethod, null,
                 null,KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
                 KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
@@ -203,8 +195,7 @@ public class KNNMethodContextTests extends KNNTestCase {
         expectThrows(ValidationException.class, knnMethodContext4::validate);
 
         // Check invalid encoder faiss
-        KNNMethodContext.MethodComponentContext encoderContext = new KNNMethodContext.MethodComponentContext(ENCODER_PQ,
-                Collections.emptyMap());
+        MethodComponentContext encoderContext = new MethodComponentContext(ENCODER_PQ, Collections.emptyMap());
         KNNMethodContext knnMethodContext5 = new KNNMethodContext(KNNEngine.FAISS, SpaceType.L2, invalidMethod,
                 null, encoderContext,KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
                 KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
@@ -221,7 +212,7 @@ public class KNNMethodContextTests extends KNNTestCase {
         // Test nmslib - nmslib should just have hnsw name as the method
         int m = 12;
         int efConstruction = 44;
-        KNNMethodContext.MethodComponentContext hnswMethod = new KNNMethodContext.MethodComponentContext(METHOD_HNSW,
+        MethodComponentContext hnswMethod = new MethodComponentContext(METHOD_HNSW,
                 ImmutableMap.of(METHOD_PARAMETER_M, m, METHOD_PARAMETER_EF_CONSTRUCTION, efConstruction));
         KNNMethodContext knnMethodContext = new KNNMethodContext(KNNEngine.NMSLIB, SpaceType.L2, hnswMethod, null,
                 null,KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
@@ -242,19 +233,19 @@ public class KNNMethodContextTests extends KNNTestCase {
         int pq1 = 100;
         int pq2 = 7;
 
-        KNNMethodContext.MethodComponentContext quantizerMethodComponent = new KNNMethodContext.MethodComponentContext(
+        MethodComponentContext quantizerMethodComponent = new MethodComponentContext(
                 METHOD_IVF, ImmutableMap.of(METHOD_PARAMETER_NCENTROIDS, ncentroids2));
 
-        KNNMethodContext.MethodComponentContext encoder2 = new KNNMethodContext.MethodComponentContext(
+        MethodComponentContext encoder2 = new MethodComponentContext(
                 ENCODER_PQ, ImmutableMap.of(METHOD_PARAMETER_CODE_SIZE, pq2));
 
         KNNMethodContext coarseQuantizer = new KNNMethodContext(KNNEngine.FAISS, SpaceType.L2, quantizerMethodComponent,
                 knnMethodContext, encoder2, KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
                 KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
 
-        KNNMethodContext.MethodComponentContext encoder1 = new KNNMethodContext.MethodComponentContext(
+        MethodComponentContext encoder1 = new MethodComponentContext(
                 ENCODER_PQ, ImmutableMap.of(METHOD_PARAMETER_CODE_SIZE, pq1));
-        KNNMethodContext.MethodComponentContext ivfMethod = new KNNMethodContext.MethodComponentContext(
+        MethodComponentContext ivfMethod = new MethodComponentContext(
                 METHOD_IVF, ImmutableMap.of(METHOD_PARAMETER_NCENTROIDS, ncentroids1));
         knnMethodContext = new KNNMethodContext(KNNEngine.FAISS, SpaceType.L2, ivfMethod, coarseQuantizer,
                 encoder1,KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
@@ -277,8 +268,7 @@ public class KNNMethodContextTests extends KNNTestCase {
                 .putAll(extraParams)
                 .build();
 
-        KNNMethodContext.MethodComponentContext ivfMethod = new KNNMethodContext.MethodComponentContext(
-                METHOD_IVF, params);
+        MethodComponentContext ivfMethod = new MethodComponentContext(METHOD_IVF, params);
         KNNMethodContext knnMethodContext = new KNNMethodContext(KNNEngine.FAISS, SpaceType.L2, ivfMethod, null,
                 null,KNNMethodContext.MIN_TRAINING_DATASET_SIZE_LIMIT + 1,
                 KNNMethodContext.MIN_MINIMUM_DATAPOINTS + 1);
@@ -412,7 +402,7 @@ public class KNNMethodContextTests extends KNNTestCase {
                 .field("invalid", 12)
                 .endObject();
         Map<String, Object> in14 = xContentBuilderToMap(xContentBuilder);
-        expectThrows(MapperParsingException.class, () -> KNNMethodContext.MethodComponentContext.parse(in14));
+        expectThrows(MapperParsingException.class, () -> MethodComponentContext.parse(in14));
     }
 
     /**
@@ -554,150 +544,5 @@ public class KNNMethodContextTests extends KNNTestCase {
         Map<String, Object> encoderMap = (Map<String, Object>) out.get(ENCODER);
 
         assertEquals(encoder, encoderMap.get(NAME));
-    }
-
-    /**
-     * Test MethodCompontnetContext parse where input is invalid
-     */
-    public void testMethodComponentContext_parse_invalid() throws IOException {
-        // Input is not a Map
-        Integer invalidIn = 12;
-        expectThrows(MapperParsingException.class, () -> KNNMethodContext.MethodComponentContext.parse(invalidIn));
-
-        // Name not passed in
-        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject().endObject();
-        Map<String, Object> in0 = xContentBuilderToMap(xContentBuilder);
-        expectThrows(MapperParsingException.class, () -> KNNMethodContext.MethodComponentContext.parse(in0));
-
-        // Invalid name type
-        xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(NAME, 12)
-                .endObject();
-        Map<String, Object> in1 = xContentBuilderToMap(xContentBuilder);
-        expectThrows(MapperParsingException.class, () -> KNNMethodContext.MethodComponentContext.parse(in1));
-
-        // Invalid parameter type
-        xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(PARAMETERS, 12)
-                .endObject();
-        Map<String, Object> in2 = xContentBuilderToMap(xContentBuilder);
-        expectThrows(MapperParsingException.class, () -> KNNMethodContext.MethodComponentContext.parse(in2));
-
-        // Invalid key
-        xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field("invalid", 12)
-                .endObject();
-        Map<String, Object> in3 = xContentBuilderToMap(xContentBuilder);
-        expectThrows(MapperParsingException.class, () -> KNNMethodContext.MethodComponentContext.parse(in3));
-    }
-
-    /**
-     * Test MethodCompontnetContext name getter
-     */
-    public void testMethodComponentContext_getName() {
-        String name = "test-name";
-        KNNMethodContext.MethodComponentContext methodContext = new KNNMethodContext.MethodComponentContext(name, null);
-        assertEquals(name, methodContext.getName());
-    }
-
-
-    /**
-     * Test MethodCompontnetContext parameters getter
-     */
-    public void testMethodComponentContext_getParameters() throws IOException {
-        String name = "test-name";
-        String paramKey1 = "p-1";
-        String paramVal1 = "v-1";
-        String paramKey2 = "p-2";
-        Integer paramVal2 = 1;
-        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(paramKey1, paramVal1)
-                .field(paramKey2, paramVal2)
-                .endObject();
-        Map<String, Object> params = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext methodContext = new KNNMethodContext.MethodComponentContext(name,
-                params);
-        assertEquals(paramVal1, methodContext.getParameters().get(paramKey1));
-        assertEquals(paramVal2, methodContext.getParameters().get(paramKey2));
-    }
-
-    /**
-     * Test MethodCompontnetContext parse where input is valid
-     */
-    public void testMethodComponentContext_parse_valid() throws IOException {
-        // Empty parameters
-        String name = "test-name";
-        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(NAME, name)
-                .endObject();
-        Map<String, Object> in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext methodContext = KNNMethodContext.MethodComponentContext.parse(in);
-        assertEquals(name, methodContext.getName());
-        assertNull(methodContext.getParameters());
-
-        // Multiple parameters
-        String paramKey1 = "p-1";
-        String paramVal1 = "v-1";
-        String paramKey2 = "p-2";
-        Integer paramVal2 = 1;
-
-        xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(NAME, name)
-                .startObject(PARAMETERS)
-                .field(paramKey1, paramVal1)
-                .field(paramKey2, paramVal2)
-                .endObject()
-                .endObject();
-        in = xContentBuilderToMap(xContentBuilder);
-        methodContext = KNNMethodContext.MethodComponentContext.parse(in);
-
-        assertEquals(paramVal1, methodContext.getParameters().get(paramKey1));
-        assertEquals(paramVal2, methodContext.getParameters().get(paramKey2));
-    }
-
-    /**
-     * Test MethodCompontnetContext toXContent
-     */
-    public void testMethodComponentContext_toXContent() throws IOException {
-        // Empty parameters
-        String name = "test-name";
-        XContentBuilder xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(NAME, name)
-                .endObject();
-        Map<String, Object> in = xContentBuilderToMap(xContentBuilder);
-        KNNMethodContext.MethodComponentContext methodContext = KNNMethodContext.MethodComponentContext.parse(in);
-
-        XContentBuilder builder = XContentFactory.jsonBuilder().startObject();
-        builder = methodContext.toXContent(builder, ToXContent.EMPTY_PARAMS).endObject();
-
-        Map<String, Object> out = xContentBuilderToMap(builder);
-        assertEquals(name, out.get(NAME));
-
-
-        // Multiple parameters
-        String paramKey1 = "p-1";
-        String paramVal1 = "v-1";
-        String paramKey2 = "p-2";
-        Integer paramVal2 = 1;
-        xContentBuilder = XContentFactory.jsonBuilder().startObject()
-                .field(NAME, name)
-                .startObject(PARAMETERS)
-                .field(paramKey1, paramVal1)
-                .field(paramKey2, paramVal2)
-                .endObject()
-                .endObject();
-        in = xContentBuilderToMap(xContentBuilder);
-        methodContext = KNNMethodContext.MethodComponentContext.parse(in);
-
-        builder = XContentFactory.jsonBuilder().startObject();
-        builder = methodContext.toXContent(builder, ToXContent.EMPTY_PARAMS).endObject();
-
-        out = xContentBuilderToMap(builder);
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> paramMap = (Map<String, Object>) out.get(PARAMETERS);
-
-        assertEquals(paramVal1, paramMap.get(paramKey1));
-        assertEquals(paramVal2, paramMap.get(paramKey2));
     }
 }

@@ -104,7 +104,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         SpaceType spaceType1 = SpaceType.L1;
         builder = new KNNVectorFieldMapper.Builder("test-field-name-3");
         builder.knnMethodContext.setValue(new KNNMethodContext(KNNEngine.NMSLIB, spaceType1,
-                new KNNMethodContext.MethodComponentContext(METHOD_HNSW,
+                new MethodComponentContext(METHOD_HNSW,
                         ImmutableMap.of(METHOD_PARAMETER_M, m1,
                                 METHOD_PARAMETER_EF_CONSTRUCTION, efConstruction1)),
                 null, null, 1, 1));
@@ -125,7 +125,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         // When settings are empty, mapping parameters are used
         builder = new KNNVectorFieldMapper.Builder("test-field-name-4");
         builder.knnMethodContext.setValue(new KNNMethodContext(KNNEngine.NMSLIB, spaceType1,
-                new KNNMethodContext.MethodComponentContext(METHOD_HNSW,
+                new MethodComponentContext(METHOD_HNSW,
                         ImmutableMap.of(METHOD_PARAMETER_M, m1,
                                 METHOD_PARAMETER_EF_CONSTRUCTION, efConstruction1)),
                 null, null, 1, 1));
@@ -273,7 +273,7 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
         assertEquals(KNNEngine.FAISS, builder.knnMethodContext.get().getEngine());
         assertEquals(SpaceType.INNER_PRODUCT, builder.knnMethodContext.get().getSpaceType());
 
-        KNNMethodContext.MethodComponentContext methodComponentContext = builder.knnMethodContext.get()
+        MethodComponentContext methodComponentContext = builder.knnMethodContext.get()
                 .getMethodComponent();
         assertEquals(METHOD_HNSW, methodComponentContext.getName());
         assertEquals(m, methodComponentContext.getParameters().get(METHOD_PARAMETER_M));
@@ -386,30 +386,30 @@ public class KNNVectorFieldMapperTests extends KNNTestCase {
                 xContentBuilderToMap(xContentBuilder), buildParserContext(indexName, settings));
 
         // First nested check
-        KNNMethodContext.MethodComponentContext mainMethodComp1 = builder.knnMethodContext.get().getMethodComponent();
+        MethodComponentContext mainMethodComp1 = builder.knnMethodContext.get().getMethodComponent();
         assertEquals(METHOD_IVF, mainMethodComp1.getName());
         assertEquals(nprobes1, mainMethodComp1.getParameters().get(METHOD_PARAMETER_NPROBES));
         assertEquals(ncentroids1, mainMethodComp1.getParameters().get(METHOD_PARAMETER_NCENTROIDS));
 
-        KNNMethodContext.MethodComponentContext encoderComp1 = builder.knnMethodContext.get().getEncoder();
+        MethodComponentContext encoderComp1 = builder.knnMethodContext.get().getEncoder();
         assertEquals(ENCODER_PQ, encoderComp1.getName());
         assertEquals(codeSize1, encoderComp1.getParameters().get(METHOD_PARAMETER_CODE_SIZE));
 
         // Second nested check
         KNNMethodContext knnMethodContext2 = builder.knnMethodContext.get().getCoarseQuantizer();
-        KNNMethodContext.MethodComponentContext mainMethodComp2 = knnMethodContext2.getMethodComponent();
+        MethodComponentContext mainMethodComp2 = knnMethodContext2.getMethodComponent();
 
         assertEquals(METHOD_IVF, mainMethodComp2.getName());
         assertEquals(nprobes2, mainMethodComp2.getParameters().get(METHOD_PARAMETER_NPROBES));
         assertEquals(ncentroids2, mainMethodComp2.getParameters().get(METHOD_PARAMETER_NCENTROIDS));
 
-        KNNMethodContext.MethodComponentContext encoderComp2 = knnMethodContext2.getEncoder();
+        MethodComponentContext encoderComp2 = knnMethodContext2.getEncoder();
         assertEquals(ENCODER_PQ, encoderComp2.getName());
         assertEquals(codeSize2, encoderComp2.getParameters().get(METHOD_PARAMETER_CODE_SIZE));
 
         // Third nested check
         KNNMethodContext knnMethodContext3 = knnMethodContext2.getCoarseQuantizer();
-        KNNMethodContext.MethodComponentContext mainMethodComp3 = knnMethodContext3.getMethodComponent();
+        MethodComponentContext mainMethodComp3 = knnMethodContext3.getMethodComponent();
         assertEquals(METHOD_HNSW, mainMethodComp3.getName());
 
         // Test failure on component that does not support coarse quantization

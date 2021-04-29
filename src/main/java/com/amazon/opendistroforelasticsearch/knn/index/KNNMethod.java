@@ -115,7 +115,7 @@ public class KNNMethod {
         methodComponent.validate(knnMethodContext.getMethodComponent());
 
         // validate the encoder and its parameters
-        KNNMethodContext.MethodComponentContext encoderContext = knnMethodContext.getEncoder();
+        MethodComponentContext encoderContext = knnMethodContext.getEncoder();
         if (encoderContext == null) {
             return;
         }
