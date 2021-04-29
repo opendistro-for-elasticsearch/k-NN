@@ -38,6 +38,7 @@ public class KNNConstants {
 
     public static final String METHOD_HNSW = "hnsw";
     public static final String METHOD_IVF = "ivf";
+    public static final String METHOD_BRUTE_FORCE = "brute_force";
 
     public static final String METHOD_PARAMETER_EF_CONSTRUCTION = "ef_construction";
     public static final String METHOD_PARAMETER_EF_SEARCH = "ef_search";

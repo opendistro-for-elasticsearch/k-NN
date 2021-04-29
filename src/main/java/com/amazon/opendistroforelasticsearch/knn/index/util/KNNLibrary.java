@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.COARSE_QUANTIZER;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.ENCODER_FLAT;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.ENCODER_PQ;
+import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_BRUTE_FORCE;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_HNSW;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_IVF;
 import static com.amazon.opendistroforelasticsearch.knn.common.KNNConstants.METHOD_PARAMETER_CODE_SIZE;
@@ -246,13 +247,18 @@ public interface KNNLibrary {
      * Implements NativeLibrary for the nmslib native library
      */
     class Nmslib extends NativeLibrary {
+        // ======================================
+        // Constants pertaining to faiss library
+        // ======================================
+        public final static String HNSW_LIB_NAME = "hnsw";
+        public final static String EXTENSION = ".hnsw";
 
         public final static Map<String, MethodComponent> ENCODERS = Collections.emptyMap();
 
         public final static Map<String, KNNMethod> METHODS = ImmutableMap.of(
                 METHOD_HNSW,
                 KNNMethod.Builder.builder(
-                        MethodComponent.Builder.builder("hnsw")
+                        MethodComponent.Builder.builder(HNSW_LIB_NAME)
                                 .putParameter(METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, false,
                                         v -> v > 0))
                                 .putParameter(METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512,
@@ -266,8 +272,6 @@ public interface KNNLibrary {
         );
 
         public final static Map<SpaceType, Function<Float, Float>> SCORE_TRANSLATIONS = Collections.emptyMap();
-
-        public final static String EXTENSION = ".hnsw";
 
         public final static Nmslib INSTANCE = new Nmslib(METHODS, SCORE_TRANSLATIONS,
                 NmsLibVersion.LATEST.getBuildVersion(), NmsLibVersion.LATEST.indexLibraryVersion(), EXTENSION);
@@ -291,22 +295,35 @@ public interface KNNLibrary {
      * Implements NativeLibrary for the faiss native library
      */
     class Faiss extends NativeLibrary {
+        // ======================================
+        // Constants pertaining to faiss library
+        // ======================================
+        public final static String PQ_LIB_NAME = "PQ";
+        public final static String ENCODER_FLAT_LIB_NAME = "Flat";
+        public final static String BRUTE_FORCE_LIB_NAME = ""; // Library default so it is empty string
+        public final static String HNSW_LIB_NAME = "HNSW";
+        public final static String IVF_LIB_NAME = "IVF";
+        public final static String EXTENSION = ".faiss";
+        public final static String COMPONENT_DELIMETER = ",";
+        public final static String PARAMETER_DELIMETER = "_";
+        public final static String SUB_COMPONENT_START = "(";
+        public final static String SUB_COMPONENT_END = ")";
 
         public final static Map<String, MethodComponent> ENCODERS = ImmutableMap.of(
                 ENCODER_PQ,
-                MethodComponent.Builder.builder("PQ")
+                MethodComponent.Builder.builder(PQ_LIB_NAME)
                         .putParameter(METHOD_PARAMETER_CODE_SIZE, new Parameter.IntegerParameter(16, true,
                                 v -> v > 0))
                         .build(),
                 ENCODER_FLAT,
-                MethodComponent.Builder.builder("Flat")
+                MethodComponent.Builder.builder(ENCODER_FLAT_LIB_NAME)
                         .build()
         );
 
         public final static Map<String, KNNMethod> METHODS = ImmutableMap.of(
                 METHOD_HNSW,
                 KNNMethod.Builder.builder(
-                        MethodComponent.Builder.builder("HNSW")
+                        MethodComponent.Builder.builder(HNSW_LIB_NAME)
                                 .putParameter(METHOD_PARAMETER_M, new Parameter.IntegerParameter(16, true,
                                         v -> v > 0))
                                 .putParameter(METHOD_PARAMETER_EF_CONSTRUCTION, new Parameter.IntegerParameter(512,
@@ -321,7 +338,7 @@ public interface KNNLibrary {
                         .build(),
                 METHOD_IVF,
                 KNNMethod.Builder.builder(
-                        MethodComponent.Builder.builder("IVF")
+                        MethodComponent.Builder.builder(IVF_LIB_NAME)
                                 .putParameter(METHOD_PARAMETER_NCENTROIDS, new Parameter.IntegerParameter(16, true,
                                         v -> v > 0))
                                 .putParameter(METHOD_PARAMETER_NPROBES, new Parameter.IntegerParameter(1, false,
@@ -332,9 +349,9 @@ public interface KNNLibrary {
                         .putEncoders(ENCODERS)
                         .setIsCoarseQuantizerAvailable(true)
                         .build(),
-                ENCODER_FLAT,
+                METHOD_BRUTE_FORCE,
                 KNNMethod.Builder.builder(
-                        MethodComponent.Builder.builder("").build()
+                        MethodComponent.Builder.builder(BRUTE_FORCE_LIB_NAME).build()
                 )
                         .addSpaces(SpaceType.L2, SpaceType.INNER_PRODUCT)
                         .putEncoders(ENCODERS)
@@ -346,8 +363,6 @@ public interface KNNLibrary {
                 SpaceType.INNER_PRODUCT, rawScore ->
                         SpaceType.INNER_PRODUCT.scoreTranslation(-1*rawScore)
         );
-
-        public final static String EXTENSION = ".faiss";
 
         public final static Faiss INSTANCE = new Faiss(METHODS, SCORE_TRANSLATIONS,
                 FaissLibVersion.LATEST.getBuildVersion(), FaissLibVersion.LATEST.indexLibraryVersion(), EXTENSION);
@@ -378,19 +393,8 @@ public interface KNNLibrary {
             StringBuilder methodStringBuilder = new StringBuilder(knnMethod.getMethodComponent().getName());
 
             // Attach all of the parameters for the main method component
-            Map<String, Object> parameters = knnMethodContext.getMethodComponent().getParameters();
-            String prefix = "";
-            for (Map.Entry<String, Parameter<?>> parameter : knnMethod.getMethodComponent()
-                    .getParameters().entrySet().stream().filter(m -> m.getValue().isInMethodString())
-                    .collect(Collectors.toSet())) {
-                methodStringBuilder.append(prefix);
-                if (parameters != null && parameters.containsKey(parameter.getKey())) {
-                    methodStringBuilder.append(parameters.get(parameter.getKey()));
-                } else {
-                    methodStringBuilder.append(parameter.getValue().getDefaultValue());
-                }
-                prefix = "_";
-            }
+            methodStringBuilder.append(generateParameters(knnMethodContext.getMethodComponent(),
+                    knnMethod.getMethodComponent()));
 
             // Add coarse quantizer if necessary
             if (knnMethodContext.getCoarseQuantizer() != null && !knnMethod.isCoarseQuantizerAvailable()) {
@@ -398,16 +402,16 @@ public interface KNNLibrary {
             }
 
             if (knnMethodContext.getCoarseQuantizer() != null) {
-                methodStringBuilder.append("(");
+                methodStringBuilder.append(SUB_COMPONENT_START);
                 methodStringBuilder.append(generateMethod(knnMethodContext.getCoarseQuantizer()));
-                methodStringBuilder.append(")");
+                methodStringBuilder.append(SUB_COMPONENT_END);
             }
 
             if (methodStringBuilder.length() > 0) {
-                methodStringBuilder.append(",");
+                methodStringBuilder.append(COMPONENT_DELIMETER);
             }
 
-            // Add encoding parameters
+            // Add encoder
             MethodComponentContext encoderContext = knnMethodContext.getEncoder();
             if (encoderContext != null && !knnMethod.hasEncoder(encoderContext.getName())) {
                 throw new IllegalArgumentException("Invalid encoder: " + encoderContext.getName());
@@ -416,23 +420,33 @@ public interface KNNLibrary {
             if (encoderContext != null) {
                 MethodComponent encoderComponent = knnMethod.getEncoder(encoderContext.getName());
                 methodStringBuilder.append(encoderComponent.getName());
-                parameters = encoderContext.getParameters();
-                prefix = "";
-                for (Map.Entry<String, Parameter<?>> parameter : encoderComponent.getParameters().entrySet()
-                        .stream().filter(m -> m.getValue().isInMethodString()).collect(Collectors.toSet())) {
-                    methodStringBuilder.append(prefix);
-                    if (parameters != null && parameters.containsKey(parameter.getKey())) {
-                        methodStringBuilder.append(parameters.get(parameter.getKey()));
-                    } else {
-                        methodStringBuilder.append(parameter.getValue().getDefaultValue());
-                    }
-                    prefix = "_";
-                }
+                methodStringBuilder.append(generateParameters(encoderContext, encoderComponent));
             } else {
-                methodStringBuilder.append("Flat");
+                // By default, we need to specify that the encoding is flat
+                methodStringBuilder.append(ENCODER_FLAT_LIB_NAME);
             }
 
             return methodStringBuilder.toString();
+        }
+
+        private String generateParameters(MethodComponentContext methodComponentContext,
+                                          MethodComponent methodComponent) {
+            Map<String, Object> parameters = methodComponentContext.getParameters();
+            StringBuilder parameterStringBuilder = new StringBuilder();
+            String prefix = "";
+            for (Map.Entry<String, Parameter<?>> parameter : methodComponent
+                    .getParameters().entrySet().stream().filter(m -> m.getValue().isInMethodString())
+                    .collect(Collectors.toSet())) {
+                parameterStringBuilder.append(prefix);
+                if (parameters != null && parameters.containsKey(parameter.getKey())) {
+                    parameterStringBuilder.append(parameters.get(parameter.getKey()));
+                } else {
+                    parameterStringBuilder.append(parameter.getValue().getDefaultValue());
+                }
+                prefix = PARAMETER_DELIMETER;
+            }
+
+            return parameterStringBuilder.toString();
         }
     }
 }
