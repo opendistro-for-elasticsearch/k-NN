@@ -19,13 +19,13 @@ import java.io.File;
 
 public class IndexUtil {
 
-    public static Long BYTES_PER_KILOBYTES = 1024L;
+    private static Long BYTES_PER_KILOBYTES = 1024L;
 
     /**
      * Determines the size of a file on disk in kilobytes
      *
      * @param filePath path to the file
-     * @return length of the file in kilobytes
+     * @return file size in kilobytes
      */
     public static long getFileSizeInKB(String filePath) {
         if (filePath == null || filePath.isEmpty()) {

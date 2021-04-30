@@ -316,9 +316,11 @@ public class KNNIndexCache implements Closeable {
         // loadIndex from different library
         final KNNIndex knnIndex;
 
-        if (indexPathUrl.contains(KNNEngine.NMSLIB.getExtension())) {
+        if (indexPathUrl.endsWith(KNNEngine.NMSLIB.getExtension())
+                || indexPathUrl.endsWith(KNNEngine.NMSLIB.getCompoundExtension())) {
             knnIndex = KNNNmsLibIndex.load(indexPathUrl, getQueryParams(indexName), spaceType);
-        } else if (indexPathUrl.contains(KNNEngine.FAISS.getExtension())) {
+        } else if (indexPathUrl.endsWith(KNNEngine.FAISS.getExtension())
+                || indexPathUrl.endsWith(KNNEngine.FAISS.getCompoundExtension())) {
             knnIndex = KNNFaissIndex.load(indexPathUrl, spaceType);
         } else {
             throw new IllegalArgumentException("[KNN] Invalid engine type for path: " + indexPathUrl);

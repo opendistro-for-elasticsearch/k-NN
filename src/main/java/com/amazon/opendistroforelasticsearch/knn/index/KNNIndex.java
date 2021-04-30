@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public abstract class KNNIndex implements AutoCloseable {
 
     private volatile boolean isClosed = false;
-    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock readWriteLock;
 
     private final long indexPointer;
     private final long indexSize;
@@ -36,6 +36,7 @@ public abstract class KNNIndex implements AutoCloseable {
         this.indexPointer = indexPointer;
         this.indexSize = indexSize;
         this.spaceType = spaceType;
+        this.readWriteLock = new ReentrantReadWriteLock();
     }
 
     /**
@@ -49,7 +50,7 @@ public abstract class KNNIndex implements AutoCloseable {
         readLock.lock();
         try {
             if (this.isClosed) {
-                throw new IOException("Index is already closed");
+                throw new IOException("Cannot query closed Index");
             }
             final long indexPointer = this.indexPointer;
             return queryJNIWrapper(indexPointer, query, k);
